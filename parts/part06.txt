@@ -1,0 +1,33 @@
+':
+    try:
+        app = App()
+    except Exception as error:
+        if window is not None:
+            window.loadFailure('起動できませんでした: '+str(error))
+        raise
+</script>
+<script>
+(() => {
+const status=document.getElementById('boot-status'),button=document.getElementById('boot'),reload=document.getElementById('reload');
+let failed=false,started=false,watch,timeout;
+function fail(message){if(failed)return;failed=true;clearInterval(watch);clearTimeout(timeout);status.textContent=message;button.hidden=true;reload.hidden=false;}
+reload.onclick=()=>location.reload();
+button.onclick=()=>{if(window.pyxelContext?.resolveInput){window.pyxelContext.resolveInput();button.disabled=true;status.textContent='闘技場を準備しています…';}};
+window.startLancerRuntime=()=>{
+ if(started)return;started=true;
+ try{Promise.resolve(launchPyxel({command:'run',script:document.getElementById('game-source').textContent})).catch(e=>fail('起動できませんでした：'+String(e.message||e)));}
+ catch(e){fail('起動できませんでした：'+String(e.message||e));}
+ watch=setInterval(()=>{
+  const host=document.getElementById('lancer-shell');
+  if(host){document.getElementById('boot-panel').hidden=true;clearInterval(watch);clearTimeout(timeout);return;}
+  if(window.pyxelContext?.hasFatalError){fail('実行環境でエラーが発生しました。再読み込みしてください。');return;}
+  if(window.pyxelContext?.resolveInput){button.disabled=false;button.textContent='ゲームを起動';status.textContent='準備ができました。「ゲームを起動」を押してください。';}
+ },200);
+ timeout=setTimeout(()=>{if(!document.getElementById('lancer-shell'))fail('読み込みに時間がかかっています。接続を確認して再読み込みしてください。');},90000);
+};
+window.lancerRuntimeDownloadFailed=()=>fail('ゲームの読み込みに失敗しました。インターネット接続を確認してください。');
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/gh/kitao/pyxel@v2.9.9/wasm/pyxel.js" onload="startLancerRuntime()" onerror="lancerRuntimeDownloadFailed()"></script>
+</body></html>
+
