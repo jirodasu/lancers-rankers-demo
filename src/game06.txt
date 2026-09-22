@@ -1,0 +1,150 @@
+            self.mode = 'defeat'
+        return True
+
+    def prepare(self, tech=None, combo=False):
+        dist = math.hypot(self.px-self.bx, self.py-self.by)
+        scripted = tech is None and not self.tutorial_done and self.tutorial_step < 3
+        if scripted:
+            # First three attacks teach the core loop by prediction, not by a separate tutorial screen.
+            tech = 'thrust'
+            self.tutorial_attack = self.tutorial_step
+        elif tech is None:
+            pool = ['rush', 'throw'] if dist>53 else ['thrust', 'thrust', 'combo'] if dist>29 else ['sweep', 'wave']
+            if self.phase == 1:
+                pool = [p for p in pool if p not in ('wave', 'combo')]
+            if self.repeats >= 2:
+                pool = [p for p in pool if p != self.last_tech] or ['thrust']
+            tech = self.rng.choice(pool)
+            self.tutorial_attack = -1
+        self.repeats = self.repeats+1 if tech == self.last_tech else 1
+        self.last_tech = self.tech = tech
+        self.state, self.hit, self.shot_count = 'prep', False, 0
+        self.ba = math.atan2(self.py-self.by, self.px-self.bx)
+        self.volley = self.phase
+        self.rush_origin = (self.bx,self.by)
+        if scripted:
+            self.timer = (.95, .82, .78)[self.tutorial_attack]
+            self.notice = (
+                '赤い予告から外れてみよう',
+                'もう一度。避ければ反撃の隙ができる',
+                '次は隙が長い。突きを長押ししてみよう',
+            )[self.tutorial_attack]
+        else:
+            self.timer = .38 if combo else TECH[tech][1]*(.9 if self.phase == 3 else 1)
+            self.notice = TECH[tech][0] + ('  '+str(self.step)+'/3' if tech == 'combo' else '')
+        self.prep_total = self.timer
+        if not combo:
+            self.step = 1
+        self.sound(3)
+
+    def boss_update(self):
+        if self.mode != 'battle':
+            return
+        self.timer -= DT  # Timers decrement exactly once per simulation step.
+        if self.state == 'idle':
+            dx, dy = self.px-self.bx, self.py-self.by
+            dist = math.hypot(dx, dy)
+            ux, uy = unit(dx, dy)
+            self.ba = math.atan2(dy, dx)
+            direction = 1 if dist > 36 else -.4 if dist < 23 else 0
+            self.bx += ux*23*direction*DT
+            self.by += uy*23*direction*DT
+            self.clamp('b', 10)
+            if self.timer <= 0:
+                self.prepare()
+        elif self.state == 'prep':
+            # Aim is locked from the start of the telegraph; no homing during attack.
+            if self.timer <= 0:
+                self.state, self.timer = 'attack', TECH[self.tech][2]
+        elif self.state == 'attack':
+            ux, uy = math.cos(self.ba), math.sin(self.ba)
+            age = TECH[self.tech][2]-self.timer
+            hit = False
+            if self.tech in ('thrust', 'combo'):
+                length, radius = SHAPES[self.tech]
+                hit = segment_hit(self.px, self.py, self.bx, self.by, self.bx+ux*length, self.by+uy*length, radius)
+            elif self.tech == 'rush':
+                ox, oy = self.bx, self.by
+                self.rush_origin = (ox,oy)
+                self.bx += ux*120*DT
+                self.by += uy*120*DT
+                self.clamp('b', 10)
+                length, radius = SHAPES['rush']
+                hit = segment_hit(self.px, self.py, ox, oy, self.bx+ux*length, self.by+uy*length, radius)
+            elif self.tech == 'sweep':
+                dx, dy = self.px-self.bx, self.py-self.by
+                angle = math.atan2(dy, dx)-self.ba
+                angle = (angle+math.pi)%(2*math.pi)-math.pi
+                hit = math.hypot(dx, dy)<=SHAPES['sweep'][0] and abs(angle)<SHAPES['sweep'][1]
+            elif self.tech == 'wave':
+                radius = SHAPES['wave'][0]*min(1, age/TECH['wave'][2])
+                hit = abs(math.hypot(self.px-self.bx, self.py-self.by)-radius)<=SHAPES['wave'][1]
+            elif self.tech == 'throw':
+                total = self.volley
+                if self.shot_count<total and age>=self.shot_count*.23:
+                    a = self.ba+(self.shot_count-(total-1)/2)*.23
+                    self.shots.append([self.bx+math.cos(a)*12, self.by+math.sin(a)*12, math.cos(a)*82.5, math.sin(a)*82.5, 3])
+                    self.shot_count += 1
+            if hit and not self.hit:
+                self.hit = self.hurt(TECH[self.tech][4])
+            if self.timer <= 0:
+                if self.tech == 'combo' and self.step<3:
+                    self.step += 1
+                    self.prepare('combo', True)
+                else:
+                    recovery = TECH[self.tech][3]
+                    if self.tutorial_attack >= 0:
+                        recovery = (1.25, 1.0, 1.5)[self.tutorial_attack]
+                        self.notice = (
+                            '隙あり — 今だ、突け',
+                            '隙あり — もう一度、突け',
+                            '長い隙 — 長押しして、離して突け',
+                        )[self.tutorial_attack]
+                        self.tutorial_step = self.tutorial_attack + 1
+                    else:
+                        self.notice = '隙あり — 接近して突く'
+                    self.state, self.timer = 'recover', recovery
+        elif self.timer <= 0:
+            if self.tutorial_step >= 3 and not self.tutorial_done:
+                self.tutorial_done = True
+                self.notice = '基本は同じ。予告を見て、隙にどこまで欲張るか判断しよう'
+            else:
+                self.notice = '間合いを取り、次の予告を見る'
+            self.tutorial_attack = -1
+            self.state, self.timer = 'idle', .4 if self.phase==3 else .65
+
+    def snapshot(self):
+        return dict(mode=self.mode, hp=self.hp, stamina=round(self.stamina), potions=self.potions, bossHp=self.bhp, phase=self.phase, poise=round(self.poise), bleed=self.bleed, charge=round(min(1,self.charge/self.weapon['charge']),2) if self.charging else 0, chargeAffordable=self.stamina>=self.weapon['ccost'], weapon=self.weapon_index, notice=self.feedback if self.feedback_time else self.notice, state=self.state, seconds=round(self.elapsed,1), tutorialStep=self.tutorial_step, tutorialDone=self.tutorial_done)
+
+    def publish(self):
+        if window is not None:
+            raw = json.dumps(self.snapshot())
+            if raw != getattr(self, '_published', None):
+                window.receiveLancerState(raw)
+                self._published = raw
+
+    def draw_capsule(self, x, y, ex, ey, radius, col):
+        ux, uy = unit(ex-x, ey-y)
+        vx, vy = -uy*radius, ux*radius
+        pyxel.tri(x+vx,y+vy,x-vx,y-vy,ex+vx,ey+vy,col)
+        pyxel.tri(x-vx,y-vy,ex-vx,ey-vy,ex+vx,ey+vy,col)
+        pyxel.circ(x,y,radius,col)
+        pyxel.circ(ex,ey,radius,col)
+
+    def telegraph(self):
+        if self.state not in ('prep', 'attack'):
+            return
+        col = 8 if self.state == 'prep' else 10
+        ux, uy = math.cos(self.ba), math.sin(self.ba)
+        length, half = SHAPES[self.tech]
+        pyxel.dither(.25)
+        if self.tech == 'wave':
+            radius = length*max(0,min(1,1-self.timer/TECH['wave'][2]))
+            if self.state == 'prep':
+                pyxel.circ(self.bx,self.by,length+half,col)
+            else:
+                for r in range(max(0,int(radius-half)),int(radius+half)+1):
+                    pyxel.circb(self.bx,self.by,r,col)
+        elif self.tech == 'sweep':
+            for i in range(29):
+                a = self.ba-half+i/29*half*2
