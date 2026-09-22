@@ -1,0 +1,150 @@
+    'sweep': ('城壁払い', .80, .30, .75, 22),
+    'rush': ('守将突進', .95, .45, 1.05, 28),
+    'wave': ('石突震', .90, .50, .80, 30),
+    'throw': ('イリオス投槍', .85, .80, .65, 15),
+    'combo': ('三連守槍', .72, .18, 1.10, 16),
+}
+
+def unit(x, y):
+    d = math.hypot(x, y)
+    return (x / d, y / d) if d > .001 else (0, -1)
+
+def segment_hit(px, py, x1, y1, x2, y2, radius):
+    dx, dy = x2-x1, y2-y1
+    t = max(0, min(1, ((px-x1)*dx+(py-y1)*dy)/(dx*dx+dy*dy or 1)))
+    return math.hypot(px-x1-dx*t, py-y1-dy*t) <= radius
+
+class App:
+    def __init__(self, auto_run=True, headless=False):
+        self.canvas_fallback = window is not None and bool(window.lancerCanvasFallback)
+        headless = headless or self.canvas_fallback
+        pyxel.init(W, H, title='LANCERS RANKERS — PYXEL', fps=FPS, quit_key=pyxel.KEY_NONE, headless=headless)
+        if self.canvas_fallback:
+            self._screen_view = memoryview(pyxel.screen.data_ptr()).cast('B')
+            window.lancerSetPalette(json.dumps(list(pyxel.colors)))
+        self.rng = random.Random(10)
+        self.mode = 'select'
+        self.weapon_index = 0
+        self.previous_attack = False
+        self.previous_dodge = False
+        self.previous_heal = False
+        self.previous_pause = False
+        self.fx = []
+        self.frame = 0
+        self.muted = False
+        self.ready_sound = False
+        try:
+            pyxel.sounds[0].set('c3e3g3', 't', '4', 'f', 3)
+            pyxel.sounds[1].set('c2a1f1', 'n', '5', 'f', 3)
+            pyxel.sounds[2].set('c3e3g3c4', 't', '4', 'f', 5)
+            pyxel.sounds[3].set('a2a2', 'p', '3', 'f', 5)
+            self.ready_sound = True
+        except Exception:
+            pass
+        self.reset()
+        self.publish()
+        if auto_run:
+            pyxel.run(self.update, self.draw)
+
+    def reset(self):
+        self.px, self.py = CX, CY+39
+        self.bx, self.by = CX, CY-26
+        self.hp, self.stamina, self.potions, self.bhp = 100, 100., 3, 600
+        self.pa, self.ba = -math.pi/2, math.pi/2
+        self.phase, self.poise, self.bleed = 1, 0., 0
+        self.invuln = self.dodge = self.lock = self.regen_delay = self.charge = 0.
+        self.attack_anim = self.flash = self.elapsed = 0.
+        self.charging = False
+        self.pending = None
+        self.feedback, self.feedback_time = '', 0.
+        self.volley = 1
+        self.rush_origin = (self.bx,self.by)
+        self.state, self.timer = 'idle', .8
+        self.tech, self.step, self.hit = 'thrust', 1, False
+        self.tutorial_step = 0
+        self.tutorial_attack = -1
+        self.tutorial_done = False
+        self.shots, self.fx = [], []
+        self.last_tech, self.repeats = '', 0
+        self.shot_count = 0
+        self.notice = 'まずは赤い予告から外れてみよう'
+        self.previous_attack = self.previous_dodge = self.previous_heal = self.previous_pause = False
+
+    @property
+    def weapon(self):
+        return WEAPONS[self.weapon_index]
+
+    def sound(self, n):
+        if self.ready_sound and not self.muted:
+            pyxel.play(0, n)
+
+    def text(self, x, y, label, color=7):
+        self.fx.append([x, y, str(label), color, .8])
+
+    def read_input(self):
+        if window is not None:
+            return json.loads(str(window.consumeLancerInput()))
+        return dict(x=int(pyxel.btn(pyxel.KEY_RIGHT) or pyxel.btn(pyxel.KEY_D))-int(pyxel.btn(pyxel.KEY_LEFT) or pyxel.btn(pyxel.KEY_A)), y=int(pyxel.btn(pyxel.KEY_DOWN) or pyxel.btn(pyxel.KEY_S))-int(pyxel.btn(pyxel.KEY_UP) or pyxel.btn(pyxel.KEY_W)), attack=pyxel.btn(pyxel.KEY_Z) or pyxel.btn(pyxel.KEY_SPACE), dodge=pyxel.btn(pyxel.KEY_X), heal=pyxel.btn(pyxel.KEY_C), pause=pyxel.btn(pyxel.KEY_P), command='start' if pyxel.btnp(pyxel.KEY_RETURN) else '', weapon=self.weapon_index, muted=self.muted)
+
+    def update(self, controls=None):
+        c = controls if controls is not None else self.read_input()
+        self.frame += 1
+        self.muted = c.get('muted', self.muted)
+        command = c.get('command', '')
+        if window is not None and command:
+            window.lancerInput.command = ''
+        if command == 'select':
+            self.mode = 'select'
+        if self.mode == 'select':
+            self.weapon_index = max(0, min(2, c.get('weapon', self.weapon_index)))
+        if command in ('start', 'retry'):
+            self.reset()
+            self.mode = 'battle'
+            self.sound(2)
+        pause = c.get('pause', False)
+        if (pause and not self.previous_pause or command == 'pause') and self.mode == 'battle':
+            self.mode = 'paused'
+        if command == 'resume' and self.mode == 'paused':
+            self.mode = 'battle'
+        self.previous_pause = pause
+        if self.mode != 'battle':
+            self.charging, self.pending = False, None
+            self.previous_attack = c.get('attack', False)
+            self.publish()
+            return
+        self.elapsed += DT
+        for name in ('invuln', 'dodge', 'lock', 'regen_delay', 'attack_anim', 'flash'):
+            setattr(self, name, max(0., getattr(self, name)-DT))
+        attack, dodge, heal = (c.get(k, False) for k in ('attack', 'dodge', 'heal'))
+        mx, my = c.get('x', 0), c.get('y', 0)
+        mag = min(1, math.hypot(mx, my))
+        nx, ny = unit(mx, my)
+        if mag > .12 and not self.dodge and not self.lock:
+            self.pa = math.atan2(ny, nx)
+        events = c.get('events')
+        if events is None:
+            events = [dict(action=k, kind='down' if c.get(k) else 'up')
+                      for k in ('dodge', 'heal', 'attack')
+                      if bool(c.get(k)) != getattr(self, 'previous_'+k)]
+        self.feedback_time = max(0, self.feedback_time-DT)
+        if self.pending:
+            self.pending['ttl'] -= DT
+            if self.pending['ttl'] < -1e-8:
+                self.pending = None
+        for e in events:
+            action, kind = e.get('action'), e.get('kind')
+            if kind == 'cancel':
+                if action is None:
+                    self.charging, self.pending = False, None
+                else:
+                    if action == 'attack':
+                        self.charging = False
+                    if self.pending and self.pending['action'] == action:
+                        self.pending = None
+            elif kind == 'down':
+                self.try_action(action, nx, ny, mag)
+            elif action == 'attack' and kind == 'up':
+                if self.pending and self.pending['action'] == 'attack':
+                    self.pending['released'] = True
+                if self.charging:
+                    self.player_attack()
