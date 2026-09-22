@@ -4,62 +4,107 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080e19">
+<meta name="robots" content="noindex">
 <title>ランサーズ・ランカーズ｜ランク10位戦 体験版</title>
+<meta name="description" content="Pyxelで制作中。城門の守槍ヘクトランに挑む、槍アクション体験版。">
 <style>
-html,body{margin:0;min-height:100%;background:#080e19;color:#e0e8ed;font:16px/1.7 system-ui,sans-serif}
+html,body{margin:0;min-height:100%;background:#080e19;color:#e0e8ed;font:16px/1.7 system-ui,-apple-system,"Hiragino Sans",sans-serif}
 body{display:grid;place-items:center}
-main{padding:32px;text-align:center;max-width:34em}
-h1{color:#f0dcad;font-size:24px}
-#error{color:#ffb09e;white-space:pre-wrap;margin-top:16px}
+#boot-panel{min-height:100dvh;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;box-sizing:border-box}
+#boot-panel>div{max-width:34em}
+h1{font-size:26px;line-height:1.4;color:#f0dcad;margin:10px 0 16px}
+button{font:inherit;min-height:50px;padding:12px 24px;border:0;background:#dac18d;color:#152131;font-weight:800;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+#boot-status{color:#b9c7d8}
+#reload{margin-left:8px}
+small{display:block;color:#8999ad;margin-top:14px}
+#error{color:#ffb09e;white-space:pre-wrap;margin-top:14px}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
-<main>
-<h1>ランサーズ・ランカーズ</h1>
-<p id="status">PC確認版を読み込んでいます…</p>
-<div id="error"></div>
-</main>
+<section id="boot-panel">
+  <div>
+    <small>LANCERS / RANKERS — MADE WITH PYXEL</small>
+    <h1>ランサーズ・ランカーズ<br>RANK 10 体験版</h1>
+    <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
+    <button id="boot" disabled>読み込み中…</button>
+    <button id="reload" hidden>再読み込み</button>
+    <div id="error"></div>
+    <small>PC：WASD / 矢印で移動・Zで突き・Xで回避・Cで回復<br>スマホ：画面内のアナログスティックとボタンで操作</small>
+  </div>
+</section>
 <script>
-(async()=>{
-  const status=document.getElementById('status');
+(() => {
+  const VERSION='20260923-ui1';
+  const SOURCE_PARTS=[1,2,3,4,5,6,7].map(n=>`./src/game${String(n).padStart(2,'0')}.txt?v=${VERSION}`);
+  const status=document.getElementById('boot-status');
+  const button=document.getElementById('boot');
+  const reload=document.getElementById('reload');
   const errorBox=document.getElementById('error');
-  const parts=[
-    './parts/part01.txt',
-    './parts/part02.txt',
-    './parts/part03.txt',
-    './parts/part04.txt',
-    './parts/part05.txt',
-    './parts/part06.txt'
-  ];
-  try{
-    const responses=await Promise.all(parts.map(path=>fetch(path+'?v=4',{cache:'no-store'})));
-    for(const response of responses){
-      if(!response.ok)throw new Error('ゲームデータを取得できませんでした: '+response.status);
-    }
-    const texts=await Promise.all(responses.map(response=>response.text()));
+  let failed=false,started=false,watch=null,timeout=null;
 
-    // part03 starts in the middle of a JavaScript string. During the first
-    // GitHub split, literal "\\n" sequences in that string became physical
-    // line breaks. Restore only that string section before concatenating.
-    const cssEnd='body>pyxel-run{display:none}#editor-toggle{white-space:nowrap}";';
-    const cssEndAt=texts[2].indexOf(cssEnd);
-    if(cssEndAt<0)throw new Error('ゲームデータの復元位置を確認できませんでした');
-    const beforeEnd=cssEndAt+cssEnd.length;
-    texts[2]=texts[2].slice(0,beforeEnd).replace(/\n/g,'\\n')+texts[2].slice(beforeEnd);
-
-    const html=texts.join('');
-    if(!html.startsWith('<!doctype html>')||!html.includes('startLancerRuntime')||!html.includes('pyxel@v2.9.9')){
-      throw new Error('ゲームデータが不完全です');
-    }
-    status.textContent='ゲームを起動しています…';
-    document.open();
-    document.write(html);
-    document.close();
-  }catch(error){
+  function fail(message){
+    if(failed)return;
+    failed=true;
+    clearInterval(watch);clearTimeout(timeout);
     status.textContent='起動に失敗しました。';
-    errorBox.textContent=String(error);
+    errorBox.textContent=message;
+    button.hidden=true;
+    reload.hidden=false;
   }
+  reload.onclick=()=>location.reload();
+  button.onclick=()=>{
+    if(window.pyxelContext?.resolveInput){
+      window.pyxelContext.resolveInput();
+      button.disabled=true;
+      button.textContent='起動中…';
+      status.textContent='闘技場を準備しています…';
+    }
+  };
+
+  window.startLancerRuntime=async()=>{
+    if(started)return;
+    started=true;
+    try{
+      status.textContent='最新のゲームデータを読み込んでいます…';
+      const responses=await Promise.all(SOURCE_PARTS.map(path=>fetch(path,{cache:'no-store'})));
+      for(const response of responses){
+        if(!response.ok)throw new Error(`ゲームデータを取得できませんでした: ${response.status}`);
+      }
+      const source=(await Promise.all(responses.map(r=>r.text()))).join('');
+      if(!source.includes('BROWSER_UI = r')||!source.includes('class App:')||!source.includes('この槍で戦う')){
+        throw new Error('ゲームデータが不完全です。ページを再読み込みしてください。');
+      }
+      status.textContent='Pyxelを起動しています…';
+      Promise.resolve(launchPyxel({command:'run',script:source})).catch(error=>fail(String(error?.message||error)));
+      watch=setInterval(()=>{
+        const host=document.getElementById('lancer-shell');
+        if(host){
+          document.getElementById('boot-panel').hidden=true;
+          clearInterval(watch);clearTimeout(timeout);
+          return;
+        }
+        if(window.pyxelContext?.hasFatalError){
+          fail('Pyxel実行環境でエラーが発生しました。再読み込みしてください。');
+          return;
+        }
+        if(window.pyxelContext?.resolveInput){
+          button.disabled=false;
+          button.textContent='ゲームを起動';
+          status.textContent='準備ができました。「ゲームを起動」を押してください。';
+        }
+      },200);
+      timeout=setTimeout(()=>{
+        if(!document.getElementById('lancer-shell'))fail('読み込みに時間がかかっています。接続を確認して再読み込みしてください。');
+      },90000);
+    }catch(error){
+      fail(String(error?.message||error));
+    }
+  };
+  window.lancerRuntimeDownloadFailed=()=>fail('Pyxelの読み込みに失敗しました。インターネット接続を確認してください。');
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/gh/kitao/pyxel@v2.9.9/wasm/pyxel.js" onload="startLancerRuntime()" onerror="lancerRuntimeDownloadFailed()"></script>
 </body>
 </html>
