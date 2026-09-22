@@ -32,12 +32,23 @@ h1{color:#f0dcad;font-size:24px}
     './parts/part06.txt'
   ];
   try{
-    const responses=await Promise.all(parts.map(path=>fetch(path+'?v=2',{cache:'no-store'})));
+    const responses=await Promise.all(parts.map(path=>fetch(path+'?v=4',{cache:'no-store'})));
     for(const response of responses){
       if(!response.ok)throw new Error('ゲームデータを取得できませんでした: '+response.status);
     }
-    const html=(await Promise.all(responses.map(response=>response.text()))).join('');
-    if(!html.startsWith('<!doctype html>')||!html.includes('startLancerRuntime')){
+    const texts=await Promise.all(responses.map(response=>response.text()));
+
+    // part03 starts in the middle of a JavaScript string. During the first
+    // GitHub split, literal "\\n" sequences in that string became physical
+    // line breaks. Restore only that string section before concatenating.
+    const cssEnd='body>pyxel-run{display:none}#editor-toggle{white-space:nowrap}";';
+    const cssEndAt=texts[2].indexOf(cssEnd);
+    if(cssEndAt<0)throw new Error('ゲームデータの復元位置を確認できませんでした');
+    const beforeEnd=cssEndAt+cssEnd.length;
+    texts[2]=texts[2].slice(0,beforeEnd).replace(/\n/g,'\\n')+texts[2].slice(beforeEnd);
+
+    const html=texts.join('');
+    if(!html.startsWith('<!doctype html>')||!html.includes('startLancerRuntime')||!html.includes('pyxel@v2.9.9')){
       throw new Error('ゲームデータが不完全です');
     }
     status.textContent='ゲームを起動しています…';
