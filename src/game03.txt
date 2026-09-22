@@ -1,0 +1,138 @@
+style.textContent=style.textContent.replaceAll(':root',':host').replaceAll('body{',':host{');
+root.appendChild(style);
+let expanded=false,frame=null,oldFrameStyle='';
+try{frame=window.frameElement;if(frame)oldFrameStyle=frame.style.cssText;}catch{}
+function expand(value){if(!frame)return;expanded=value;frame.style.cssText=value?'position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:99999!important;border:0!important;':oldFrameStyle;root.getElementById('editor-toggle').textContent=value?'コードへ':'拡大';}
+expand(true);
+'use strict';
+const $ = id => root.getElementById(id);
+window.loadFailure = message => { $('loading').hidden=false; $('load-label').textContent=message; $('start').disabled=true; root.querySelector('.spinner').hidden=true; };
+window.__lancerCleanup=()=>{for(const remove of removers)remove();if(frame)frame.style.cssText=oldFrameStyle;host.remove();};
+window.lancerCanvasFallback = true;
+// Dedicated canvas: never reuse or move Code Maker's runtime canvas.
+const canvas=root.querySelector('#pyxel-screen canvas');
+canvas.width=195;canvas.height=250;
+canvas.style.cssText='position:absolute;inset:0;margin:auto;width:auto;height:100%;max-width:100%;object-fit:contain';
+const pixelContext=canvas.getContext('2d',{alpha:false});
+if(!pixelContext)throw new Error('Canvas 2Dを初期化できませんでした');
+const pixelImage=pixelContext.createImageData(195,250);
+const target32=new Uint32Array(pixelImage.data.buffer);
+const littleEndian=new Uint8Array(new Uint32Array([0x01020304]).buffer)[0]===4;
+let palette32=null;
+window.lancerSetPalette=raw=>{
+  palette32=Uint32Array.from(JSON.parse(raw),c=>littleEndian?
+    ((255<<24)|((c&255)<<16)|(c&0xff00)|(c>>>16))>>>0:
+    ((c<<8)|255)>>>0);
+};
+window.presentPyxel=pixels=>{
+  let view;
+  try {
+    if(!palette32)throw new Error('Palette is not initialized');
+    view=pixels.getBuffer('u8');
+    const data=view.data, offset=view.offset;
+    for(let i=0;i<target32.length;i++)target32[i]=palette32[data[offset+i]];
+    pixelContext.putImageData(pixelImage,0,0);
+  } finally {view?.release();}
+};
+const input = window.lancerInput = {x:0,y:0,attack:false,dodge:false,heal:false,pause:false,command:'',weapon:0,muted:false};
+let events = [];
+window.consumeLancerInput = () => {const value=JSON.stringify({...input,events});events=[];input.command='';return value;};
+let current = null, mode = '', ready = false, launching = false, keys = new Set(), stickVector = {x:0,y:0}, stickId = null;
+const pressed = {attack:new Set(),dodge:new Set(),heal:new Set()};
+const attackKeys = new Set(['KeyZ','Space']), dodgeKeys = new Set(['KeyX','ShiftLeft','ShiftRight']), healKeys = new Set(['KeyC','KeyE']);
+function mergeInput(kind='up'){
+  const x = (keys.has('ArrowRight')||keys.has('KeyD')?1:0)-(keys.has('ArrowLeft')||keys.has('KeyA')?1:0);
+  const y = (keys.has('ArrowDown')||keys.has('KeyS')?1:0)-(keys.has('ArrowUp')||keys.has('KeyW')?1:0);
+  input.x=stickId===null?x:stickVector.x;input.y=stickId===null?y:stickVector.y;
+  for(const [name,set] of [['attack',attackKeys],['dodge',dodgeKeys],['heal',healKeys]]){const held=pressed[name].size>0||[...set].some(k=>keys.has(k));if(held!==input[name])events.push({action:name,kind:held?'down':kind});input[name]=held;$(name).classList.toggle('down',held);}
+}
+function clearInput(){keys.clear();for(const set of Object.values(pressed))set.clear();stickId=null;stickVector={x:0,y:0};$('knob').style.transform='';mergeInput('cancel');events=[{kind:'cancel'}];input.pause=false;}
+function canInput(){return mode==='battle'&&!document.hidden&&!landscape();}
+function capture(el,e){if(e.isTrusted){try{el.setPointerCapture(e.pointerId);}catch{return false;}}return true;}
+for(const name of ['attack','dodge','heal']){
+  const el=$(name);
+  on(el,'pointerdown',e=>{if(!canInput())return;e.preventDefault();if(!capture(el,e))return;pressed[name].add(e.pointerId);mergeInput();});
+  for(const ev of ['pointerup','pointercancel','lostpointercapture'])on(el,ev,e=>{if(!pressed[name].has(e.pointerId))return;pressed[name].delete(e.pointerId);mergeInput(ev==='pointerup'?'up':'cancel');});
+}
+function moveStick(e){const r=$('stick').getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,limit=r.width*.32,len=Math.hypot(dx,dy),scale=len>limit?limit/len:1;stickVector=len<limit*.14?{x:0,y:0}:{x:dx*scale/limit,y:dy*scale/limit};$('knob').style.transform=`translate(${stickVector.x*32}px,${stickVector.y*32}px)`;mergeInput();}
+on($('stick'),'pointerdown',e=>{if(stickId!==null||!canInput())return;e.preventDefault();if(!capture($('stick'),e))return;stickId=e.pointerId;moveStick(e);});
+on($('stick'),'pointermove',e=>{if(e.pointerId===stickId)moveStick(e);});
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])on($('stick'),ev,e=>{if(e.pointerId!==stickId)return;stickId=null;stickVector={x:0,y:0};$('knob').style.transform='';mergeInput();});
+on(window,'keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(canInput())keys.add(e.code);if(e.code==='KeyP'&&!e.repeat)request(mode==='paused'?'resume':'pause');if(e.code==='Enter'&&!e.repeat&&ready){if(mode==='select')request('start');else if(mode==='paused')request('resume');else if(['victory','defeat'].includes(mode))request('retry');}mergeInput();});
+on(window,'keyup',e=>{keys.delete(e.code);mergeInput();});
+function suspend(){clearInput();if(current?.mode==='battle'||input.command==='resume'||input.command==='start'||input.command==='retry')input.command='pause';}
+on(window,'blur',suspend);on(document,'visibilitychange',()=>{if(document.hidden)suspend();});
+function landscape(){return innerWidth>innerHeight&&innerHeight<600;}
+function orientation(){const rotated=landscape();$('rotate').hidden=!rotated;if(rotated)suspend();}
+on(window,'resize',orientation);on(window.visualViewport,'resize',orientation);orientation();
+function resumeAudio(){const audio=window.pyxelContext?.pyodide?._module?.SDL2?.audioContext;if(audio?.state==='suspended')audio.resume().catch(()=>{});}
+function request(command){if(['start','resume','retry'].includes(command)&&(landscape()||document.hidden))return;clearInput();input.command=command;resumeAudio();}
+root.querySelectorAll('[data-weapon]').forEach(el=>on(el,'click',()=>{input.weapon=Number(el.dataset.weapon);root.querySelectorAll('[data-weapon]').forEach(b=>b.classList.toggle('selected',b===el));}));
+on($('start'),'click',()=>request(mode==='select'?'start':mode==='paused'?'resume':'retry'));
+on($('back'),'click',()=>request('select'));
+on($('pause'),'click',()=>request(mode==='paused'?'resume':'pause'));
+on($('mute'),'click',()=>{input.muted=!input.muted;$('mute').textContent=input.muted?'音 OFF':'音 ON';resumeAudio();});
+on($('reload'),'click',()=>location.reload());
+on($('activate'),'click',()=>{window.pyxelContext?.resolveInput?.();$('activate').hidden=true;$('load-label').textContent='闘技場を準備中…';resumeAudio();});
+const text=(id,value)=>{const el=$(id),str=String(value);if(el.textContent!==str)el.textContent=str;};
+const bar=(id,value)=>{const el=$(id),str=`${value}%`;if(el.style.width!==str)el.style.width=str;};
+window.receiveLancerState = raw => {
+  const s=JSON.parse(raw);current=s;
+  if(!ready){ready=true;$('loading').hidden=true;$('start').disabled=false;}
+  text('boss-value',`${s.bossHp} / 600`);bar('boss-bar',s.bossHp/6);text('phase',`PHASE ${s.phase}`);
+  const poiseRow=root.querySelector('.poise-row'); if(poiseRow)poiseRow.hidden=!s.tutorialDone;
+  bar('poise-bar',s.poise);text('hp-value',s.hp);bar('hp-bar',s.hp);text('st-value',s.stamina);bar('st-bar',s.stamina);text('potion-value',`回復薬 ${s.potions}`);
+  $('notice').hidden=s.mode==='select';
+  if(s.mode!=='select')text('notice',s.notice);
+  text('charge-label',s.charge>0?(s.chargeAffordable?`溜め ${Math.round(s.charge*100)}%`:'ST不足→通常'):s.weapon===2?`出血 ${s.bleed}%`:['正槍','重槍'][s.weapon]);$('charge-label').classList.toggle('insufficient',s.charge>0&&!s.chargeAffordable);
+  if(mode===s.mode)return;mode=s.mode;
+  $('overlay').hidden=s.mode==='battle';$('weapons').hidden=s.mode!=='select';$('back').hidden=s.mode==='select';$('pause').disabled=s.mode!=='battle'&&s.mode!=='paused';
+  $('pause').textContent=s.mode==='paused'?'再開':'一時停止';
+  if(s.mode==='select'){$('panel-kicker').textContent='CHALLENGER';$('panel-title').textContent='槍を選び、門を越えろ。';$('panel-tip').textContent='槍を選んで、ヘクトランに挑め。';$('start').textContent='この槍で戦う';}
+  else if(s.mode==='paused'){$('panel-kicker').textContent='PAUSED';$('panel-title').textContent='一時停止';$('panel-tip').textContent='準備ができたら、闘技場へ。';$('start').textContent='戦闘に戻る';}
+  else if(s.mode==='victory'||s.mode==='defeat'){const win=s.mode==='victory';$('panel-kicker').textContent=win?'RANK 10 DEFEATED':'TRY AGAIN';$('panel-title').textContent=win?'城門、突破。':'まだ、槍は折れない。';$('panel-tip').textContent=win?`討伐 ${s.seconds}秒 / 残りHP ${s.hp} / 回復薬 ${s.potions}`:`ヘクトラン 残りHP ${s.bossHp}。赤い予告から横へ避け、攻撃後の隙を狙おう。`;$('start').textContent='もう一度挑む';}
+};
+window.loadFailure = message => {$('overlay').hidden=true;$('loading').hidden=false;$('activate').hidden=true;$('load-label').textContent=message;$('reload').hidden=false;root.querySelector('.spinner').hidden=true;};
+
+on(window,'error',()=>{suspend();window.loadFailure('エラーで停止しました。再読み込みしてください。');});
+on(window,'unhandledrejection',()=>{suspend();window.loadFailure('実行を続けられませんでした。再読み込みしてください。');});
+
+$('editor-toggle').hidden=!frame;
+on($('editor-toggle'),'click',()=>{suspend();expand(!expanded);});
+})();
+'''
+try:
+    _browser_window.eval(BROWSER_UI)
+except Exception as error:
+    from js import document as _document
+    _message = _document.createElement("pre")
+    _message.textContent = "ゲーム画面の準備に失敗しました。\n" + str(error)
+    _message.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#080e19;color:white;white-space:pre-wrap;padding:20px;overflow:auto"
+    _document.body.appendChild(_message)
+    raise
+del _browser_window
+
+"""Lancers Rankers — genuine Pyxel simulation and rendering, 60 fixed steps/sec."""
+import math
+import random
+import json
+import pyxel
+
+try:
+    from js import window
+except ImportError:
+    window = None
+
+W, H, FPS = 195, 250, 60
+CX, CY, R = 97.5, 129, 86
+DT = 1 / FPS
+# Danger envelopes include the existing player collision radius; no damage changes.
+SHAPES = {'thrust': (50, 11), 'combo': (36, 8), 'rush': (38, 8),
+          'sweep': (46, math.pi*.42), 'wave': (40, 7), 'throw': (172, 6)}
+WEAPONS = [
+    dict(name='正槍・白銀', damage=18, charged=32, cost=18, ccost=36, charge=.7, duration=.22, recovery=.42, reach=24, width=8, poise=5, cpoise=12, color=12),
+    dict(name='重槍・岩穿', damage=34, charged=60, cost=32, ccost=58, charge=1., duration=.38, recovery=.68, reach=27, width=11, poise=15, cpoise=25, color=10),
+    dict(name='双短槍・紅牙', damage=11, charged=19, cost=10, ccost=22, charge=.5, duration=.14, recovery=.28, reach=20, width=6, poise=2, cpoise=6, color=14),
+]
+TECH = {
+    'thrust': ('城門穿ち', .72, .20, .82, 26),
