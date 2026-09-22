@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080e19"><meta name="robots" content="noindex">
+<title>ランサーズ・ランカーズ｜ランク10位戦 体験版</title>
+<meta name="description" content="城門の守槍ヘクトランに挑む、縦画面の槍アクション体験版。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23080e19'/%3E%3Cpath d='M8 27L24 5M17 9L24 5L23 13' stroke='%23dfba72' stroke-width='3'/%3E%3C/svg%3E">
+<style>html,body{margin:0;height:100%;background:#080e19;color:#e0e8ed;font:16px/1.7 system-ui,sans-serif}#boot-panel{min-height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box}h1{font-size:24px;color:#f0dcad}button{font:inherit;padding:14px 24px;background:#dac18d;color:#152131;border:0;cursor:pointer}button:disabled{opacity:.5}#boot-status{max-width:32em}small{display:block;color:#aab9cc}[hidden]{display:none!important}</style>
+</head><body>
+<section id="boot-panel"><div><small>LANCERS / RANKERS — PC確認版</small><h1>ランサーズ・ランカーズ<br>ランク10位戦 体験版</h1>
+<p id="boot-status" role="status">ゲームを読み込んでいます…</p>
+<button id="boot" disabled>読み込み中…</button><button id="reload" hidden>再読み込み</button>
+<small>初回は読み込みに時間がかかります。<br>移動：WASD・矢印 ／ 突き：Z ／ 回避：X ／ 回復：C</small></div></section>
+<script id="game-source" type="text/plain">
+"""ランサーズ・ランカーズ｜ランク10位戦 体験版 / Web entry"""
+from js import window as _browser_window
+BROWSER_UI = r'''
+(() => {
+window.__lancerCleanup?.();
+const removers=[];
+function on(target,type,handler){if(!target)return;target.addEventListener(type,handler);removers.push(()=>target.removeEventListener(type,handler));}
+const host=document.createElement('div');
+host.id='lancer-shell';
+host.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#080e19';
+const root=host.attachShadow({mode:'open'});
+root.innerHTML="<div id=\"rotate\" hidden role=\"status\">縦画面に戻してください<br><small>戦闘は一時停止しています。縦に戻して「再開」を押してください。</small></div><main id=\"app\">\n<header><div><span class=\"eyebrow\">LANCERS / RANKERS</span><h1>城門の守槍 <span>ヘクトラン</span></h1></div><div class=\"rank\">RANK<b>10</b></div></header>\n<section class=\"boss-hud\" aria-label=\"ボス状態\"><div class=\"bar-label\"><span id=\"phase\">PHASE 1</span><span id=\"boss-value\">600 / 600</span></div><div class=\"bar boss\"><i id=\"boss-bar\"></i></div><div class=\"poise-row\"><span>体勢</span><div class=\"bar poise\"><i id=\"poise-bar\"></i></div></div></section>\n<section id=\"arena\"><div id=\"pyxel-screen\"></div><div id=\"loading\"><span class=\"spinner\"></span><b id=\"load-label\">Pyxelを読み込み中…</b><small>初回は少し時間がかかります</small><button id=\"activate\" hidden>画面をタップして起動</button><button id=\"reload\" hidden>再読み込み</button></div>\n<div id=\"overlay\" hidden><div class=\"panel\"><span class=\"eyebrow\" id=\"panel-kicker\">CHALLENGER</span><h2 id=\"panel-title\">槍を選び、門を越えろ。</h2><div id=\"weapons\"><button class=\"weapon selected\" data-weapon=\"0\"><b>正槍・白銀</b><span>威力18 / 溜め32 · バランス型</span></button><button class=\"weapon\" data-weapon=\"1\"><b>重槍・岩穿</b><span>威力34 / 溜め60 · 体勢を崩す</span></button><button class=\"weapon\" data-weapon=\"2\"><b>双短槍・紅牙</b><span>威力11 / 溜め19 · 出血を蓄積</span></button></div><p id=\"panel-tip\">赤い予告を避け、攻撃後の隙を突く。<br>突きを長押しすると溜め攻撃。</p><button class=\"primary\" id=\"start\" disabled>戦闘開始</button><button id=\"back\" hidden>武器を選び直す</button></div></div></section>\n<p id=\"notice\" role=\"status\">赤い予告を避け、攻撃後の隙を突こう</p>\n<section class=\"player-hud\"><div><div class=\"bar-label\"><b>HP <span id=\"hp-value\">100</span></b><span id=\"potion-value\">回復薬 3</span></div><div class=\"bar health\"><i id=\"hp-bar\"></i></div></div><div><div class=\"bar-label\"><b>ST <span id=\"st-value\">100</span></b><span id=\"charge-label\">正槍</span></div><div class=\"bar stamina\"><i id=\"st-bar\"></i></div></div></section>\n<section class=\"controls\" aria-label=\"戦闘操作\"><div id=\"stick\" role=\"application\" aria-label=\"移動スティック\"><span class=\"stick-cross\">＋</span><div id=\"knob\"></div><small>移動</small></div><div class=\"actions\"><button id=\"heal\" class=\"action heal\" aria-label=\"回復薬\">薬<span>C</span></button><button id=\"dodge\" class=\"action dodge\" aria-label=\"回避\">避<span>X</span></button><button id=\"attack\" class=\"action attack\" aria-label=\"突き 長押しで溜め\">突<span>長押しで溜め</span></button></div></section>\n<footer><button id=\"editor-toggle\">コードへ</button><div><button id=\"mute\" aria-label=\"効果音切り替え\">音 ON</button><button id=\"pause\" aria-label=\"一時停止\">一時停止</button></div></footer></main>";
+root.querySelector('#pyxel-screen').appendChild(document.createElement('canvas'));
+document.body.appendChild(host);
+const style=document.createElement('style');
+style.textContent=":root{color-scheme:dark;font-family:system-ui,-apple-system,'Hiragino Sans',sans-serif;background:#050810;color:#e0e8ed}*{box-sizing:border-box}body{margin:0;display:flex;justify-content:center;height:100dvh;overflow:hidden}button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}button:focus-visible{outline:2px solid #77d5ee;outline-offset:3px}button:disabled{opacity:.5;cursor:wait}[hidden]{display:none!important}#app{width:min(100%,460px);height:100%;display:flex;flex-direction:column;padding: max(10px,env(safe-area-inset-top)) 18px max(8px,env(safe-area-inset-bottom));background:#080e19;box-shadow:0 0 90px #0e1d3180}header{display:flex;justify-content:space-between;align-items:center;flex:none;padding:3px 0 8px}.eyebrow{font-size:11px;letter-spacing:2px;color:#a8b7c9}h1{font-size:14px;line-height:1.5;margin:5px 0 0;font-weight:400;color:#a4b1c1}h1 span{color:#f0dbad;font-size:19px;font-weight:700;padding-left:4px}.rank{font-size:9px;letter-spacing:2px;text-align:center;color:#d6b574;border:1px solid #6f5833;width:43px;padding:4px}.rank b{font:700 25px/1.1 monospace;display:block}.boss-hud{flex:none}.bar-label{dis
