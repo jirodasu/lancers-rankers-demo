@@ -1,0 +1,31 @@
+# ランサーズ・ランカーズ / Code Maker用 1ファイル修正版
+# この全文を https://kitao.github.io/pyxel/web/code-maker/ のCode欄に貼り付けてRun。
+# 外部素材ファイル不要。Pyxelの読み込みにはインターネット接続が必要。
+# 通常のPC Python単独用ではありません。日本語UIとタッチは内蔵JavaScriptを使用。
+# HP・攻撃力・武器3種・敵技6種・方向固定・100ms入力予約を維持。
+# 修正: 予約回避は押下時の方向を保存。溜めは離した時に発動。通常攻撃も武器別recoveryを反映。
+# 導入: 最初の3回は『予告を見る→避ける→隙を突く→長い隙なら溜める』を体験できる半スクリプト。
+# 操作変更: 指1本のキャンセルではその操作だけ解除。他の指の移動/溜めは継続。
+# アプリ切替・フォーカス喪失・横画面時は従来どおり全解除して一時停止。
+# 描画変更: 専用Canvasと隔離UI、画面バッファ参照、色変換表再利用。
+# 実機iPhone/Android、音声、発熱、Code Maker上の動作は未確認。
+# 検証: Python戦闘テスト・構文・DOM入力シミュレーション・色変換テスト合格。
+# Code Makerでは標準リソースエディタ側の停止でRunが失敗し、起動検証未完了。
+try:
+    from js import window as _browser_window
+except ImportError as error:
+    raise RuntimeError("Pyxel Code MakerのCode欄に貼り付けて実行してください。") from error
+
+BROWSER_UI = r'''
+(() => {
+window.__lancerCleanup?.();
+const removers=[];
+function on(target,type,handler){if(!target)return;target.addEventListener(type,handler);removers.push(()=>target.removeEventListener(type,handler));}
+const host=document.createElement('div');
+host.id='lancer-shell';
+host.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#080e19';
+const root=host.attachShadow({mode:'open'});
+root.innerHTML="<div id=\"rotate\" hidden role=\"status\">縦画面に戻してください<br><small>戦闘は一時停止しています。縦に戻して「再開」を押してください。</small></div><main id=\"app\">\n<header><div><span class=\"eyebrow\">LANCERS / RANKERS</span><h1>城門の守槍 <span>ヘクトラン</span></h1></div><div class=\"rank\">RANK<b>10</b></div></header>\n<section class=\"boss-hud\" aria-label=\"ボス状態\"><div class=\"bar-label\"><span id=\"phase\">PHASE 1</span><span id=\"boss-value\">600 / 600</span></div><div class=\"bar boss\"><i id=\"boss-bar\"></i></div><div class=\"poise-row\"><span>体勢</span><div class=\"bar poise\"><i id=\"poise-bar\"></i></div></div></section>\n<section id=\"arena\"><div id=\"pyxel-screen\"></div><div id=\"loading\"><span class=\"spinner\"></span><b id=\"load-label\">Pyxelを読み込み中…</b><small>初回は少し時間がかかります</small><button id=\"activate\" hidden>画面をタップして起動</button><button id=\"reload\" hidden>再読み込み</button></div>\n<div id=\"overlay\" hidden><div class=\"panel\"><span class=\"eyebrow\" id=\"panel-kicker\">CHALLENGER</span><h2 id=\"panel-title\">槍を選び、門を越えろ。</h2><div id=\"weapons\"><button class=\"weapon selected\" data-weapon=\"0\"><b>正槍・白銀</b><span>威力18 / 溜め32 · バランス型</span></button><button class=\"weapon\" data-weapon=\"1\"><b>重槍・岩穿</b><span>威力34 / 溜め60 · 体勢を崩す</span></button><button class=\"weapon\" data-weapon=\"2\"><b>双短槍・紅牙</b><span>威力11 / 溜め19 · 出血を蓄積</span></button></div><p id=\"panel-tip\">槍を選んで、ヘクトランに挑め。</p><button class=\"primary\" id=\"start\" disabled>この槍で戦う</button><button id=\"back\" hidden>武器を選び直す</button></div></div></section>\n<p id=\"notice\" role=\"status\">赤い予告を避け、攻撃後の隙を突こう</p>\n<section class=\"player-hud\"><div><div class=\"bar-label\"><b>HP <span id=\"hp-value\">100</span></b><span id=\"potion-value\">回復薬 3</span></div><div class=\"bar health\"><i id=\"hp-bar\"></i></div></div><div><div class=\"bar-label\"><b>ST <span id=\"st-value\">100</span></b><span id=\"charge-label\">正槍</span></div><div class=\"bar stamina\"><i id=\"st-bar\"></i></div></div></section>\n<section class=\"controls\" aria-label=\"戦闘操作\"><div id=\"stick\" role=\"application\" aria-label=\"移動スティック\"><span class=\"stick-cross\">＋</span><div id=\"knob\"></div><small>移動</small></div><div class=\"actions\"><button id=\"heal\" class=\"action heal\" aria-label=\"回復薬\">薬<span>C</span></button><button id=\"dodge\" class=\"action dodge\" aria-label=\"回避\">避<span>X</span></button><button id=\"attack\" class=\"action attack\" aria-label=\"突き 長押しで溜め\">突<span>長押しで溜め</span></button></div></section>\n<footer><button id=\"editor-toggle\">コードへ</button><div><button id=\"mute\" aria-label=\"効果音切り替え\">音 ON</button><button id=\"pause\" aria-label=\"一時停止\">一時停止</button></div></footer></main>";
+root.querySelector('#pyxel-screen').appendChild(document.createElement('canvas'));
+document.body.appendChild(host);
+const style=document.createElement('style');
