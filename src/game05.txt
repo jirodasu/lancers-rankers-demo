@@ -1,0 +1,150 @@
+        if self.pending and not self.lock and not self.dodge:
+            queued, self.pending = self.pending, None
+            qnx = queued.get('nx', nx)
+            qny = queued.get('ny', ny)
+            qmag = queued.get('mag', mag)
+            self.try_action(queued['action'], qnx, qny, qmag)
+            if queued['released'] and self.charging:
+                self.player_attack()
+        if self.charging:
+            # Hold only charges. The attack is committed when the button/finger is released.
+            self.charge = min(self.weapon['charge'], self.charge + DT)
+        if self.dodge:
+            self.px += self.ddx*112*DT
+            self.py += self.ddy*112*DT
+        elif not self.lock and mag > .12:
+            speed = 56*(.3 if self.charging else 1)
+            self.px += nx*speed*mag*DT
+            self.py += ny*speed*mag*DT
+        if not self.regen_delay and not self.charging and not self.lock and not self.dodge:
+            self.stamina = min(100, self.stamina+40*DT)
+        self.clamp('p', 5)
+        self.boss_update()
+        dx, dy = self.px-self.bx, self.py-self.by
+        distance = math.hypot(dx, dy)
+        if distance < 14:
+            ux, uy = unit(dx, dy)
+            self.px, self.py = self.bx+ux*14, self.by+uy*14
+            self.clamp('p', 5)
+        for shot in self.shots[:]:
+            x, y = shot[0], shot[1]
+            shot[0] += shot[2]*DT
+            shot[1] += shot[3]*DT
+            shot[4] -= DT
+            if segment_hit(self.px, self.py, x, y, shot[0], shot[1], SHAPES['throw'][1]):
+                self.hurt(TECH['throw'][4])
+                self.shots.remove(shot)
+            elif shot[4] <= 0 or math.hypot(shot[0]-CX, shot[1]-CY)>R:
+                self.shots.remove(shot)
+        for fx in self.fx:
+            fx[1] -= 10*DT
+            fx[4] -= DT
+        self.fx = [f for f in self.fx if f[4] > 0]
+        self.previous_attack, self.previous_dodge, self.previous_heal = attack, dodge, heal
+        self.publish()
+
+    def say(self, message):
+        self.feedback, self.feedback_time = message, .8
+
+    def try_action(self, action, nx, ny, mag):
+        if self.lock or self.dodge:
+            if max(self.lock, self.dodge) <= .1:
+                self.pending = dict(action=action, ttl=.1, released=False, nx=nx, ny=ny, mag=mag)
+                self.say('入力予約：'+{'attack':'突き','dodge':'回避','heal':'回復'}.get(action,''))
+            else:
+                self.say('硬直中：次の操作は終了直前に')
+            return
+        self.pending = None
+        if action == 'dodge' and self.stamina >= 22:
+            self.stamina -= 22
+            self.regen_delay, self.dodge, self.invuln = .55, .28, .24
+            self.ddx, self.ddy = (nx, ny) if mag > .12 else (math.cos(self.pa), math.sin(self.pa))
+            self.charging = False
+            self.text(self.px, self.py-9, 'EVADE', 12)
+        elif action == 'heal' and self.potions > 0 and self.hp < 100:
+            self.potions -= 1
+            self.hp = min(100, self.hp+45)
+            self.lock = .7
+            self.charging = False
+            self.text(self.px, self.py-12, '+45', 11)
+            self.sound(2)
+        elif action == 'attack':
+            if self.stamina >= self.weapon['cost']:
+                self.charging, self.charge = True, 0.
+            else:
+                self.say('ST不足：回復を待とう')
+        elif action == 'dodge':
+            self.say('回避にはST 22が必要')
+        elif action == 'heal':
+            self.say('HPは満タンです' if self.hp >= 100 else '回復薬がありません')
+
+    def clamp(self, who, radius):
+        x, y = getattr(self, who+'x'), getattr(self, who+'y')
+        d = math.hypot(x-CX, y-CY)
+        if d > R-radius:
+            ux, uy = unit(x-CX, y-CY)
+            setattr(self, who+'x', CX+ux*(R-radius))
+            setattr(self, who+'y', CY+uy*(R-radius))
+
+    def player_attack(self):
+        self.charging = False
+        w = self.weapon
+        full = self.charge >= w['charge']
+        cost = w['ccost'] if full else w['cost']
+        if self.stamina < cost:
+            full, cost = False, w['cost']
+            self.say('溜めST不足：通常突きに切り替え')
+        if self.stamina < cost:
+            return
+        self.stamina -= cost
+        self.regen_delay = .65
+        # Weapon identity applies to both normal and charged attacks.
+        self.lock = w['duration'] + w['recovery']
+        self.attack_anim = w['duration']
+        # Small prototype assist: thrust at the boss, movement still determines evade direction.
+        self.aa = math.atan2(self.by-self.py, self.bx-self.px)
+        self.attack_full = full
+        self.sound(0)
+        ux, uy = math.cos(self.aa), math.sin(self.aa)
+        if full:
+            for _ in range(10):
+                x, y = self.px+ux, self.py+uy
+                if math.hypot(x-self.bx, y-self.by)<15 or math.hypot(x-CX, y-CY)>R-5:
+                    break
+                self.px, self.py = x, y
+        if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
+            damage = w['charged'] if full else w['damage']
+            punish = full and self.state in ('recover', 'break')
+            if punish:
+                damage = round(damage*1.3)
+                self.text(self.bx-10, self.by-22, 'PUNISH', 10)
+            if self.weapon_index == 2:
+                self.bleed += 30 if full else 22
+                if self.bleed >= 100:
+                    self.bleed -= 100
+                    damage += 35
+                    self.text(self.bx-13, self.by-25, 'BLEED +35', 14)
+            if self.state != 'break':
+                self.poise += 45 if punish and self.weapon_index == 1 else (w['cpoise'] if full else w['poise'])
+                if self.poise >= 100:
+                    self.poise = 0
+                    self.state, self.timer = 'break', 1.3
+                    self.notice = 'BREAK! 溜め突きで追撃'
+                    self.text(self.bx-10, self.by-16, 'BREAK!', 10)
+            self.bhp = max(0, self.bhp-damage)
+            self.flash = .12
+            self.text(self.bx, self.by-11, damage)
+            self.phase = 3 if self.bhp <= 180 else 2 if self.bhp <= 360 else 1
+            if self.bhp == 0:
+                self.mode = 'victory'
+                self.sound(2)
+
+    def hurt(self, damage):
+        if self.invuln or self.mode != 'battle':
+            return False
+        self.hp = max(0, self.hp-damage)
+        self.invuln, self.charging = .65, False
+        self.pending = None
+        self.text(self.px, self.py-12, '-'+str(damage), 8)
+        self.sound(1)
+        if self.hp == 0:
