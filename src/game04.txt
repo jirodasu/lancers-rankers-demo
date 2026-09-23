@@ -6,92 +6,90 @@
 }
 
 
-# Hectoran battle theme — authored in Pyxel MML Studio.
-BGM_CH1 = """T138 @1 V78 Q68 O4 L8
-D E F A G F E D
-F G A >C <A G F E
-D E F G A G F D
-C D E F E D C R
+# THE TENTH GATE — Hectoran Rank 10 battle theme, authored for Pyxel MML Studio.
+BGM_CH1 = """T148 Q78 @1 V92 O4 L8
+D R A R E- R D R
+D R A R F E- D R
+D D F E- D R A R
+G F E- D C R D R
 
-D E F A >D C <A G
-F G A >C D C <A G
-A G F E D F A G
-E F G A G F E R
+D R A E- D F E- D
+F R C R E- D C R
+D F A G F E- D C
+E- D C <A >D R R4
 
-B- C D F E D C B-
-G A B- >D C <B- A G
-F G A >C B- <A G F
-E F G A F E D R
+D D F A G F E- D
+F A >D <C A G F E-
+D F A G F D E- F
+G F E- D C D E- C
 
-D F A >D C <A F D
-E G B- >E D <B- G E
-F A >C F E C <A F
-G B- >D G F D <B- G
+E- E- G B- A G F E-
+F F A >C <B- A G F
+A A >C D C <A G E-
+D F A >D <A F E- D"""
 
->D C <A F G A B- >C
-D C <B- A G F E D
-F A >C D C <A G F
-E F G A B- A G E"""
+BGM_CH2 = """T148 Q65 @2 V54 O3 L8
+R A R D R F R A
+R A R D R E- R A
+R F R B- R D R F
+R E R A R C# R E
 
-BGM_CH2 = """T138 @2 V52 Q55 O3 L4
-D A F A
-B- F D F
-G D B- D
-A E C# E
+R A R D R F R A
+R B- R E- R G R B-
+R F R B- R D R F
+R E R A R C# R E
 
-D A F A
-B- F D F
-G D E G
-A E C# E
+D F A F D F A F
+C E G E C E G E
+B- D F D B- D F D
+A C# E C# A C# E C#
 
-B- F D F
-C G E G
-D A F A
-A E C# E
+E- G B- G E- G B- G
+F A C A F A C A
+A C# E G A G E C#
+D F A F D A F D"""
 
-G D B- D
-D A F A
-B- F D F
-A E C# E
+BGM_CH3 = """T148 Q92 @0 V76 O2 L8
+D D R D A A R A
+D D R D A A E- D
+B- B- R B- F F R F
+A A R A E E R E
 
-D A F A
-C G E G
-B- F D F
-A E C# E"""
+D D R D A A R A
+E- E- R E- B- B- R B-
+B- B- R B- F F R F
+A A R A E E R E
 
-BGM_CH3 = """T138 @0 V72 Q75 O2 L8
-D R D R A R D R
-B- R B- R F R B- R
-G R G R D R G R
-A R A R E R A R
+D D A D D A C D
+C C G C C G B- C
+B- B- F B- B- F A B-
+A A E A A E G A
 
-D R D R A R D R
-B- R B- R F R B- R
-G R G R D R G R
-A R A R E R A R
+E- E- B- E- E- B- D E-
+F F C F F C E- F
+A A E A G E C# E
+D D A D F E- D R"""
 
-B- R B- R F R B- R
-C R C R G R C R
-D R D R A R D R
-A R A R E R A R
+BGM_CH4 = """T148 Q28 @3 V60 O3 L8
+C R G R C G R G
+C R G R C G G R
+C R G G C R G G
+C G R G C R G G
 
-G R G R D R G R
-D R D R A R D R
-B- R B- R F R B- R
-A R A R E R A R
+C R G R C G R G
+C R G G C R G G
+C G R G C G R G
+C G G R C G G G
 
-D R D R A R D R
-C R C R G R C R
-B- R B- R F R B- R
-A R A R E R A R"""
+C R G G C G G G
+C G R G C G G G
+C G G R C G G G
+C G G G C G G G
 
-BGM_CH4 = """T138 @3 V62 Q35 O2 L16
-[
-C R G R C C G R C R G R C C G G
-C R G R C R G G C R G R C C G R
-C R G R C C G R C R G G C R G G
-C R G R C C G G C R G R C G G G
-]5"""
+C G R G C G R G
+C G G G C G G G
+C G G C G G C G
+C G G G C G G G"""
 
 def unit(x, y):
     d = math.hypot(x, y)
