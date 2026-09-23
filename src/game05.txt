@@ -136,6 +136,7 @@
             self.text(self.bx, self.by-11, damage)
             self.phase = 3 if self.bhp <= 180 else 2 if self.bhp <= 360 else 1
             if self.bhp == 0:
+                self.stop_bgm()
                 self.mode = 'victory'
                 self.sound(2)
 
