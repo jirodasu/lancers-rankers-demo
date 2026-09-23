@@ -5,6 +5,94 @@
     'combo': ('三連守槍', .72, .18, 1.10, 16),
 }
 
+
+# Hectoran battle theme — authored in Pyxel MML Studio.
+BGM_CH1 = """T138 @1 V78 Q68 O4 L8
+D E F A G F E D
+F G A >C <A G F E
+D E F G A G F D
+C D E F E D C R
+
+D E F A >D C <A G
+F G A >C D C <A G
+A G F E D F A G
+E F G A G F E R
+
+B- C D F E D C B-
+G A B- >D C <B- A G
+F G A >C B- <A G F
+E F G A F E D R
+
+D F A >D C <A F D
+E G B- >E D <B- G E
+F A >C F E C <A F
+G B- >D G F D <B- G
+
+>D C <A F G A B- >C
+D C <B- A G F E D
+F A >C D C <A G F
+E F G A B- A G E"""
+
+BGM_CH2 = """T138 @2 V52 Q55 O3 L4
+D A F A
+B- F D F
+G D B- D
+A E C# E
+
+D A F A
+B- F D F
+G D E G
+A E C# E
+
+B- F D F
+C G E G
+D A F A
+A E C# E
+
+G D B- D
+D A F A
+B- F D F
+A E C# E
+
+D A F A
+C G E G
+B- F D F
+A E C# E"""
+
+BGM_CH3 = """T138 @0 V72 Q75 O2 L8
+D R D R A R D R
+B- R B- R F R B- R
+G R G R D R G R
+A R A R E R A R
+
+D R D R A R D R
+B- R B- R F R B- R
+G R G R D R G R
+A R A R E R A R
+
+B- R B- R F R B- R
+C R C R G R C R
+D R D R A R D R
+A R A R E R A R
+
+G R G R D R G R
+D R D R A R D R
+B- R B- R F R B- R
+A R A R E R A R
+
+D R D R A R D R
+C R C R G R C R
+B- R B- R F R B- R
+A R A R E R A R"""
+
+BGM_CH4 = """T138 @3 V62 Q35 O2 L16
+[
+C R G R C C G R C R G R C C G G
+C R G R C R G G C R G R C C G R
+C R G R C C G R C R G G C R G G
+C R G R C C G G C R G R C G G G
+]5"""
+
 def unit(x, y):
     d = math.hypot(x, y)
     return (x / d, y / d) if d > .001 else (0, -1)
@@ -33,6 +121,25 @@ class App:
         self.frame = 0
         self.muted = False
         self.ready_sound = False
+        self.ready_bgm = False
+        self.bgm_playing = False
+        self.sfx_channel = 3
+        self.extended_audio = False
+        # Preserve all four MML parts by adding one extra Pyxel channel for SFX.
+        # If channel extension is unavailable, use 3 BGM channels + 1 SFX channel.
+        try:
+            channels = []
+            for gain in (.18, .18, .18, .18, .24):
+                channel = pyxel.Channel()
+                channel.gain = gain
+                channel.detune = 0
+                channels.append(channel)
+            pyxel.channels[:] = channels
+            self.extended_audio = True
+            self.sfx_channel = 4
+        except Exception:
+            self.extended_audio = False
+            self.sfx_channel = 3
         try:
             pyxel.sounds[0].set('c3e3g3', 't', '4', 'f', 3)
             pyxel.sounds[1].set('c2a1f1', 'n', '5', 'f', 3)
@@ -41,6 +148,18 @@ class App:
             self.ready_sound = True
         except Exception:
             pass
+        try:
+            pyxel.sounds[10].mml(BGM_CH1)
+            pyxel.sounds[11].mml(BGM_CH2)
+            pyxel.sounds[12].mml(BGM_CH3)
+            pyxel.sounds[13].mml(BGM_CH4)
+            if self.extended_audio:
+                pyxel.musics[0].set([10], [11], [12], [13])
+            else:
+                pyxel.musics[0].set([10], [11], [12])
+            self.ready_bgm = True
+        except Exception:
+            self.ready_bgm = False
         self.reset()
         self.publish()
         if auto_run:
@@ -76,7 +195,20 @@ class App:
 
     def sound(self, n):
         if self.ready_sound and not self.muted:
-            pyxel.play(0, n)
+            pyxel.play(self.sfx_channel, n)
+
+    def start_bgm(self):
+        if self.ready_bgm and not self.muted and self.mode == 'battle' and not self.bgm_playing:
+            pyxel.playm(0, loop=True)
+            self.bgm_playing = True
+
+    def stop_bgm(self):
+        if not self.bgm_playing:
+            return
+        count = 4 if self.extended_audio else 3
+        for channel in range(count):
+            pyxel.stop(channel)
+        self.bgm_playing = False
 
     def text(self, x, y, label, color=7):
         self.fx.append([x, y, str(label), color, .8])
@@ -89,23 +221,36 @@ class App:
     def update(self, controls=None):
         c = controls if controls is not None else self.read_input()
         self.frame += 1
+        was_muted = self.muted
         self.muted = c.get('muted', self.muted)
+        if self.muted != was_muted:
+            if self.muted:
+                self.stop_bgm()
+                if self.ready_sound:
+                    pyxel.stop(self.sfx_channel)
+            elif self.mode == 'battle':
+                self.start_bgm()
         command = c.get('command', '')
         if window is not None and command:
             window.lancerInput.command = ''
         if command == 'select':
+            self.stop_bgm()
             self.mode = 'select'
         if self.mode == 'select':
             self.weapon_index = max(0, min(2, c.get('weapon', self.weapon_index)))
         if command in ('start', 'retry'):
+            self.stop_bgm()
             self.reset()
             self.mode = 'battle'
+            self.start_bgm()
             self.sound(2)
         pause = c.get('pause', False)
         if (pause and not self.previous_pause or command == 'pause') and self.mode == 'battle':
+            self.stop_bgm()
             self.mode = 'paused'
         if command == 'resume' and self.mode == 'paused':
             self.mode = 'battle'
+            self.start_bgm()
         self.previous_pause = pause
         if self.mode != 'battle':
             self.charging, self.pending = False, None
