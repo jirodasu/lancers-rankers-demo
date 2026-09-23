@@ -1,0 +1,40 @@
+// LAYOUT_STABILITY_FIX
+// 1) Keep poise row space reserved before tutorial completion.
+// 2) Lock arena height when battle starts so HUD changes cannot resize gameplay.
+// 3) Use stable small viewport height on mobile instead of dynamic viewport height.
+style.textContent=style.textContent.replaceAll('100dvh','100svh');
+style.textContent += '.poise-row[hidden]{display:flex!important;visibility:hidden!important}.poise-row:not([hidden]){visibility:visible}';
+
+const arenaLayout = root.getElementById('arena');
+const overlayLayout = root.getElementById('overlay');
+const weaponsLayout = root.getElementById('weapons');
+let arenaSizeLocked = false;
+
+function lockArenaLayout(){
+  if(arenaSizeLocked || !arenaLayout || !overlayLayout?.hidden) return;
+  requestAnimationFrame(()=>{
+    if(arenaSizeLocked || !overlayLayout.hidden) return;
+    const h=Math.max(80,Math.round(arenaLayout.getBoundingClientRect().height));
+    arenaLayout.style.flex=`0 0 ${h}px`;
+    arenaLayout.style.height=`${h}px`;
+    arenaSizeLocked=true;
+  });
+}
+
+function unlockArenaLayout(){
+  if(!arenaLayout) return;
+  arenaLayout.style.flex='';
+  arenaLayout.style.height='';
+  arenaSizeLocked=false;
+}
+
+const layoutObserver = new MutationObserver(()=>{
+  if(weaponsLayout && !weaponsLayout.hidden){
+    unlockArenaLayout();
+  }else if(overlayLayout?.hidden){
+    lockArenaLayout();
+  }
+});
+if(overlayLayout) layoutObserver.observe(overlayLayout,{attributes:true,attributeFilter:['hidden']});
+if(weaponsLayout) layoutObserver.observe(weaponsLayout,{attributes:true,attributeFilter:['hidden']});
+removers.push(()=>layoutObserver.disconnect());
