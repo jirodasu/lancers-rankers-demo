@@ -10,7 +10,7 @@
 <style>
 html,body{margin:0;min-height:100%;background:#080e19;color:#e0e8ed;font:16px/1.7 system-ui,-apple-system,"Hiragino Sans",sans-serif}
 body{display:grid;place-items:center}
-#boot-panel{min-height:100dvh;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;box-sizing:border-box}
+#boot-panel{min-height:100vh;min-height:100svh;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;box-sizing:border-box}
 #boot-panel>div{max-width:34em}
 h1{font-size:26px;line-height:1.4;color:#f0dcad;margin:10px 0 16px}
 button{font:inherit;min-height:50px;padding:12px 24px;border:0;background:#dac18d;color:#152131;font-weight:800;cursor:pointer}
@@ -36,8 +36,17 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='20260923-bgm2';
-  const SOURCE_PARTS=[1,2,3,4,5,6,7].map(n=>`./src/game${String(n).padStart(2,'0')}.txt?v=${VERSION}`);
+  const VERSION='20260923-layout1';
+  const SOURCE_PARTS=[
+    './src/game01.txt',
+    './src/game02.txt',
+    './src/layout-fix.txt',
+    './src/game03.txt',
+    './src/game04.txt',
+    './src/game05.txt',
+    './src/game06.txt',
+    './src/game07.txt'
+  ].map(path=>`${path}?v=${VERSION}`);
   const status=document.getElementById('boot-status');
   const button=document.getElementById('boot');
   const reload=document.getElementById('reload');
@@ -73,7 +82,7 @@ small{display:block;color:#8999ad;margin-top:14px}
         if(!response.ok)throw new Error(`ゲームデータを取得できませんでした: ${response.status}`);
       }
       const source=(await Promise.all(responses.map(r=>r.text()))).join('');
-      if(!source.includes('BROWSER_UI = r')||!source.includes('class App:')||!source.includes('この槍で戦う')||!source.includes('BGM_CH1')){
+      if(!source.includes('BROWSER_UI = r')||!source.includes('class App:')||!source.includes('この槍で戦う')||!source.includes('BGM_CH1')||!source.includes('LAYOUT_STABILITY_FIX')){
         throw new Error('ゲームデータが不完全です。ページを再読み込みしてください。');
       }
       status.textContent='Pyxelを起動しています…';
