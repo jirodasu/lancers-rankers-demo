@@ -1,3 +1,4 @@
+            self.stop_bgm()
             self.mode = 'defeat'
         return True
 
