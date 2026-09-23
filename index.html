@@ -36,7 +36,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='20260923-ui1';
+  const VERSION='20260923-bgm1';
   const SOURCE_PARTS=[1,2,3,4,5,6,7].map(n=>`./src/game${String(n).padStart(2,'0')}.txt?v=${VERSION}`);
   const status=document.getElementById('boot-status');
   const button=document.getElementById('boot');
@@ -73,7 +73,7 @@ small{display:block;color:#8999ad;margin-top:14px}
         if(!response.ok)throw new Error(`ゲームデータを取得できませんでした: ${response.status}`);
       }
       const source=(await Promise.all(responses.map(r=>r.text()))).join('');
-      if(!source.includes('BROWSER_UI = r')||!source.includes('class App:')||!source.includes('この槍で戦う')){
+      if(!source.includes('BROWSER_UI = r')||!source.includes('class App:')||!source.includes('この槍で戦う')||!source.includes('BGM_CH1')){
         throw new Error('ゲームデータが不完全です。ページを再読み込みしてください。');
       }
       status.textContent='Pyxelを起動しています…';
