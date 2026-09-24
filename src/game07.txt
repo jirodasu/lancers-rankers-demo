@@ -162,6 +162,47 @@
         # Tiny gold hand cue keeps weapon ownership readable.
         pyxel.pset(bx+dx8*2,by-1+dy8,10)
 
+    def draw_boss_hit_v42(self):
+        # v4.2 hit reaction: keep Hectran's v4 silhouette and recoil opposite the player.
+        a = math.atan2(self.by-self.py, self.bx-self.px)
+        dx,dy=math.cos(a),math.sin(a)
+        d=int(round(a/(math.pi/4)))%8
+        dx8=(1,1,0,-1,-1,-1,0,1)[d]; dy8=(0,1,1,1,0,-1,-1,-1)[d]
+        x,y=int(round(self.bx+dx8*2)),int(round(self.by+dy8*2))
+        backx,backy=-dx8,-dy8
+        pyxel.elli(x-10,y+7,20,4,0)
+        # Cape/plume snap backward on impact.
+        pyxel.tri(x-3,y-4,x+backx*10-4,y+backy*3+6,x-1,y+5,4)
+        pyxel.tri(x+3,y-4,x+backx*8+4,y+backy*3+5,x+2,y+5,4)
+        pyxel.line(x,y-10,x+backx*9,y-10+backy*4,4)
+        pyxel.pset(x+backx*10,y-10+backy*5,2)
+        # Recoiling legs and torso.
+        pyxel.line(x-4,y+3,x-6+backx*2,y+8+backy,1)
+        pyxel.line(x+4,y+3,x+5+dx8,y+8+dy8,1)
+        pyxel.rect(x-7,y-5,14,10,1)
+        pyxel.rect(x-9,y-4,4,6,6); pyxel.rect(x+6,y-4,4,6,6)
+        pyxel.pset(x-8,y-3,10); pyxel.pset(x+8,y-3,10)
+        pyxel.line(x-4,y+1,x+4,y+1,10)
+        # Helmet tilted one pixel with the recoil.
+        hx,hy=x+dx8,y-10+dy8
+        pyxel.rect(hx-5,hy,10,6,6); pyxel.rect(hx-6,hy+1,12,3,1)
+        pyxel.rect(hx-4,hy+2,8,3,7)
+        for gx in (-3,-1,1,3): pyxel.pset(hx+gx,hy+3,0)
+        # Shield is pulled across the body as if absorbing the blow.
+        sx=x-dy8*3; sy=y+dx8*2
+        pyxel.rect(sx-4,sy-5,7,10,4); pyxel.rectb(sx-4,sy-5,7,10,10)
+        pyxel.line(sx-1,sy-3,sx-1,sy+3,10)
+        # Spear drops diagonally instead of returning to the old placeholder.
+        aa=self.ba+.45
+        ex,ey=x+math.cos(aa)*18,y+math.sin(aa)*18
+        tx,ty=x-math.cos(aa)*8,y-math.sin(aa)*8
+        pyxel.line(tx,ty,ex,ey,10); pyxel.line(tx+1,ty,ex+1,ey,6)
+        pyxel.circ(ex,ey,1,7)
+        # Very short impact sparks; palette only.
+        for ox,oy in ((-11,-5),(10,-7),(-9,4),(11,2)):
+            pyxel.pset(x+ox,y+oy,7)
+            pyxel.pset(x+ox+(1 if ox<0 else -1),y+oy,10)
+
     def draw_player_v32(self):
         # v3.2: 8-direction red-haired lancer for idle/walk only.
         # Character body stays inside roughly 9x17 px; spear is drawn separately.
@@ -418,10 +459,12 @@
         bosscol = 7 if self.flash else 10 if self.state=='break' else 9
         if self.state in ('prep','attack'):
             self.draw_boss_attack_v41()
-        elif self.state in ('idle','recover') and not self.flash:
+        elif self.flash and self.state!='break':
+            self.draw_boss_hit_v42()
+        elif self.state in ('idle','recover'):
             self.draw_boss_idle_v40()
         else:
-            # BREAK / hit flash keeps the placeholder until its dedicated motion pass.
+            # BREAK keeps the placeholder until its dedicated motion pass.
             pyxel.elli(self.bx-11,self.by+5,22,7,0)
             pyxel.rect(self.bx-7,self.by-7,14,15,bosscol)
             pyxel.rect(self.bx-5,self.by-10,10,6,6)
