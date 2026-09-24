@@ -202,6 +202,61 @@
             pyxel.line(ex-dx*5+vx*3,ey-dy*5+vy*3,ex-dx*1+vx,ey-dy*1+vy,10)
             pyxel.line(ex-dx*5-vx*3,ey-dy*5-vy*3,ex-dx*1-vx,ey-dy*1-vy,10)
 
+    def draw_player_dodge_v35(self):
+        # v3.5 dodge: keep the red-haired lancer silhouette while leaning into the stored dodge direction.
+        a = math.atan2(self.ddy, self.ddx)
+        dx, dy = math.cos(a), math.sin(a)
+        direction = int(round(a/(math.pi/4))) % 8
+        dx8 = (1,1,0,-1,-1,-1,0,1)[direction]
+        dy8 = (0,1,1,1,0,-1,-1,-1)[direction]
+        x, y = int(round(self.px)), int(round(self.py))
+        # Dodge duration is ~0.28 s. Use the remaining timer only for a tiny visual bob;
+        # gameplay movement and invulnerability remain untouched.
+        phase = max(0., min(1., self.dodge/.28))
+        bob = -1 if .25 < phase < .82 else 0
+        bx, by = x+dx8, y+dy8+bob
+
+        # Stretched ground shadow communicates speed without changing collision.
+        pyxel.elli(bx-7,by+5,14,3,0)
+
+        backx, backy = -dx8, -dy8
+        # Ponytail trails farther behind during the dodge.
+        tx, ty = bx+backx*6, by-5+backy*3
+        pyxel.rect(tx-2,ty-2,4,4,8)
+        pyxel.pset(tx+backx*2,ty+backy*2,8)
+        pyxel.pset(tx+backx*4,ty+backy*3,2)
+
+        # Low, forward-leaning body and split legs.
+        pyxel.line(bx-2,by+2,bx-3+backx*2,by+6+backy,5)
+        pyxel.line(bx+2,by+2,bx+3+dx8*2,by+5+dy8,5)
+        pyxel.rect(bx-4,by-3,8,7,1)
+        pyxel.rect(bx-3,by-2,6,3,5)
+        pyxel.pset(bx-3,by+2,8); pyxel.pset(bx+3,by+2,8)
+        pyxel.rect(bx-1,by+1,2,2,7)
+
+        # Head/hair follows dodge heading so all 8 directions remain readable.
+        hx, hy = bx+dx8, by-8+dy8
+        pyxel.rect(hx-3,hy,6,5,9)
+        pyxel.rect(hx-4,hy-1,8,3,8)
+        pyxel.pset(hx-4,hy+2,8); pyxel.pset(hx+3,hy+2,8)
+        if dy8 < 0:
+            pyxel.rect(hx-2,hy+1,4,3,8)
+        else:
+            ey=hy+2+dy8
+            pyxel.pset(hx+dx8*2,ey,7)
+
+        # Spear is tucked along the dodge direction rather than thrust forward.
+        sx, sy = bx-dx8*5, by-1-dy8*5
+        ex, ey = bx+dx8*8, by-1+dy8*8
+        pyxel.line(sx,sy,ex,ey,self.weapon['color'])
+        pyxel.pset(ex,ey,7)
+
+        # Two short motion streaks at the rear; purely visual.
+        if phase > .18:
+            vx,vy=-dy8,dx8
+            pyxel.line(bx+backx*7+vx*3,by+backy*7+vy*3,bx+backx*11+vx*3,by+backy*11+vy*3,6)
+            pyxel.line(bx+backx*6-vx*3,by+backy*6-vy*3,bx+backx*9-vx*3,by+backy*9-vy*3,6)
+
     def draw(self):
         pyxel.cls(0)
         pyxel.circ(CX,CY,R+5,1)
@@ -239,20 +294,11 @@
                 self.draw_player_charge_v34()
             elif self.attack_anim and not self.attack_full:
                 self.draw_player_thrust_v33()
-            elif not self.dodge:
-                # Keep the v3.2 character visible during idle, walk, charge wind-up,
-                # and the recovery frame so the legacy placeholder never flashes.
-                self.draw_player_v32()
+            elif self.dodge:
+                self.draw_player_dodge_v35()
             else:
-                # Dodge keeps the legacy pose until its dedicated sprite pass.
-                pyxel.elli(self.px-6,self.py+3,12,5,0)
-                pyxel.rect(self.px-4,self.py-3,8,9,12)
-                pyxel.rect(self.px-3,self.py-7,6,5,7)
-                pyxel.rect(self.px-5,self.py+1,3,9,1)
-                pyxel.rect(self.px+2,self.py+4,2,6,6)
-                a=math.atan2(self.by-self.py,self.bx-self.px)
-                ux,uy=math.cos(a),math.sin(a)
-                pyxel.line(self.px,self.py,self.px+ux*12,self.py+uy*12,self.weapon['color'])
+                # Idle, walk, charge wind-up and recovery all keep the v3.2 character.
+                self.draw_player_v32()
         if self.charging:
             pyxel.circb(self.px,self.py,9,8 if self.stamina<self.weapon['ccost'] else 10 if self.charge>=self.weapon['charge'] else 12)
         # Cyan chevron: movement/neutral-dodge heading, distinct from auto-aim spear.
