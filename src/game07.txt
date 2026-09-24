@@ -92,6 +92,76 @@
         pyxel.tri(hx-2,hy-11,hx+3,hy-11,hx,hy-16,7)
         pyxel.pset(hx,hy-14,6)
 
+    def draw_boss_attack_v41(self):
+        # v4.1: Hectran combat pose for all six attacks, keeping the v4.0 24px-class design.
+        a=self.ba
+        dx,dy=math.cos(a),math.sin(a)
+        d=int(round(a/(math.pi/4)))%8
+        dx8=(1,1,0,-1,-1,-1,0,1)[d]; dy8=(0,1,1,1,0,-1,-1,-1)[d]
+        x,y=int(round(self.bx)),int(round(self.by))
+        attacking=self.state=='attack'
+        total=TECH[self.tech][2] if attacking else max(.001,self.prep_total)
+        p=max(0.,min(1.,1-self.timer/total))
+        # During prep Hectran visibly draws the weapon back. During attack he commits forward.
+        lean=(2 if attacking else -1)
+        bx,by=x+dx8*lean,y+dy8*lean
+        backx,backy=-dx8,-dy8
+        pyxel.elli(bx-10,by+7,20,4,0)
+        # Cape/plume.
+        pyxel.tri(bx-3,by-4,bx+backx*9,by+backy*3+6,bx-1,by+5,4)
+        pyxel.tri(bx+3,by-4,bx+backx*7+3,by+backy*3+5,bx+2,by+5,4)
+        pyxel.line(bx,by-10,bx+backx*7,by-10+backy*3,4)
+        pyxel.pset(bx+backx*8,by-10+backy*4,2)
+        # Wide braced armour.
+        pyxel.line(bx-4,by+3,bx-5+backx*2,by+8+backy,1)
+        pyxel.line(bx+4,by+3,bx+5-dx8*2,by+8-dy8,1)
+        pyxel.rect(bx-7,by-5,14,10,1)
+        pyxel.rect(bx-9,by-4,4,6,6); pyxel.rect(bx+6,by-4,4,6,6)
+        pyxel.pset(bx-8,by-3,10); pyxel.pset(bx+8,by-3,10)
+        pyxel.line(bx-4,by+1,bx+4,by+1,10)
+        # Helmet / visor.
+        pyxel.rect(bx-5,by-10,10,6,6); pyxel.rect(bx-6,by-9,12,3,1)
+        if dy8<0:
+            pyxel.rect(bx-4,by-8,8,3,1)
+        else:
+            pyxel.rect(bx-4,by-8,8,3,7)
+            for gx in (-3,-1,1,3): pyxel.pset(bx+gx,by-7,0)
+            pyxel.pset(bx+dx8*5,by-7,10)
+        # Shield is pulled inward for thrust/rush/throw and swept outward for sweep/wave.
+        side=-1 if self.tech in ('sweep','wave') else 1
+        sx=bx-dx8*2-dy8*6*side; sy=by-dy8*2+dx8*4*side
+        pyxel.rect(sx-3,sy-5,6,10,4); pyxel.rectb(sx-3,sy-5,6,10,10)
+        # Spear pose: each technique gets a distinct silhouette.
+        if self.tech=='wave':
+            # Vertical slam for 石突震.
+            ex,ey=bx,by+14 if attacking else by-15
+            pyxel.line(bx,by-4,ex,ey,10); pyxel.line(bx+1,by-4,ex+1,ey,6)
+            pyxel.tri(ex-2,ey,ex+3,ey,ex,ey+(4 if attacking else -4),7)
+        elif self.tech=='sweep':
+            # Wide side sweep.
+            aa=a+(-.75+.95*p if attacking else -.95+.25*p)
+            reach=27
+            ex,ey=bx+math.cos(aa)*reach,by+math.sin(aa)*reach
+            tx,ty=bx-math.cos(aa)*7,by-math.sin(aa)*7
+            pyxel.line(tx,ty,ex,ey,10); pyxel.line(tx+1,ty,ex+1,ey,6); pyxel.circ(ex,ey,1,7)
+        elif self.tech=='throw':
+            # High cocked throw, then released spear line.
+            aa=a if attacking else a+math.pi*.72
+            reach=30 if attacking else 20
+            ex,ey=bx+math.cos(aa)*reach,by+math.sin(aa)*reach
+            tx,ty=bx-math.cos(aa)*6,by-math.sin(aa)*6
+            pyxel.line(tx,ty,ex,ey,10); pyxel.line(tx+1,ty,ex+1,ey,6)
+            pyxel.tri(ex-dy*2,ey+dx*2,ex+dy*2,ey-dx*2,ex+dx*4,ey+dy*4,7)
+        else:
+            # 城門穿ち / 守将突進 / 三連守槍: draw back then drive straight through.
+            reach=(15+int(16*p)) if attacking else (14-int(5*p))
+            ex,ey=bx+dx*reach,by+dy*reach
+            tx,ty=bx-dx*(10 if not attacking else 6),by-dy*(10 if not attacking else 6)
+            pyxel.line(tx,ty,ex,ey,10); pyxel.line(tx+1,ty,ex+1,ey,6)
+            pyxel.tri(ex-dy*2,ey+dx*2,ex+dy*2,ey-dx*2,ex+dx*4,ey+dy*4,7)
+        # Tiny gold hand cue keeps weapon ownership readable.
+        pyxel.pset(bx+dx8*2,by-1+dy8,10)
+
     def draw_player_v32(self):
         # v3.2: 8-direction red-haired lancer for idle/walk only.
         # Character body stays inside roughly 9x17 px; spear is drawn separately.
@@ -346,19 +416,20 @@
             pyxel.line(s[0]-ux*7,s[1]-uy*7,s[0]+ux*3,s[1]+uy*3,10)
             pyxel.pset(s[0]+ux*3,s[1]+uy*3,7)
         bosscol = 7 if self.flash else 10 if self.state=='break' else 9
-        if self.state in ('idle','recover') and not self.flash:
+        if self.state in ('prep','attack'):
+            self.draw_boss_attack_v41()
+        elif self.state in ('idle','recover') and not self.flash:
             self.draw_boss_idle_v40()
         else:
-            # Existing combat placeholder remains for attack/prep/BREAK until each boss motion is replaced.
+            # BREAK / hit flash keeps the placeholder until its dedicated motion pass.
             pyxel.elli(self.bx-11,self.by+5,22,7,0)
             pyxel.rect(self.bx-7,self.by-7,14,15,bosscol)
             pyxel.rect(self.bx-5,self.by-10,10,6,6)
             pyxel.rect(self.bx-3,self.by-6,6,2,8)
             pyxel.rect(self.bx-10,self.by-3,4,10,5)
-            length=38 if self.tech=='rush' and self.state=='attack' else 22
             ux,uy=math.cos(self.ba),math.sin(self.ba)
-            pyxel.line(self.bx,self.by,self.bx+ux*length,self.by+uy*length,10)
-            pyxel.circ(self.bx+ux*length,self.by+uy*length,2,7)
+            pyxel.line(self.bx,self.by,self.bx+ux*22,self.by+uy*22,10)
+            pyxel.circ(self.bx+ux*22,self.by+uy*22,2,7)
         if not self.invuln or self.frame%6<3:
             if self.attack_anim and self.attack_full:
                 self.draw_player_charge_v34()
