@@ -173,22 +173,20 @@
         if not self.invuln or self.frame%6<3:
             if self.attack_anim and not self.attack_full:
                 self.draw_player_thrust_v33()
-            elif not self.attack_anim and not self.dodge and not self.charging:
+            elif not self.dodge:
+                # Keep the v3.2 character visible during idle, walk, charge wind-up,
+                # and the recovery frame so the legacy placeholder never flashes.
                 self.draw_player_v32()
             else:
-                # Charged thrust/dodge/charge stay on the legacy pose until their dedicated sprite pass.
+                # Dodge keeps the legacy pose until its dedicated sprite pass.
                 pyxel.elli(self.px-6,self.py+3,12,5,0)
                 pyxel.rect(self.px-4,self.py-3,8,9,12)
                 pyxel.rect(self.px-3,self.py-7,6,5,7)
                 pyxel.rect(self.px-5,self.py+1,3,9,1)
                 pyxel.rect(self.px+2,self.py+4,2,6,6)
-                a=self.aa if self.attack_anim else math.atan2(self.by-self.py,self.bx-self.px)
-                length=self.weapon['reach'] if self.attack_anim else 12
+                a=math.atan2(self.by-self.py,self.bx-self.px)
                 ux,uy=math.cos(a),math.sin(a)
-                pyxel.line(self.px,self.py,self.px+ux*length,self.py+uy*length,self.weapon['color'])
-                if self.attack_anim:
-                    pyxel.line(self.px+1,self.py,self.px+1+ux*length,self.py+uy*length,7)
-                    pyxel.circ(self.px+ux*length,self.py+uy*length,2 if self.attack_full else 1,7)
+                pyxel.line(self.px,self.py,self.px+ux*12,self.py+uy*12,self.weapon['color'])
         if self.charging:
             pyxel.circb(self.px,self.py,9,8 if self.stamina<self.weapon['ccost'] else 10 if self.charge>=self.weapon['charge'] else 12)
         # Cyan chevron: movement/neutral-dodge heading, distinct from auto-aim spear.
