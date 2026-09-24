@@ -26,6 +26,67 @@
             pyxel.rect(self.bx-10,self.by-18,20,2,1)
             pyxel.rect(self.bx-10,self.by-18,20*(1-self.timer/self.prep_total),2,8)
 
+    def draw_player_v32(self):
+        # v3.2: 8-direction red-haired lancer for idle/walk only.
+        # Character body stays inside roughly 9x17 px; spear is drawn separately.
+        last_x = getattr(self, '_sprite_last_x', self.px)
+        last_y = getattr(self, '_sprite_last_y', self.py)
+        moving = math.hypot(self.px-last_x, self.py-last_y) > .08
+        self._sprite_last_x, self._sprite_last_y = self.px, self.py
+        angle = self.pa
+        direction = int(round(angle/(math.pi/4))) % 8
+        dx8 = (1,1,0,-1,-1,-1,0,1)[direction]
+        dy8 = (0,1,1,1,0,-1,-1,-1)[direction]
+        step = 1 if moving and (self.frame//7)%2 else 0
+        bob = -1 if moving and step else 0
+        x, y = int(round(self.px)), int(round(self.py))+bob
+
+        # Ground shadow.
+        pyxel.elli(x-5,y+5,10,3,0)
+
+        # Ponytail: opposite the facing direction, using Pyxel palette reds.
+        backx, backy = -dx8, -dy8
+        tx, ty = x+backx*4, y-5+backy*2
+        pyxel.rect(tx-2,ty-2,4,5,8)
+        pyxel.pset(tx+backx*2,ty+backy*2,8)
+        pyxel.pset(tx+backx*3,ty+backy*3,2)
+
+        # Legs animate only while walking.
+        leg = 1 if moving and step else -1 if moving else 0
+        pyxel.line(x-2,y+2,x-2+dx8*leg,y+6+dy8*leg,5)
+        pyxel.line(x+2,y+2,x+2-dx8*leg,y+6-dy8*leg,5)
+        pyxel.pset(x-2+dx8*leg,y+6+dy8*leg,7)
+        pyxel.pset(x+2-dx8*leg,y+6-dy8*leg,7)
+
+        # Black/red armour torso.
+        pyxel.rect(x-4,y-3,8,7,1)
+        pyxel.rect(x-3,y-2,6,3,5)
+        pyxel.pset(x-3,y+2,8)
+        pyxel.pset(x+3,y+2,8)
+        pyxel.rect(x-1,y+1,2,2,7)
+
+        # Head, red hair and readable face/back for all 8 directions.
+        pyxel.rect(x-3,y-8,6,5,9)
+        pyxel.rect(x-4,y-9,8,3,8)
+        pyxel.pset(x-4,y-6,8)
+        pyxel.pset(x+3,y-6,8)
+        if dy8 < 0:
+            pyxel.rect(x-2,y-7,4,3,8)
+        else:
+            ex = x + dx8*2
+            ey = y-6 + dy8
+            pyxel.pset(ex,ey,7)
+            if dx8 == 0:
+                pyxel.pset(x-1,ey,7)
+                pyxel.pset(x+1,ey,7)
+
+        # Arms and a short neutral spear aligned to the 8-way facing.
+        sx, sy = x+dx8*2, y-1+dy8
+        pyxel.pset(sx,sy,9)
+        ex, ey = x+dx8*12, y-1+dy8*12
+        pyxel.line(sx,sy,ex,ey,self.weapon['color'])
+        pyxel.pset(ex,ey,7)
+
     def draw(self):
         pyxel.cls(0)
         pyxel.circ(CX,CY,R+5,1)
@@ -59,18 +120,22 @@
         pyxel.line(self.bx,self.by,self.bx+ux*length,self.by+uy*length,10)
         pyxel.circ(self.bx+ux*length,self.by+uy*length,2,7)
         if not self.invuln or self.frame%6<3:
-            pyxel.elli(self.px-6,self.py+3,12,5,0)
-            pyxel.rect(self.px-4,self.py-3,8,9,12)
-            pyxel.rect(self.px-3,self.py-7,6,5,7)
-            pyxel.rect(self.px-5,self.py+1,3,9,1)
-            pyxel.rect(self.px+2,self.py+4,2,6,6)
-            a=self.aa if self.attack_anim else math.atan2(self.by-self.py,self.bx-self.px)
-            length=self.weapon['reach'] if self.attack_anim else 12
-            ux,uy=math.cos(a),math.sin(a)
-            pyxel.line(self.px,self.py,self.px+ux*length,self.py+uy*length,self.weapon['color'])
-            if self.attack_anim:
-                pyxel.line(self.px+1,self.py,self.px+1+ux*length,self.py+uy*length,7)
-                pyxel.circ(self.px+ux*length,self.py+uy*length,2 if self.attack_full else 1,7)
+            if not self.attack_anim and not self.dodge and not self.charging:
+                self.draw_player_v32()
+            else:
+                # v3.2 keeps the existing combat poses until attack/dodge sprites are added.
+                pyxel.elli(self.px-6,self.py+3,12,5,0)
+                pyxel.rect(self.px-4,self.py-3,8,9,12)
+                pyxel.rect(self.px-3,self.py-7,6,5,7)
+                pyxel.rect(self.px-5,self.py+1,3,9,1)
+                pyxel.rect(self.px+2,self.py+4,2,6,6)
+                a=self.aa if self.attack_anim else math.atan2(self.by-self.py,self.bx-self.px)
+                length=self.weapon['reach'] if self.attack_anim else 12
+                ux,uy=math.cos(a),math.sin(a)
+                pyxel.line(self.px,self.py,self.px+ux*length,self.py+uy*length,self.weapon['color'])
+                if self.attack_anim:
+                    pyxel.line(self.px+1,self.py,self.px+1+ux*length,self.py+uy*length,7)
+                    pyxel.circ(self.px+ux*length,self.py+uy*length,2 if self.attack_full else 1,7)
         if self.charging:
             pyxel.circb(self.px,self.py,9,8 if self.stamina<self.weapon['ccost'] else 10 if self.charge>=self.weapon['charge'] else 12)
         # Cyan chevron: movement/neutral-dodge heading, distinct from auto-aim spear.
