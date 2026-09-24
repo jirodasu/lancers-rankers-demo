@@ -87,6 +87,57 @@
         pyxel.line(sx,sy,ex,ey,self.weapon['color'])
         pyxel.pset(ex,ey,7)
 
+    def draw_player_thrust_v33(self):
+        # v3.3 normal thrust: preserve the v3.2 lancer silhouette and add a readable 3-stage thrust.
+        a = self.aa
+        dx, dy = math.cos(a), math.sin(a)
+        direction = int(round(a/(math.pi/4))) % 8
+        dx8 = (1,1,0,-1,-1,-1,0,1)[direction]
+        dy8 = (0,1,1,1,0,-1,-1,-1)[direction]
+        x, y = int(round(self.px)), int(round(self.py))
+        duration = max(.001, self.weapon['duration'])
+        progress = max(0., min(1., 1-self.attack_anim/duration))
+        # anticipation -> extension -> settle; full charged thrust remains on the legacy pose for now.
+        reach_factor = .45 + .55*min(1., progress/.55) if progress < .55 else 1-.18*((progress-.55)/.45)
+        lean = 1 if progress > .18 else 0
+        bx, by = x+dx8*lean, y+dy8*lean
+
+        pyxel.elli(bx-5,by+5,10,3,0)
+        backx, backy = -dx8, -dy8
+        tx, ty = bx+backx*4, by-5+backy*2
+        pyxel.rect(tx-2,ty-2,4,5,8)
+        pyxel.pset(tx+backx*2,ty+backy*2,8)
+        pyxel.pset(tx+backx*3,ty+backy*3,2)
+
+        # Braced legs and armour.
+        pyxel.line(bx-2,by+2,bx-2-backx,by+6-backy,5)
+        pyxel.line(bx+2,by+2,bx+2+backx,by+6+backy,5)
+        pyxel.rect(bx-4,by-3,8,7,1)
+        pyxel.rect(bx-3,by-2,6,3,5)
+        pyxel.pset(bx-3,by+2,8)
+        pyxel.pset(bx+3,by+2,8)
+        pyxel.rect(bx-1,by+1,2,2,7)
+
+        pyxel.rect(bx-3,by-8,6,5,9)
+        pyxel.rect(bx-4,by-9,8,3,8)
+        pyxel.pset(bx-4,by-6,8); pyxel.pset(bx+3,by-6,8)
+        if dy8 < 0:
+            pyxel.rect(bx-2,by-7,4,3,8)
+        else:
+            ey = by-6+dy8
+            pyxel.pset(bx+dx8*2,ey,7)
+
+        # Both hands sit on the shaft; spear extension makes the normal thrust readable at game scale.
+        handx, handy = bx+dx8*2, by-1+dy8
+        pyxel.pset(handx,handy,9)
+        pyxel.pset(handx-dx8*2,handy-dy8*2,9)
+        length = max(12, int(self.weapon['reach']*reach_factor))
+        ex, ey = bx+dx*length, by-1+dy*length
+        tailx, taily = bx-dx*5, by-1-dy*5
+        pyxel.line(tailx,taily,ex,ey,self.weapon['color'])
+        pyxel.line(tailx+1,taily,ex+1,ey,7)
+        pyxel.circ(ex,ey,1,7)
+
     def draw(self):
         pyxel.cls(0)
         pyxel.circ(CX,CY,R+5,1)
@@ -120,10 +171,12 @@
         pyxel.line(self.bx,self.by,self.bx+ux*length,self.by+uy*length,10)
         pyxel.circ(self.bx+ux*length,self.by+uy*length,2,7)
         if not self.invuln or self.frame%6<3:
-            if not self.attack_anim and not self.dodge and not self.charging:
+            if self.attack_anim and not self.attack_full:
+                self.draw_player_thrust_v33()
+            elif not self.attack_anim and not self.dodge and not self.charging:
                 self.draw_player_v32()
             else:
-                # v3.2 keeps the existing combat poses until attack/dodge sprites are added.
+                # Charged thrust/dodge/charge stay on the legacy pose until their dedicated sprite pass.
                 pyxel.elli(self.px-6,self.py+3,12,5,0)
                 pyxel.rect(self.px-4,self.py-3,8,9,12)
                 pyxel.rect(self.px-3,self.py-7,6,5,7)
