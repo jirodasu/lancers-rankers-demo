@@ -144,7 +144,7 @@
             vfx_tier = 3 if (full and was_break) else (2 if full else 1)
             contact_x = self.bx - ux*8
             contact_y = self.by - uy*8
-            self.hit_vfx.append([contact_x, contact_y, self.aa, vfx_tier, .18])
+            self.hit_vfx.append([contact_x, contact_y, self.aa, vfx_tier, .36])
             self.flash = .12
             self.text(self.bx, self.by-11, damage)
             self.phase = 3 if self.bhp <= 180 else 2 if self.bhp <= 360 else 1
