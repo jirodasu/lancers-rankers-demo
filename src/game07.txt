@@ -536,6 +536,31 @@
             else:
                 # Idle, walk, charge wind-up and recovery all keep the v3.2 character.
                 self.draw_player_v32()
+        # v4.4.2 spear-tip hit VFX. Keep normal hits restrained and reserve
+        # the broad white/gold lance flash for charged/BREAK hits.
+        for hx,hy,ha,tier,life in self.hit_vfx:
+            dx,dy=math.cos(ha),math.sin(ha)
+            vx,vy=-dy,dx
+            age=max(0.,min(1.,1-life/.14))
+            radius=2 if tier==1 else 4 if tier==2 else 6
+            col=7 if tier>=2 else 10
+            # Compact impact star centered on the actual contact point.
+            pyxel.line(hx-vx*radius,hy-vy*radius,hx+vx*radius,hy+vy*radius,col)
+            pyxel.line(hx-dx*(radius-1),hy-dy*(radius-1),hx+dx*radius,hy+dy*radius,7)
+            if tier>=2:
+                # Short spear-shaped flash aligned to thrust direction.
+                tail=7 if tier==2 else 11
+                pyxel.line(hx-dx*tail,hy-dy*tail,hx+dx*3,hy+dy*3,7)
+                pyxel.line(hx-dx*(tail-2)+vx*2,hy-dy*(tail-2)+vy*2,hx+dx*1,hy+dy*1,10)
+                pyxel.line(hx-dx*(tail-2)-vx*2,hy-dy*(tail-2)-vy*2,hx+dx*1,hy+dy*1,10)
+            # Sparks travel visually outward as the 0.14 s effect expires.
+            spread=2+int(age*(3 if tier==1 else 5 if tier==2 else 7))
+            for side in (-1,1):
+                sx=hx+vx*side*spread-dx*int(age*2)
+                sy=hy+vy*side*spread-dy*int(age*2)
+                pyxel.pset(sx,sy,10 if tier<3 else 7)
+            if tier==3:
+                pyxel.circb(hx,hy,3+int(age*3),10)
         if self.charging:
             pyxel.circb(self.px,self.py,9,8 if self.stamina<self.weapon['ccost'] else 10 if self.charge>=self.weapon['charge'] else 12)
         # Cyan chevron: movement/neutral-dodge heading, distinct from auto-aim spear.
