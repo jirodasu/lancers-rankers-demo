@@ -40,6 +40,9 @@
             fx[1] -= 10*DT
             fx[4] -= DT
         self.fx = [f for f in self.fx if f[4] > 0]
+        for spark in self.hit_vfx:
+            spark[4] -= DT
+        self.hit_vfx = [spark for spark in self.hit_vfx if spark[4] > 0]
         self.previous_attack, self.previous_dodge, self.previous_heal = attack, dodge, heal
         self.publish()
 
@@ -135,6 +138,13 @@
             self.bhp = max(0, self.bhp-damage)
             # v4.4.1: normal 2F / charged 4F / charged during BREAK 6F.
             self.hitstop_frames = 6 if (full and was_break) else (4 if full else 2)
+            # v4.4.2: impact originates at the spear/boss contact point, not boss center.
+            # tier 1 = normal spark, 2 = charged spark + short spear flash,
+            # tier 3 = charged hit during BREAK (largest visual reward).
+            vfx_tier = 3 if (full and was_break) else (2 if full else 1)
+            contact_x = self.bx - ux*8
+            contact_y = self.by - uy*8
+            self.hit_vfx.append([contact_x, contact_y, self.aa, vfx_tier, .14])
             self.flash = .12
             self.text(self.bx, self.by-11, damage)
             self.phase = 3 if self.bhp <= 180 else 2 if self.bhp <= 360 else 1
