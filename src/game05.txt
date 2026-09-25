@@ -128,7 +128,7 @@
                 self.poise += 45 if punish and self.weapon_index == 1 else (w['cpoise'] if full else w['poise'])
                 if self.poise >= 100:
                     self.poise = 0
-                    self.state, self.timer = 'break', 1.3
+                    self.state, self.timer = 'break', 3.0
                     self.notice = 'BREAK! 溜め突きで追撃'
                     self.text(self.bx-10, self.by-16, 'BREAK!', 10)
             self.bhp = max(0, self.bhp-damage)
