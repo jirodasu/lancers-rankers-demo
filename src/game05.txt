@@ -114,6 +114,7 @@
                 self.px, self.py = x, y
         if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
             damage = w['charged'] if full else w['damage']
+            was_break = self.state == 'break'
             punish = full and self.state in ('recover', 'break')
             if punish:
                 damage = round(damage*1.3)
@@ -132,6 +133,8 @@
                     self.notice = 'BREAK! 溜め突きで追撃'
                     self.text(self.bx-10, self.by-16, 'BREAK!', 10)
             self.bhp = max(0, self.bhp-damage)
+            # v4.4.1: normal 2F / charged 4F / charged during BREAK 6F.
+            self.hitstop_frames = 6 if (full and was_break) else (4 if full else 2)
             self.flash = .12
             self.text(self.bx, self.by-11, damage)
             self.phase = 3 if self.bhp <= 180 else 2 if self.bhp <= 360 else 1
