@@ -25,7 +25,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v4.4.2e — MADE WITH PYXEL</small>
+    <small>LANCERS / RANKERS — v4.4.2f — MADE WITH PYXEL</small>
     <h1>ランサーズ・ランカーズ<br>RANK 10 体験版</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
@@ -36,9 +36,41 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='4.4.2e';
+  const VERSION='4.4.2f';
+
+  // Browser-native hit SFX bootstrap. Keep this outside the concatenated Python source.
+  // Future swaps only need replacing the three files under assets/sfx/.
+  const sfxSources={
+    normal:`./assets/sfx/hit_normal.mp3?v=${VERSION}`,
+    charge:`./assets/sfx/hit_charge.mp3?v=${VERSION}`,
+    break:`./assets/sfx/hit_break.mp3?v=${VERSION}`
+  };
+  const sfxPools={};
+  const sfxCursors={normal:0,charge:0,break:0};
+  for(const [name,src] of Object.entries(sfxSources)){
+    sfxPools[name]=Array.from({length:3},()=>{
+      const audio=new Audio(src);
+      audio.preload='auto';
+      audio.volume=1;
+      audio.load();
+      return audio;
+    });
+  }
+  window.lancerHitSfxSources=sfxSources;
+  window.playLancerHitSfx=kind=>{
+    if(window.lancerInput?.muted)return;
+    const key=Object.prototype.hasOwnProperty.call(sfxPools,kind)?kind:'normal';
+    const pool=sfxPools[key];
+    const audio=pool[sfxCursors[key]++%pool.length];
+    try{
+      audio.pause();
+      audio.currentTime=0;
+      const result=audio.play();
+      if(result?.catch)result.catch(()=>{});
+    }catch{}
+  };
+
   const SOURCE_PARTS=[
-    './src/hit-audio.txt',
     './src/game01.txt',
     './src/game02.txt',
     './src/layout-fix.txt',
