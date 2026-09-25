@@ -136,10 +136,11 @@
                     self.notice = 'BREAK! 溜め突きで追撃'
                     self.text(self.bx-10, self.by-16, 'BREAK!', 10)
             self.bhp = max(0, self.bhp-damage)
-            # v4.4.2c: play the approved slash SFX only on confirmed damage.
+            # v4.4.2d: confirmed-hit audio has fixed normal / charge / BREAK-punish slots.
             if window is not None and not self.muted:
                 try:
-                    window.playLancerHitSfx()
+                    hit_sfx = 'break' if (full and was_break) else ('charge' if full else 'normal')
+                    window.playLancerHitSfx(hit_sfx)
                 except Exception:
                     pass
             # v4.4.1: normal 2F / charged 4F / charged during BREAK 6F.
