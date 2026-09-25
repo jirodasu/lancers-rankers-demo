@@ -25,7 +25,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v4.4.2f — MADE WITH PYXEL</small>
+    <small>LANCERS / RANKERS — v4.4.2g — MADE WITH PYXEL</small>
     <h1>ランサーズ・ランカーズ<br>RANK 10 体験版</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
@@ -36,7 +36,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='4.4.2f';
+  const VERSION='4.4.2g';
 
   // Browser-native hit SFX bootstrap. Keep this outside the concatenated Python source.
   // Future swaps only need replacing the three files under assets/sfx/.
@@ -51,7 +51,7 @@ small{display:block;color:#8999ad;margin-top:14px}
     sfxPools[name]=Array.from({length:3},()=>{
       const audio=new Audio(src);
       audio.preload='auto';
-      audio.volume=1;
+      audio.volume=0.8;
       audio.load();
       return audio;
     });
