@@ -171,6 +171,8 @@ class App:
         self.phase, self.poise, self.bleed = 1, 0., 0
         self.invuln = self.dodge = self.lock = self.regen_delay = self.charge = 0.
         self.attack_anim = self.flash = self.elapsed = 0.
+        # v4.4.1: short simulation freeze on confirmed player hits (60 FPS).
+        self.hitstop_frames = 0
         self.charging = False
         self.pending = None
         self.feedback, self.feedback_time = '', 0.
@@ -253,6 +255,15 @@ class App:
         if self.mode != 'battle':
             self.charging, self.pending = False, None
             self.previous_attack = c.get('attack', False)
+            self.publish()
+            return
+        # v4.4.1 hit stop: freeze battle simulation while keeping rendering/audio alive.
+        # Consume input state so a held/released button is not replayed after the freeze.
+        if self.hitstop_frames > 0:
+            self.hitstop_frames -= 1
+            self.previous_attack = c.get('attack', False)
+            self.previous_dodge = c.get('dodge', False)
+            self.previous_heal = c.get('heal', False)
             self.publish()
             return
         self.elapsed += DT
