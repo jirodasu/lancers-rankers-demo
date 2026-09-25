@@ -1,5 +1,10 @@
-# v4.4.2d: browser-side hit SFX slots backed by repository assets.
-# Replace files under assets/sfx/ to audition new sounds without changing game logic.
+# v4.4.2e: standalone browser-side hit SFX slots backed by repository assets.
+# This file must be safe to concatenate before the main game source.
+try:
+    from js import window
+except ImportError:
+    window = None
+
 if window is not None:
     try:
         window.eval(r"""
