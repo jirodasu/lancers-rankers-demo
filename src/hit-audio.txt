@@ -1,29 +1,39 @@
-# v4.4.2c: browser-side hit SFX from the approved user WAV, encoded as MP3 data URI.
-# This keeps the SFX self-contained in the GitHub Pages build and avoids external hotlink failures.
+# v4.4.2d: browser-side hit SFX slots backed by repository assets.
+# Replace files under assets/sfx/ to audition new sounds without changing game logic.
 if window is not None:
     try:
         window.eval(r"""
 (() => {
-  if (window.playLancerHitSfx) return;
-  const SRC='data:audio/mpeg;base64,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qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/7UsShg8AAAaQAAAAgAAA0gAAABKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//tSxKGDwAABpAAAACAAADSAAAAEqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqo=';
-  const pool=Array.from({length:4},()=>{const a=new Audio(SRC);a.preload='auto';a.volume=1;return a;});
-  let cursor=0, primed=false;
-  const prime=()=>{
-    if(primed)return; primed=true;
-    for(const a of pool){
-      const v=a.volume;a.volume=0;
-      const p=a.play();
-      if(p&&p.then)p.then(()=>{a.pause();a.currentTime=0;a.volume=v;}).catch(()=>{a.volume=v;});
-      else {a.pause();a.currentTime=0;a.volume=v;}
-    }
+  const base = new URL('./assets/sfx/', window.location.href);
+  const sources = {
+    normal: new URL('hit_normal.mp3', base).href,
+    charge: new URL('hit_charge.mp3', base).href,
+    break: new URL('hit_break.mp3', base).href,
   };
-  document.addEventListener('pointerdown',prime,{once:true,capture:true});
-  document.addEventListener('keydown',prime,{once:true,capture:true});
-  window.playLancerHitSfx=()=>{
-    if(window.lancerInput?.muted)return;
-    const a=pool[cursor++%pool.length];
-    try{a.pause();a.currentTime=0;}catch{}
-    const p=a.play(); if(p&&p.catch)p.catch(()=>{});
+  const pools = {};
+  const cursors = {normal:0, charge:0, break:0};
+  for (const [name, src] of Object.entries(sources)) {
+    pools[name] = Array.from({length: 3}, () => {
+      const audio = new Audio(src);
+      audio.preload = 'auto';
+      audio.volume = 1.0;
+      audio.load();
+      return audio;
+    });
+  }
+  window.lancerHitSfxSources = sources;
+  window.playLancerHitSfx = kind => {
+    if (window.lancerInput?.muted) return;
+    const key = Object.prototype.hasOwnProperty.call(pools, kind) ? kind : 'normal';
+    const pool = pools[key];
+    const index = cursors[key]++ % pool.length;
+    const audio = pool[index];
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+      const result = audio.play();
+      if (result?.catch) result.catch(() => {});
+    } catch (_) {}
   };
 })();
 """)
