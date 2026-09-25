@@ -173,6 +173,8 @@ class App:
         self.attack_anim = self.flash = self.elapsed = 0.
         # v4.4.1: short simulation freeze on confirmed player hits (60 FPS).
         self.hitstop_frames = 0
+        # v4.4.2: short-lived spear-tip hit VFX entries: [x, y, angle, tier, life].
+        self.hit_vfx = []
         self.charging = False
         self.pending = None
         self.feedback, self.feedback_time = '', 0.
@@ -184,6 +186,7 @@ class App:
         self.tutorial_attack = -1
         self.tutorial_done = False
         self.shots, self.fx = [], []
+        self.hit_vfx = []
         self.last_tech, self.repeats = '', 0
         self.shot_count = 0
         self.notice = 'まずは赤い予告から外れてみよう'
