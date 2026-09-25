@@ -203,6 +203,65 @@
             pyxel.pset(x+ox,y+oy,7)
             pyxel.pset(x+ox+(1 if ox<0 else -1),y+oy,10)
 
+    def draw_boss_break_v43(self):
+        # v4.3 BREAK: Hectran buckles into a low, vulnerable down pose.
+        # Visual only; BREAK duration, poise and damage rules remain unchanged.
+        a=self.ba
+        d=int(round(a/(math.pi/4)))%8
+        dx8=(1,1,0,-1,-1,-1,0,1)[d]; dy8=(0,1,1,1,0,-1,-1,-1)[d]
+        x,y=int(round(self.bx)),int(round(self.by))
+        backx,backy=-dx8,-dy8
+        # Use the BREAK timer to add a short collapse settle without changing gameplay.
+        total=max(.001,getattr(self,'break_total',1.0))
+        remain=max(0.,min(1.,self.timer/total)) if self.state=='break' else 0.
+        sink=2 if remain<.82 else 1
+        y+=sink
+
+        # Flattened shadow emphasizes that the guard is broken.
+        pyxel.elli(x-11,y+7,22,4,0)
+
+        # Cape sprawls across the floor.
+        pyxel.tri(x-3,y-2,x+backx*11-5,y+backy*3+7,x-1,y+6,4)
+        pyxel.tri(x+3,y-2,x+backx*10+5,y+backy*3+7,x+2,y+6,4)
+
+        # One knee down, one foot planted.
+        pyxel.rect(x-6,y+1,5,5,1)
+        pyxel.rect(x-7,y+5,7,3,6)
+        pyxel.line(x+2,y+1,x+6+dx8,y+6+dy8,1)
+        pyxel.rect(x+3+dx8,y+5+dy8,6,2,6)
+        pyxel.pset(x-5,y+4,10); pyxel.pset(x+5+dx8,y+4+dy8,10)
+
+        # Torso folds forward and loses its square guard silhouette.
+        bx=x+dx8*2; by=y-2+dy8
+        pyxel.rect(bx-7,by-4,14,8,1)
+        pyxel.rect(bx-8,by-3,4,5,6); pyxel.rect(bx+5,by-3,4,5,6)
+        pyxel.line(bx-4,by+1,bx+4,by+1,10)
+
+        # Helmet drops toward the ground.
+        hx=bx+dx8*3; hy=by-8+dy8*2
+        pyxel.rect(hx-5,hy,10,6,6); pyxel.rect(hx-6,hy+1,12,3,1)
+        pyxel.rect(hx-4,hy+2,8,3,7)
+        for gx in (-3,-1,1,3): pyxel.pset(hx+gx,hy+3,0)
+
+        # Plume and shield sag instead of staying combat-ready.
+        pyxel.line(hx,hy,hx+backx*8,hy+backy*3,4)
+        pyxel.pset(hx+backx*9,hy+backy*4,2)
+        sx=x-dy8*6; sy=y+dx8*3+2
+        pyxel.rect(sx-3,sy-3,7,7,4); pyxel.rectb(sx-3,sy-3,7,7,10)
+
+        # Spear lies diagonally on the arena floor.
+        aa=a+.58
+        ex,ey=x+math.cos(aa)*17,y+5+math.sin(aa)*8
+        tx,ty=x-math.cos(aa)*13,y+5-math.sin(aa)*6
+        pyxel.line(tx,ty,ex,ey,10); pyxel.line(tx+1,ty,ex+1,ey,6)
+        pyxel.circ(ex,ey,1,7)
+
+        # Small guard-break fragments around the collapsed armor.
+        if self.frame%8<5:
+            for ox,oy in ((-10,-6),(9,-7),(-8,1),(11,0)):
+                pyxel.pset(x+ox,y+oy,10)
+                pyxel.pset(x+ox+(1 if ox<0 else -1),y+oy-1,7)
+
     def draw_player_v32(self):
         # v3.2: 8-direction red-haired lancer for idle/walk only.
         # Character body stays inside roughly 9x17 px; spear is drawn separately.
@@ -461,18 +520,12 @@
             self.draw_boss_attack_v41()
         elif self.flash and self.state!='break':
             self.draw_boss_hit_v42()
+        elif self.state=='break':
+            self.draw_boss_break_v43()
         elif self.state in ('idle','recover'):
             self.draw_boss_idle_v40()
         else:
-            # BREAK keeps the placeholder until its dedicated motion pass.
-            pyxel.elli(self.bx-11,self.by+5,22,7,0)
-            pyxel.rect(self.bx-7,self.by-7,14,15,bosscol)
-            pyxel.rect(self.bx-5,self.by-10,10,6,6)
-            pyxel.rect(self.bx-3,self.by-6,6,2,8)
-            pyxel.rect(self.bx-10,self.by-3,4,10,5)
-            ux,uy=math.cos(self.ba),math.sin(self.ba)
-            pyxel.line(self.bx,self.by,self.bx+ux*22,self.by+uy*22,10)
-            pyxel.circ(self.bx+ux*22,self.by+uy*22,2,7)
+            self.draw_boss_idle_v40()
         if not self.invuln or self.frame%6<3:
             if self.attack_anim and self.attack_full:
                 self.draw_player_charge_v34()
