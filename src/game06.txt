@@ -140,12 +140,27 @@
         length, half = SHAPES[self.tech]
         pyxel.dither(.25)
         if self.tech == 'wave':
-            radius = length*max(0,min(1,1-self.timer/TECH['wave'][2]))
             if self.state == 'prep':
-                pyxel.circ(self.bx,self.by,length+half,col)
+                # v4.5a: show this as an OUTWARD moving shockwave, not a filled danger circle.
+                # A faint outer boundary shows the maximum reach; the animated preview ring
+                # travels from Hectran to that boundary so the dodge direction is readable.
+                prep = max(0., min(1., 1-self.timer/max(.001, self.prep_total)))
+                preview = 6 + int((length-6)*prep)
+                pyxel.circb(self.bx,self.by,int(length+half),col)
+                pyxel.circb(self.bx,self.by,5,col)
+                for r in range(max(2,preview-1),preview+2):
+                    pyxel.circb(self.bx,self.by,r,col)
+                # Four outward-moving markers reinforce expansion without filling the center.
+                for a in (0, math.pi/2, math.pi, math.pi*1.5):
+                    mx = self.bx + math.cos(a)*preview
+                    my = self.by + math.sin(a)*preview
+                    pyxel.pset(mx,my,10)
             else:
+                radius = length*max(0,min(1,1-self.timer/TECH['wave'][2]))
                 for r in range(max(0,int(radius-half)),int(radius+half)+1):
                     pyxel.circb(self.bx,self.by,r,col)
+                # Bright leading edge makes the live damage band distinct from the preview.
+                pyxel.circb(self.bx,self.by,int(radius+half),10)
         elif self.tech == 'sweep':
             for i in range(29):
                 a = self.ba-half+i/29*half*2
