@@ -82,8 +82,20 @@ window.receiveLancerState = raw => {
   text('boss-value',`${s.bossHp} / 600`);bar('boss-bar',s.bossHp/6);text('phase',`PHASE ${s.phase}`);
   const poiseRow=root.querySelector('.poise-row'); if(poiseRow)poiseRow.hidden=!s.tutorialDone;
   bar('poise-bar',s.poise);text('hp-value',s.hp);bar('hp-bar',s.hp);text('st-value',s.stamina);bar('st-bar',s.stamina);text('potion-value',`回復薬 ${s.potions}`);
-  $('notice').hidden=s.mode==='select';
-  if(s.mode!=='select')text('notice',s.notice);
+  const combatState=$('combat-state');
+  const inBattle=s.mode==='battle';
+  combatState.hidden=!inBattle;
+  if(inBattle){
+    let stateName='WATCH',hint='次の攻撃を見ろ';
+    if(s.state==='prep'||s.state==='attack'){
+      stateName='DANGER';hint='予告範囲から離れろ';
+    }else if(s.state==='recover'||s.state==='break'){
+      stateName='CHANCE';
+      hint=(s.state==='break'||/長押し|長い隙|溜め/.test(s.notice))?'今なら溜め突き':'今なら突け';
+    }
+    combatState.dataset.state=stateName.toLowerCase();
+    text('state-label',stateName);text('notice',hint);
+  }
   text('charge-label',s.charge>0?(s.chargeAffordable?`溜め ${Math.round(s.charge*100)}%`:'ST不足→通常'):s.weapon===2?`出血 ${s.bleed}%`:['正槍','重槍'][s.weapon]);$('charge-label').classList.toggle('insufficient',s.charge>0&&!s.chargeAffordable);
   if(mode===s.mode)return;mode=s.mode;
   $('overlay').hidden=s.mode==='battle';$('weapons').hidden=s.mode!=='select';$('back').hidden=s.mode==='select';$('pause').disabled=s.mode!=='battle'&&s.mode!=='paused';
