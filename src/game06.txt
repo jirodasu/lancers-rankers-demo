@@ -153,7 +153,6 @@
         ux, uy = math.cos(self.ba), math.sin(self.ba)
         length, half = SHAPES[self.tech]
         progress = 1.
-        contract = 0
         if self.state == 'prep':
             progress = max(0., min(1., 1-self.timer/max(.001, self.prep_total)))
             pulse = (self.frame//5)%2 == 0
@@ -164,14 +163,11 @@
                 outline_col = 10 if pulse else 8
                 fill_alpha = .30 if pulse else .22
             else:
-                # Final warning: blink harder and pull the outline slightly inward before impact.
+                # Final warning gets brighter/faster, but NEVER changes the danger geometry.
+                # The telegraph boundary must remain identical to the real hitbox.
                 col = 8
                 outline_col = 7 if pulse else 8
                 fill_alpha = .52 if pulse else .32
-                contract = 1 + int((progress-.80)/.20*2)
-            if self.tech != 'wave':
-                length = max(6, length-contract*2)
-                half = max(2, half-contract*.5)
         else:
             col, outline_col, fill_alpha = 10, 10, .34
         self._telegraph_alpha = fill_alpha
@@ -179,9 +175,9 @@
         pyxel.dither(fill_alpha)
         if self.tech == 'wave':
             if self.state == 'prep':
-                # v4.6a: outward preview inherits the 3-stage urgency palette.
+                # v4.6a1: outward preview inherits urgency, while max reach stays exact.
                 preview = 6 + int((length-6)*progress)
-                edge = max(8, int(length+half-contract))
+                edge = max(8, int(length+half))
                 pyxel.dither(1)
                 pyxel.circb(self.bx,self.by,edge,outline_col)
                 pyxel.circb(self.bx,self.by,5,outline_col)
@@ -200,7 +196,7 @@
                     pyxel.circb(self.bx,self.by,r,col)
                 pyxel.circb(self.bx,self.by,int(radius+half),10)
         elif self.tech == 'sweep':
-            # Keep the wedge translucent, but make its two escape boundaries fully readable.
+            # Keep the wedge translucent, but keep its boundaries EXACTLY equal to the hit test.
             pyxel.dither(1)
             pyxel.line(self.bx,self.by,self.bx+math.cos(self.ba-half)*length,self.by+math.sin(self.ba-half)*length,outline_col)
             pyxel.line(self.bx,self.by,self.bx+math.cos(self.ba+half)*length,self.by+math.sin(self.ba+half)*length,outline_col)
