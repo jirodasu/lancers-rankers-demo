@@ -31,7 +31,12 @@
                 '次は隙が長い。突きを長押ししてみよう',
             )[self.tutorial_attack]
         else:
-            self.timer = .38 if combo else TECH[tech][1]*(.9 if self.phase == 3 else 1)
+            if combo:
+                # v4.5b3: strike 1 -> strike 2 starts exactly 1.00 s later (.18 attack + .82 reset).
+                # Strike 2 -> strike 3 keeps the existing timing (.18 attack + .38 reset = .56 s).
+                self.timer = .82 if self.step == 2 else .38
+            else:
+                self.timer = TECH[tech][1]*(.9 if self.phase == 3 else 1)
             # v4.5b2: 三連守槍 is a learnable surprise. Do not expose a 1/3 counter.
             self.notice = TECH[tech][0]
         self.prep_total = self.timer
