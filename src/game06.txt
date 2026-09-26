@@ -32,9 +32,9 @@
             )[self.tutorial_attack]
         else:
             if combo:
-                # v4.5b3: strike 1 -> strike 2 starts exactly 1.00 s later (.18 attack + .82 reset).
-                # Strike 2 -> strike 3 keeps the existing timing (.18 attack + .38 reset = .56 s).
-                self.timer = .82 if self.step == 2 else .38
+                # v4.5b4: first combo reset shortened to .60 s; second reset stays .38 s.
+                # With the .18 s attack itself, strike 1 -> 2 is now about .78 s total.
+                self.timer = .60 if self.step == 2 else .38
             else:
                 self.timer = TECH[tech][1]*(.9 if self.phase == 3 else 1)
             # v4.5b2: 三連守槍 is a learnable surprise. Do not expose a 1/3 counter.
