@@ -1,0 +1,31 @@
+name: validate concatenated source
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - '.github/workflows/validate-source.yml'
+  workflow_dispatch:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Concatenate runtime in production order
+        run: |
+          cat \
+            src/game01.txt \
+            src/game02.txt \
+            src/layout-fix.txt \
+            src/game03.txt \
+            src/game04.txt \
+            src/game05.txt \
+            src/game06.txt \
+            src/game07.txt > /tmp/lancers_runtime.py
+      - name: Validate Python syntax
+        run: python -m py_compile /tmp/lancers_runtime.py
