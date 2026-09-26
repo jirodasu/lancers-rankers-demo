@@ -102,8 +102,11 @@
         attacking=self.state=='attack'
         total=TECH[self.tech][2] if attacking else max(.001,self.prep_total)
         p=max(0.,min(1.,1-self.timer/total))
-        # During prep Hectran visibly draws the weapon back. During attack he commits forward.
-        lean=(2 if attacking else -1)
+        # v4.5b2: after the first combo thrust, visibly recoil farther back before strikes 2 and 3.
+        if self.tech=='combo' and not attacking and self.step>1:
+            lean=-3
+        else:
+            lean=(2 if attacking else -1)
         bx,by=x+dx8*lean,y+dy8*lean
         backx,backy=-dx8,-dy8
         pyxel.elli(bx-10,by+7,20,4,0)
@@ -152,8 +155,30 @@
             tx,ty=bx-math.cos(aa)*6,by-math.sin(aa)*6
             pyxel.line(tx,ty,ex,ey,10); pyxel.line(tx+1,ty,ex+1,ey,6)
             pyxel.tri(ex-dy*2,ey+dx*2,ex+dy*2,ey-dx*2,ex+dx*4,ey+dy*4,7)
+        elif self.tech=='combo':
+            # Strike 1 resembles a normal thrust. Strikes 2/3 telegraph only by a strong physical retraction.
+            if attacking:
+                reach=15+int(16*p)
+                tail=6
+            elif self.step>1:
+                reach=12-int(7*p)
+                tail=12+int(8*p)
+            else:
+                reach=14-int(5*p)
+                tail=10
+            ex,ey=bx+dx*reach,by+dy*reach
+            tx,ty=bx-dx*tail,by-dy*tail
+            pyxel.line(tx,ty,ex,ey,10); pyxel.line(tx+1,ty,ex+1,ey,6)
+            pyxel.tri(ex-dy*2,ey+dx*2,ex+dy*2,ey-dx*2,ex+dx*4,ey+dy*4,7)
+            if not attacking and self.step>1 and .15<p<.85:
+                # Reverse motion streaks make the reset readable after the surprise first hit.
+                vx,vy=-dy,dx
+                for off in (-2,2):
+                    sx1=tx-dx*2+vx*off; sy1=ty-dy*2+vy*off
+                    sx2=tx-dx*6+vx*off; sy2=ty-dy*6+vy*off
+                    pyxel.line(sx1,sy1,sx2,sy2,6)
         else:
-            # 城門穿ち / 守将突進 / 三連守槍: draw back then drive straight through.
+            # 城門穿ち / 守将突進: draw back then drive straight through.
             reach=(15+int(16*p)) if attacking else (14-int(5*p))
             ex,ey=bx+dx*reach,by+dy*reach
             tx,ty=bx-dx*(10 if not attacking else 6),by-dy*(10 if not attacking else 6)
@@ -583,4 +608,3 @@ if __name__ == '__main__':
         if window is not None:
             window.loadFailure('起動できませんでした: '+str(error))
         raise
-
