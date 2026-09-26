@@ -161,6 +161,20 @@
                     pyxel.circb(self.bx,self.by,r,col)
                 # Bright leading edge makes the live damage band distinct from the preview.
                 pyxel.circb(self.bx,self.by,int(radius+half),10)
+        elif self.tech == 'combo':
+            # v4.5b: make the three consecutive thrusts readable without relying on text.
+            # Filled dots are attacks still to come; hollow dots are already spent.
+            self.draw_capsule(self.bx,self.by,self.bx+ux*length,self.by+uy*length,half,col)
+            dot_y = self.by-23
+            for i in range(1,4):
+                dot_x = self.bx+(i-2)*5
+                if i < self.step:
+                    pyxel.circb(dot_x,dot_y,1,5)
+                elif i == self.step:
+                    pulse = 10 if (self.frame//6)%2 == 0 else 7
+                    pyxel.circ(dot_x,dot_y,1,pulse)
+                else:
+                    pyxel.circ(dot_x,dot_y,1,8)
         elif self.tech == 'sweep':
             for i in range(29):
                 a = self.ba-half+i/29*half*2
