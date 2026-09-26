@@ -133,40 +133,77 @@
     def draw_capsule(self, x, y, ex, ey, radius, col):
         ux, uy = unit(ex-x, ey-y)
         vx, vy = -uy*radius, ux*radius
+        alpha = getattr(self, '_telegraph_alpha', 1.)
+        outline = getattr(self, '_telegraph_outline', col)
+        pyxel.dither(alpha)
         pyxel.tri(x+vx,y+vy,x-vx,y-vy,ex+vx,ey+vy,col)
         pyxel.tri(x-vx,y-vy,ex-vx,ey-vy,ex+vx,ey+vy,col)
         pyxel.circ(x,y,radius,col)
         pyxel.circ(ex,ey,radius,col)
+        pyxel.dither(1)
+        pyxel.line(x+vx,y+vy,ex+vx,ey+vy,outline)
+        pyxel.line(x-vx,y-vy,ex-vx,ey-vy,outline)
+        pyxel.circb(x,y,max(1,int(radius)),outline)
+        pyxel.circb(ex,ey,max(1,int(radius)),outline)
+        pyxel.dither(alpha)
 
     def telegraph(self):
         if self.state not in ('prep', 'attack'):
             return
-        col = 8 if self.state == 'prep' else 10
         ux, uy = math.cos(self.ba), math.sin(self.ba)
         length, half = SHAPES[self.tech]
-        pyxel.dither(.25)
+        progress = 1.
+        contract = 0
+        if self.state == 'prep':
+            progress = max(0., min(1., 1-self.timer/max(.001, self.prep_total)))
+            pulse = (self.frame//5)%2 == 0
+            if progress < .45:
+                col, outline_col, fill_alpha = 8, 8, .14
+            elif progress < .80:
+                col = 8
+                outline_col = 10 if pulse else 8
+                fill_alpha = .30 if pulse else .22
+            else:
+                # Final warning: blink harder and pull the outline slightly inward before impact.
+                col = 8
+                outline_col = 7 if pulse else 8
+                fill_alpha = .52 if pulse else .32
+                contract = 1 + int((progress-.80)/.20*2)
+            if self.tech != 'wave':
+                length = max(6, length-contract*2)
+                half = max(2, half-contract*.5)
+        else:
+            col, outline_col, fill_alpha = 10, 10, .34
+        self._telegraph_alpha = fill_alpha
+        self._telegraph_outline = outline_col
+        pyxel.dither(fill_alpha)
         if self.tech == 'wave':
             if self.state == 'prep':
-                # v4.5a: show this as an OUTWARD moving shockwave, not a filled danger circle.
-                # A faint outer boundary shows the maximum reach; the animated preview ring
-                # travels from Hectran to that boundary so the dodge direction is readable.
-                prep = max(0., min(1., 1-self.timer/max(.001, self.prep_total)))
-                preview = 6 + int((length-6)*prep)
-                pyxel.circb(self.bx,self.by,int(length+half),col)
-                pyxel.circb(self.bx,self.by,5,col)
-                for r in range(max(2,preview-1),preview+2):
-                    pyxel.circb(self.bx,self.by,r,col)
+                # v4.6a: outward preview inherits the 3-stage urgency palette.
+                preview = 6 + int((length-6)*progress)
+                edge = max(8, int(length+half-contract))
+                pyxel.dither(1)
+                pyxel.circb(self.bx,self.by,edge,outline_col)
+                pyxel.circb(self.bx,self.by,5,outline_col)
+                ring_half = 2 if progress >= .8 else 1
+                for r in range(max(2,preview-ring_half),preview+ring_half+1):
+                    pyxel.circb(self.bx,self.by,r,outline_col)
                 # Four outward-moving markers reinforce expansion without filling the center.
                 for a in (0, math.pi/2, math.pi, math.pi*1.5):
                     mx = self.bx + math.cos(a)*preview
                     my = self.by + math.sin(a)*preview
-                    pyxel.pset(mx,my,10)
+                    pyxel.pset(mx,my,outline_col)
+                pyxel.dither(fill_alpha)
             else:
                 radius = length*max(0,min(1,1-self.timer/TECH['wave'][2]))
                 for r in range(max(0,int(radius-half)),int(radius+half)+1):
                     pyxel.circb(self.bx,self.by,r,col)
-                # Bright leading edge makes the live damage band distinct from the preview.
                 pyxel.circb(self.bx,self.by,int(radius+half),10)
         elif self.tech == 'sweep':
+            # Keep the wedge translucent, but make its two escape boundaries fully readable.
+            pyxel.dither(1)
+            pyxel.line(self.bx,self.by,self.bx+math.cos(self.ba-half)*length,self.by+math.sin(self.ba-half)*length,outline_col)
+            pyxel.line(self.bx,self.by,self.bx+math.cos(self.ba+half)*length,self.by+math.sin(self.ba+half)*length,outline_col)
+            pyxel.dither(fill_alpha)
             for i in range(29):
                 a = self.ba-half+i/29*half*2
