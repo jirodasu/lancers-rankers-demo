@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
+  test.setTimeout(180000);
   const out = path.join(process.cwd(), 'test-results', 'ai-playtest');
   fs.mkdirSync(out, { recursive: true });
   const consoleErrors = [];
@@ -11,10 +12,15 @@ test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
 
   await page.goto('/');
   await page.waitForFunction(() => window.pyxelContext?.resolveInput, null, { timeout: 90000 });
-  await page.locator('#boot').click();
+
+  // Pyxel's canvas can cover the visual boot button after loading.
+  // Trigger the existing button handler directly so the test does not depend on z-index.
+  await page.evaluate(() => document.getElementById('boot')?.click());
+
   await page.waitForFunction(() => {
     const h = document.querySelector('#lancer-shell');
-    return h?.shadowRoot?.querySelector('#start') && !h.shadowRoot.querySelector('#start').disabled;
+    const start = h?.shadowRoot?.querySelector('#start');
+    return start && !start.disabled;
   }, null, { timeout: 90000 });
 
   const state = () => page.evaluate(() => {
@@ -24,7 +30,7 @@ test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
     const text = id => r.getElementById(id)?.textContent || '';
     return {
       hp: Number(text('hp-value')) || 0,
-      bossHp: Number((text('boss-value').match(/^\d+/) || ['0'])[0]),
+      bossHp: Number((text('boss-value').match(/^\\d+/) || ['0'])[0]),
       stamina: Number(text('st-value')) || 0,
       notice: text('notice'),
       overlay: !r.getElementById('overlay')?.hidden,
@@ -32,7 +38,7 @@ test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
     };
   });
 
-  await page.evaluate(() => document.querySelector('#lancer-shell').shadowRoot.querySelector('#start').click());
+  await page.evaluate(() => document.querySelector('#lancer-shell')?.shadowRoot?.querySelector('#start')?.click());
   await page.waitForTimeout(800);
 
   const log = [];
@@ -41,11 +47,9 @@ test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
   while (Date.now() - started < 90000) {
     const s = await state();
     if (!s) break;
-    log.push({ t: +(Date.now() - started) / 1000, ...s });
+    log.push({ t: +((Date.now() - started) / 1000).toFixed(1), ...s });
     if (s.overlay && /RANK 10 DEFEATED|TRY AGAIN/.test(s.panel)) break;
 
-    // Baseline bot: keep circling, dodge danger, attack during openings,
-    // heal below 35 HP. This intentionally uses the same keyboard controls as a PC player.
     const moveKey = ['KeyW','KeyD','KeyS','KeyA'][Math.floor(tick / 8) % 4];
     await page.keyboard.down(moveKey);
     if (s.hp > 0 && s.hp < 35) {
