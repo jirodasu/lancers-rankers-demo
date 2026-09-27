@@ -11,17 +11,27 @@ test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
   page.on('pageerror', e => consoleErrors.push(String(e)));
 
   await page.goto('/');
-  await page.waitForFunction(() => window.pyxelContext?.resolveInput, null, { timeout: 90000 });
 
-  // Pyxel's canvas can cover the visual boot button after loading.
-  // Trigger the existing button handler directly so the test does not depend on z-index.
-  await page.evaluate(() => document.getElementById('boot')?.click());
+  await page.waitForFunction(() => typeof window.pyxelContext?.resolveInput === 'function', null, { timeout: 90000 });
+  console.log('[AI Playtest] resolveInput detected');
+
+  // Call Pyxel's input resolver directly. The visible #boot button begins disabled
+  // and is enabled by a polling loop, so clicking it too early can be ignored.
+  await page.evaluate(() => window.pyxelContext.resolveInput());
+  console.log('[AI Playtest] boot activated via resolveInput');
+
+  await page.waitForFunction(() => !!document.querySelector('#lancer-shell'), null, { timeout: 90000 });
+  console.log('[AI Playtest] lancer-shell detected');
+
+  await page.waitForFunction(() => !!document.querySelector('#lancer-shell')?.shadowRoot, null, { timeout: 90000 });
+  console.log('[AI Playtest] shadowRoot detected');
 
   await page.waitForFunction(() => {
     const h = document.querySelector('#lancer-shell');
     const start = h?.shadowRoot?.querySelector('#start');
-    return start && !start.disabled;
+    return !!start && !start.disabled;
   }, null, { timeout: 90000 });
+  console.log('[AI Playtest] start button enabled');
 
   const state = () => page.evaluate(() => {
     const h = document.querySelector('#lancer-shell');
@@ -39,6 +49,7 @@ test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
   });
 
   await page.evaluate(() => document.querySelector('#lancer-shell')?.shadowRoot?.querySelector('#start')?.click());
+  console.log('[AI Playtest] battle started');
   await page.waitForTimeout(800);
 
   const log = [];
