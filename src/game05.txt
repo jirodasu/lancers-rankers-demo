@@ -63,7 +63,6 @@
             self.regen_delay, self.dodge, self.invuln = .55, .28, .24
             self.ddx, self.ddy = (nx, ny) if mag > .12 else (math.cos(self.pa), math.sin(self.pa))
             self.charging = False
-            self.text(self.px, self.py-9, 'EVADE', 12)
         elif action == 'heal' and self.potions > 0 and self.hp < 100:
             self.potions -= 1
             self.hp = min(100, self.hp+45)
@@ -161,7 +160,14 @@
                 self.sound(2)
 
     def hurt(self, damage):
-        if self.invuln or self.mode != 'battle':
+        if self.mode != 'battle':
+            return False
+        if self.invuln:
+            # v4.6a5: EVADE means the dodge actually intercepted a damaging hitbox,
+            # not merely that the player pressed the dodge button.
+            if self.dodge:
+                self.text(self.px, self.py-9, 'EVADE!', 12)
+                return True
             return False
         self.hp = max(0, self.hp-damage)
         self.invuln, self.charging = .65, False
