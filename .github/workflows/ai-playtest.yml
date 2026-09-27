@@ -1,0 +1,36 @@
+name: AI Playtest Step 1
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/**'
+      - 'assets/**'
+      - 'tests/**'
+      - 'playwright.config.js'
+      - 'package.json'
+
+jobs:
+  rank10-playtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:play
+      - name: Upload playtest evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rank10-ai-playtest
+          path: |
+            test-results/ai-playtest/
+            test-results/**/*.zip
+            test-results/**/*.webm
+          if-no-files-found: ignore
