@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
 
-const PERSONA = process.env.PERSONA || 'normal';
+// Step 2 runs the same fight under three deterministic player-skill profiles.\nconst PERSONA = process.env.PERSONA || 'normal';
 const ROUNDS = Number(process.env.ROUNDS || 10);
 const MAX_BATTLE_MS = Number(process.env.MAX_BATTLE_MS || 90000);
 
