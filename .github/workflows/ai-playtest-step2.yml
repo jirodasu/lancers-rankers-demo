@@ -1,0 +1,42 @@
+name: AI Playtest Step 2
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/**'
+      - 'assets/**'
+      - 'tests/persona-playtest.spec.js'
+      - 'playwright.config.js'
+      - 'package.json'
+      - '.github/workflows/ai-playtest-step2.yml'
+
+jobs:
+  persona-playtest:
+    name: persona-${{ matrix.persona }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        persona: [beginner, normal, skilled]
+    env:
+      PERSONA: ${{ matrix.persona }}
+      ROUNDS: 10
+      MAX_BATTLE_MS: 90000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test tests/persona-playtest.spec.js
+      - name: Upload persona evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rank10-persona-${{ matrix.persona }}
+          path: test-results/persona-playtest/${{ matrix.persona }}/
+          if-no-files-found: ignore

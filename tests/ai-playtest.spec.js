@@ -1,0 +1,105 @@
+const { test, expect } = require('@playwright/test');
+const fs = require('fs');
+const path = require('path');
+
+test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
+  test.setTimeout(180000);
+  const out = path.join(process.cwd(), 'test-results', 'ai-playtest');
+  fs.mkdirSync(out, { recursive: true });
+  const consoleErrors = [];
+  page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+  page.on('pageerror', e => consoleErrors.push(String(e)));
+
+  await page.goto('/');
+
+  await page.waitForFunction(() => typeof window.pyxelContext?.resolveInput === 'function', null, { timeout: 90000 });
+  console.log('[AI Playtest] resolveInput detected');
+
+  // Call Pyxel's input resolver directly. The visible #boot button begins disabled
+  // and is enabled by a polling loop, so clicking it too early can be ignored.
+  await page.evaluate(() => window.pyxelContext.resolveInput());
+  console.log('[AI Playtest] boot activated via resolveInput');
+
+  await page.waitForFunction(() => !!document.querySelector('#lancer-shell'), null, { timeout: 90000 });
+  console.log('[AI Playtest] lancer-shell detected');
+
+  await page.waitForFunction(() => !!document.querySelector('#lancer-shell')?.shadowRoot, null, { timeout: 90000 });
+  console.log('[AI Playtest] shadowRoot detected');
+
+  await page.waitForFunction(() => {
+    const h = document.querySelector('#lancer-shell');
+    const start = h?.shadowRoot?.querySelector('#start');
+    return !!start && !start.disabled;
+  }, null, { timeout: 90000 });
+  console.log('[AI Playtest] start button enabled');
+
+  const state = () => page.evaluate(() => {
+    const h = document.querySelector('#lancer-shell');
+    const r = h?.shadowRoot;
+    if (!r) return null;
+    const text = id => r.getElementById(id)?.textContent || '';
+    return {
+      hp: Number(text('hp-value')) || 0,
+      bossHp: Number(text('boss-value').split('/')[0].trim()) || 0,
+      stamina: Number(text('st-value')) || 0,
+      potions: Number((text('potion-value').match(/[0-9]+/) || ['0'])[0]),
+      combatState: r.getElementById('combat-state')?.dataset?.state || '',
+      notice: text('notice'),
+      overlay: !r.getElementById('overlay')?.hidden,
+      panel: text('panel-kicker')
+    };
+  });
+
+  await page.evaluate(() => document.querySelector('#lancer-shell')?.shadowRoot?.querySelector('#start')?.click());
+  console.log('[AI Playtest] battle started');
+  await page.waitForTimeout(800);
+
+  const log = [];
+  const actions = { attack: 0, dodge: 0, heal: 0 };
+  const started = Date.now();
+  let tick = 0;
+  while (Date.now() - started < 90000) {
+    const s = await state();
+    if (!s) break;
+    log.push({ t: +((Date.now() - started) / 1000).toFixed(1), ...s });
+    if (s.overlay && /RANK 10 DEFEATED|TRY AGAIN/.test(s.panel)) break;
+
+    const moveKey = ['KeyW','KeyD','KeyS','KeyA'][Math.floor(tick / 8) % 4];
+    await page.keyboard.down(moveKey);
+    if (s.hp > 0 && s.hp < 35) {
+      await page.keyboard.press('KeyC');
+      actions.heal++;
+    } else if (/離れろ/.test(s.notice)) {
+      await page.keyboard.press('KeyX');
+      actions.dodge++;
+    } else {
+      await page.keyboard.press('KeyZ');
+      actions.attack++;
+    }
+    await page.waitForTimeout(220);
+    await page.keyboard.up(moveKey);
+    await page.waitForTimeout(80);
+    tick++;
+  }
+
+  const final = await state();
+  await page.screenshot({ path: path.join(out, 'final.png'), fullPage: true });
+  const report = {
+    generatedAt: new Date().toISOString(),
+    persona: 'baseline-bot-v1',
+    result: final?.overlay ? (final?.panel || 'FINISHED') : 'TIMEOUT',
+    elapsedSec: +((Date.now() - started) / 1000).toFixed(1),
+    final,
+    actions,
+    summary: {
+      playerDamageTaken: Math.max(0, 100 - (final?.hp || 0)) + actions.heal * 45,
+      bossDamageDealt: Math.max(0, 600 - (final?.bossHp || 600)),
+      potionsUsed: Math.max(0, 3 - (final?.potions ?? 3))
+    },
+    samples: log,
+    consoleErrors
+  };
+  fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
+  expect(consoleErrors, consoleErrors.join('\n')).toEqual([]);
+  expect(log.length).toBeGreaterThan(0);
+});
