@@ -40,8 +40,10 @@ test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
     const text = id => r.getElementById(id)?.textContent || '';
     return {
       hp: Number(text('hp-value')) || 0,
-      bossHp: Number((text('boss-value').match(/^\\d+/) || ['0'])[0]),
+      bossHp: Number(text('boss-value').split('/')[0].trim()) || 0,
       stamina: Number(text('st-value')) || 0,
+      potions: Number((text('potion-value').match(/[0-9]+/) || ['0'])[0]),
+      combatState: r.getElementById('combat-state')?.dataset?.state || '',
       notice: text('notice'),
       overlay: !r.getElementById('overlay')?.hidden,
       panel: text('panel-kicker')
@@ -53,6 +55,7 @@ test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
   await page.waitForTimeout(800);
 
   const log = [];
+  const actions = { attack: 0, dodge: 0, heal: 0 };
   const started = Date.now();
   let tick = 0;
   while (Date.now() - started < 90000) {
@@ -65,10 +68,13 @@ test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
     await page.keyboard.down(moveKey);
     if (s.hp > 0 && s.hp < 35) {
       await page.keyboard.press('KeyC');
+      actions.heal++;
     } else if (/離れろ/.test(s.notice)) {
       await page.keyboard.press('KeyX');
+      actions.dodge++;
     } else {
       await page.keyboard.press('KeyZ');
+      actions.attack++;
     }
     await page.waitForTimeout(220);
     await page.keyboard.up(moveKey);
@@ -81,9 +87,15 @@ test('Rank 10: one autonomous baseline playthrough', async ({ page }) => {
   const report = {
     generatedAt: new Date().toISOString(),
     persona: 'baseline-bot-v1',
-    result: final?.panel || 'TIMEOUT',
+    result: final?.overlay ? (final?.panel || 'FINISHED') : 'TIMEOUT',
     elapsedSec: +((Date.now() - started) / 1000).toFixed(1),
     final,
+    actions,
+    summary: {
+      playerDamageTaken: Math.max(0, 100 - (final?.hp || 0)) + actions.heal * 45,
+      bossDamageDealt: Math.max(0, 600 - (final?.bossHp || 600)),
+      potionsUsed: Math.max(0, 3 - (final?.potions ?? 3))
+    },
     samples: log,
     consoleErrors
   };
