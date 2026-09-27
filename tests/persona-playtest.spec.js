@@ -24,9 +24,9 @@ const profiles = {
   skilled: {
     label: 'skilled',
     healBelow: 45,
-    dangerReactionMs: 80,
-    dodgeCooldownMs: 700,
-    attackMode: 'patient'
+    dangerReactionMs: 90,
+    dodgeCooldownMs: 1250,
+    attackMode: 'punish'
   }
 };
 
@@ -79,6 +79,8 @@ test(`Step 2: ${PERSONA} persona x ${ROUNDS} battles`, async ({ page }) => {
     let dangerStarted = null;
     let lastDodgeAt = -99999;
     let previousCombatState = '';
+    let dodgedThisDanger = false;
+    let punishUntil = 0;
     const actions = { attack: 0, dodge: 0, heal: 0, chargedAttack: 0 };
     const samples = [];
 
@@ -89,8 +91,12 @@ test(`Step 2: ${PERSONA} persona x ${ROUNDS} battles`, async ({ page }) => {
       samples.push({ t: +(elapsed / 1000).toFixed(1), ...s });
       if (s.overlay && /RANK 10 DEFEATED|TRY AGAIN/.test(s.panel)) break;
 
-      if (s.combatState === 'danger' && previousCombatState !== 'danger') dangerStarted = elapsed;
+      if (s.combatState === 'danger' && previousCombatState !== 'danger') {
+        dangerStarted = elapsed;
+        dodgedThisDanger = false;
+      }
       if (s.combatState !== 'danger') dangerStarted = null;
+      if (s.combatState === 'chance' && previousCombatState !== 'chance') punishUntil = elapsed + 1100;
 
       const moveKey = ['KeyW','KeyD','KeyS','KeyA'][Math.floor(tick / 7) % 4];
       await page.keyboard.down(moveKey);
@@ -105,12 +111,14 @@ test(`Step 2: ${PERSONA} persona x ${ROUNDS} battles`, async ({ page }) => {
       const dangerReady = s.combatState === 'danger'
         && dangerStarted !== null
         && elapsed - dangerStarted >= profile.dangerReactionMs
-        && elapsed - lastDodgeAt >= profile.dodgeCooldownMs;
+        && elapsed - lastDodgeAt >= profile.dodgeCooldownMs
+        && (PERSONA !== 'skilled' || !dodgedThisDanger);
 
       if (!acted && dangerReady && s.stamina >= 22) {
         await page.keyboard.press('KeyX');
         actions.dodge++;
         lastDodgeAt = elapsed;
+        if (PERSONA === 'skilled') dodgedThisDanger = true;
         acted = true;
       }
 
@@ -128,14 +136,19 @@ test(`Step 2: ${PERSONA} persona x ${ROUNDS} battles`, async ({ page }) => {
             actions.attack++;
           }
         } else {
-          // Skilled player preserves stamina and commits mainly during CHANCE.
-          if (s.combatState === 'chance' && s.stamina >= 50) {
+          // Skilled: one dodge per telegraph, then punish the post-attack opening.
+          // Stop attacking below 30 stamina so a defensive dodge always remains available.
+          const inPunishWindow = s.combatState === 'chance' || elapsed < punishUntil;
+          if (inPunishWindow && s.stamina >= 55) {
             await page.keyboard.down('KeyZ');
-            await page.waitForTimeout(360);
+            await page.waitForTimeout(260);
             await page.keyboard.up('KeyZ');
             actions.chargedAttack++;
             acted = true;
-          } else if (s.combatState === 'watch' && s.stamina >= 70 && tick % 5 === 0) {
+          } else if (inPunishWindow && s.stamina >= 30) {
+            await page.keyboard.press('KeyZ');
+            actions.attack++;
+          } else if (s.combatState === 'watch' && s.stamina >= 65 && tick % 4 === 0) {
             await page.keyboard.press('KeyZ');
             actions.attack++;
           }
