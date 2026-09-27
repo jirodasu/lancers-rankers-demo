@@ -91,7 +91,7 @@ window.receiveLancerState = raw => {
       stateName='DANGER';hint='予告範囲から離れろ';
     }else if(s.state==='recover'||s.state==='break'){
       stateName='CHANCE';
-      hint=(s.state==='break'||/長押し|長い隙|溜め/.test(s.notice))?'今なら溜め突き':'今なら突け';
+      hint=(s.state==='break'||/長押し|長い隙|溜め/.test(s.notice))?'今なら溜め突き':'今だ！突け！';
     }
     combatState.dataset.state=stateName.toLowerCase();
     text('state-label',stateName);text('notice',hint);
