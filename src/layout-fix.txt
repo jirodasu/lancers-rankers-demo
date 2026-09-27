@@ -41,6 +41,41 @@ if(staminaValue) staminaObserver.observe(staminaValue,{childList:true,characterD
 syncDodgeStaminaState();
 removers.push(()=>{staminaObserver.disconnect();clearTimeout(dodgeReadyTimer);});
 
+// v4.6a4: circular charge gauge around the attack button.
+// It mirrors the existing charge percentage, so gameplay timing/costs remain unchanged.
+style.textContent += `
+#attack{position:relative!important;isolation:isolate;--charge-pct:0}
+#attack::before{
+  content:'';position:absolute;pointer-events:none;inset:-6px;border-radius:22px;
+  background:conic-gradient(from -90deg,#f4cf83 calc(var(--charge-pct)*1%),rgba(105,84,49,.34) 0);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+  padding:3px;opacity:0;transition:opacity .08s linear,filter .08s linear;
+}
+#attack.charging::before{opacity:1}
+#attack.charge-full::before{opacity:1;filter:brightness(1.5);animation:charge-full-pop .28s ease-out}
+#attack.charge-full{box-shadow:0 0 0 1px rgba(244,207,131,.28),0 0 12px rgba(244,207,131,.18)}
+@keyframes charge-full-pop{
+  0%{transform:scale(.96);filter:brightness(1.9)}
+  60%{transform:scale(1.05);filter:brightness(1.45)}
+  100%{transform:scale(1);filter:brightness(1.5)}
+}`;
+
+const chargeLabel = root.getElementById('charge-label');
+const attackButton = root.getElementById('attack');
+function syncAttackChargeGauge(){
+  if(!chargeLabel || !attackButton) return;
+  const match = chargeLabel.textContent.match(/溜め\s*(\d+)%/);
+  const pct = match ? Math.max(0,Math.min(100,Number(match[1]))) : 0;
+  attackButton.style.setProperty('--charge-pct',String(pct));
+  attackButton.classList.toggle('charging',pct>0);
+  attackButton.classList.toggle('charge-full',pct>=100);
+}
+const chargeObserver = new MutationObserver(syncAttackChargeGauge);
+if(chargeLabel) chargeObserver.observe(chargeLabel,{childList:true,characterData:true,subtree:true});
+syncAttackChargeGauge();
+removers.push(()=>chargeObserver.disconnect());
+
 const arenaLayout = root.getElementById('arena');
 const overlayLayout = root.getElementById('overlay');
 const weaponsLayout = root.getElementById('weapons');
