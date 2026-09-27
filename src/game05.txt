@@ -163,12 +163,8 @@
         if self.mode != 'battle':
             return False
         if self.invuln:
-            # v4.6a5: EVADE means the dodge actually intercepted a damaging hitbox,
-            # not merely that the player pressed the dodge button.
-            if self.dodge:
-                self.text(self.px, self.py-9, 'EVADE!', 12)
-                return True
-            return False
+            # Normal dodge success stays silent. Preserve the existing hit-consumption behavior.
+            return bool(self.dodge)
         self.hp = max(0, self.hp-damage)
         self.invuln, self.charging = .65, False
         self.pending = None
