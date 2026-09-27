@@ -5,6 +5,42 @@
 style.textContent=style.textContent.replaceAll('100dvh','100svh');
 style.textContent += '.poise-row[hidden]{display:flex!important;visibility:hidden!important}.poise-row:not([hidden]){visibility:visible}';
 
+// v4.6a3: stamina-linked dodge affordance only.
+// Below ST 22 the dodge button is visually unavailable; when ST recovers to 22,
+// it gives one small readiness pulse. Input behavior itself is unchanged.
+style.textContent += `
+#dodge.st-low{opacity:.38;filter:saturate(.35) brightness(.68);border-color:#334255;background:#111b29;box-shadow:none}
+#dodge.st-ready-pop{animation:dodge-ready-pop .24s ease-out}
+@keyframes dodge-ready-pop{
+  0%{box-shadow:0 0 0 0 rgba(143,204,232,.72);filter:brightness(1.45)}
+  55%{box-shadow:0 0 0 5px rgba(143,204,232,.26);filter:brightness(1.18)}
+  100%{box-shadow:0 0 0 8px rgba(143,204,232,0);filter:brightness(1)}
+}`;
+
+const staminaValue = root.getElementById('st-value');
+const dodgeButton = root.getElementById('dodge');
+let dodgeWasReady = null;
+let dodgeReadyTimer = 0;
+function syncDodgeStaminaState(){
+  if(!staminaValue || !dodgeButton) return;
+  const stamina = Number(staminaValue.textContent);
+  if(!Number.isFinite(stamina)) return;
+  const readyNow = stamina >= 22;
+  dodgeButton.classList.toggle('st-low', !readyNow);
+  if(dodgeWasReady === false && readyNow){
+    dodgeButton.classList.remove('st-ready-pop');
+    void dodgeButton.offsetWidth;
+    dodgeButton.classList.add('st-ready-pop');
+    clearTimeout(dodgeReadyTimer);
+    dodgeReadyTimer = setTimeout(()=>dodgeButton.classList.remove('st-ready-pop'), 260);
+  }
+  dodgeWasReady = readyNow;
+}
+const staminaObserver = new MutationObserver(syncDodgeStaminaState);
+if(staminaValue) staminaObserver.observe(staminaValue,{childList:true,characterData:true,subtree:true});
+syncDodgeStaminaState();
+removers.push(()=>{staminaObserver.disconnect();clearTimeout(dodgeReadyTimer);});
+
 const arenaLayout = root.getElementById('arena');
 const overlayLayout = root.getElementById('overlay');
 const weaponsLayout = root.getElementById('weapons');
