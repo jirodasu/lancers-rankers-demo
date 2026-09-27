@@ -102,7 +102,7 @@ window.receiveLancerState = raw => {
   $('pause').textContent=s.mode==='paused'?'再開':'一時停止';
   if(s.mode==='select'){$('panel-kicker').textContent='CHALLENGER';$('panel-title').textContent='槍を選び、門を越えろ。';$('panel-tip').textContent='槍を選んで、ヘクトランに挑め。';$('start').textContent='この槍で戦う';}
   else if(s.mode==='paused'){$('panel-kicker').textContent='PAUSED';$('panel-title').textContent='一時停止';$('panel-tip').textContent='準備ができたら、闘技場へ。';$('start').textContent='戦闘に戻る';}
-  else if(s.mode==='victory'||s.mode==='defeat'){const win=s.mode==='victory';$('panel-kicker').textContent=win?'RANK 10 DEFEATED':'TRY AGAIN';$('panel-title').textContent=win?'城門、突破。':'まだ、槍は折れない。';$('panel-tip').textContent=win?`討伐 ${s.seconds}秒 / 残りHP ${s.hp} / 回復薬 ${s.potions}`:`ヘクトラン 残りHP ${s.bossHp}。赤い予告から横へ避け、攻撃後の隙を狙おう。`;$('start').textContent='もう一度挑む';}
+  else if(s.mode==='victory'||s.mode==='defeat'){const win=s.mode==='victory';const clearRank=s.seconds<35?'S':s.seconds<45?'A':s.seconds<60?'B':'C';$('panel-kicker').textContent=win?`CLEAR RANK ${clearRank}`:'TRY AGAIN';$('panel-title').textContent=win?`RANK ${clearRank} — 城門、突破。`:'まだ、槍は折れない。';$('panel-tip').textContent=win?`討伐 ${s.seconds}秒 / 残りHP ${s.hp} / 回復薬 ${s.potions}`:`ヘクトラン 残りHP ${s.bossHp}。赤い予告から横へ避け、攻撃後の隙を狙おう。`;$('start').textContent='もう一度挑む';}
 };
 window.loadFailure = message => {$('overlay').hidden=true;$('loading').hidden=false;$('activate').hidden=true;$('load-label').textContent=message;$('reload').hidden=false;root.querySelector('.spinner').hidden=true;};
 
