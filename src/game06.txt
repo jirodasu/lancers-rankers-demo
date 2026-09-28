@@ -4,7 +4,7 @@
 
     def prepare(self, tech=None, combo=False):
         dist = math.hypot(self.px-self.bx, self.py-self.by)
-        scripted = tech is None and not self.tutorial_done and self.tutorial_step < 3
+        scripted = tech is None and self.mode == 'training' and not self.tutorial_done and self.tutorial_step < 3
         if scripted:
             # First three attacks teach the core loop by prediction, not by a separate tutorial screen.
             tech = 'thrust'
@@ -25,10 +25,11 @@
         self.rush_origin = (self.bx,self.by)
         if scripted:
             self.timer = (.95, .82, .78)[self.tutorial_attack]
+            self.training_failed = False
             self.notice = (
-                '赤い予告から外れてみよう',
-                'もう一度。避ければ反撃の隙ができる',
-                '次は隙が長い。突きを長押ししてみよう',
+                'STEP 1/3　赤い予告を見て避けろ',
+                'STEP 2/3　避けた後の隙に突け',
+                'STEP 3/3　長い隙に長押し→離せ',
             )[self.tutorial_attack]
         else:
             if combo:
@@ -45,7 +46,7 @@
         self.sound(3)
 
     def boss_update(self):
-        if self.mode != 'battle':
+        if self.mode not in ('battle', 'training'):
             return
         self.timer -= DT  # Timers decrement exactly once per simulation step.
         if self.state == 'idle':
@@ -101,24 +102,34 @@
                 else:
                     recovery = TECH[self.tech][3]
                     if self.tutorial_attack >= 0:
-                        recovery = (1.25, 1.0, 1.5)[self.tutorial_attack]
-                        self.notice = (
-                            '隙あり — 今だ、突け',
-                            '隙あり — もう一度、突け',
-                            '長い隙 — 長押しして、離して突け',
-                        )[self.tutorial_attack]
-                        self.tutorial_step = self.tutorial_attack + 1
+                        recovery = (1.25, 1.25, 1.8)[self.tutorial_attack]
+                        if self.tutorial_attack == 0:
+                            if self.training_failed:
+                                self.notice = 'もう一度。赤い予告を見て避けろ'
+                            else:
+                                self.tutorial_step = 1
+                                self.notice = '✓ 回避成功　STEP 2/3　今だ！突け！'
+                        elif self.tutorial_attack == 1:
+                            self.notice = 'CHANCE　今だ！突け！'
+                        else:
+                            self.notice = 'CHANCE　長押しで溜めろ → 離せ！'
                     else:
                         self.notice = '隙あり — 接近して突く'
                     self.state, self.timer = 'recover', recovery
         elif self.timer <= 0:
-            if self.tutorial_step >= 3 and not self.tutorial_done:
-                self.tutorial_done = True
-                self.notice = '基本は同じ。予告を見て、隙にどこまで欲張るか判断しよう'
+            if self.mode == 'training':
+                self.tutorial_attack = -1
+                self.state, self.timer = 'idle', .35
+                if self.tutorial_step == 0:
+                    self.notice = 'STEP 1/3　赤い予告を見て避けろ'
+                elif self.tutorial_step == 1:
+                    self.notice = 'STEP 2/3　避けた後の隙に突け'
+                else:
+                    self.notice = 'STEP 3/3　長い隙に長押し→離せ'
             else:
                 self.notice = '間合いを取り、次の予告を見る'
-            self.tutorial_attack = -1
-            self.state, self.timer = 'idle', .4 if self.phase==3 else .65
+                self.tutorial_attack = -1
+                self.state, self.timer = 'idle', .4 if self.phase==3 else .65
 
     def snapshot(self):
         return dict(mode=self.mode, hp=self.hp, stamina=round(self.stamina), potions=self.potions, bossHp=self.bhp, phase=self.phase, poise=round(self.poise), bleed=self.bleed, charge=round(min(1,self.charge/self.weapon['charge']),2) if self.charging else 0, chargeAffordable=self.stamina>=self.weapon['ccost'], weapon=self.weapon_index, notice=self.feedback if self.feedback_time else self.notice, state=self.state, seconds=round(self.elapsed,1), tutorialStep=self.tutorial_step, tutorialDone=self.tutorial_done)
