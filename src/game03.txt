@@ -47,7 +47,7 @@ function mergeInput(kind='up'){
   for(const [name,set] of [['attack',attackKeys],['dodge',dodgeKeys],['heal',healKeys]]){const held=pressed[name].size>0||[...set].some(k=>keys.has(k));if(held!==input[name])events.push({action:name,kind:held?'down':kind});input[name]=held;$(name).classList.toggle('down',held);}
 }
 function clearInput(){keys.clear();for(const set of Object.values(pressed))set.clear();stickId=null;stickVector={x:0,y:0};$('knob').style.transform='';mergeInput('cancel');events=[{kind:'cancel'}];input.pause=false;}
-function canInput(){return mode==='battle'&&!document.hidden&&!landscape();}
+function canInput(){return (mode==='battle'||mode==='training')&&!document.hidden&&!landscape();}
 function capture(el,e){if(e.isTrusted){try{el.setPointerCapture(e.pointerId);}catch{return false;}}return true;}
 for(const name of ['attack','dodge','heal']){
   const el=$(name);
@@ -58,7 +58,7 @@ function moveStick(e){const r=$('stick').getBoundingClientRect(),dx=e.clientX-r.
 on($('stick'),'pointerdown',e=>{if(stickId!==null||!canInput())return;e.preventDefault();if(!capture($('stick'),e))return;stickId=e.pointerId;moveStick(e);});
 on($('stick'),'pointermove',e=>{if(e.pointerId===stickId)moveStick(e);});
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])on($('stick'),ev,e=>{if(e.pointerId!==stickId)return;stickId=null;stickVector={x:0,y:0};$('knob').style.transform='';mergeInput();});
-on(window,'keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(canInput())keys.add(e.code);if(e.code==='KeyP'&&!e.repeat)request(mode==='paused'?'resume':'pause');if(e.code==='Enter'&&!e.repeat&&ready){if(mode==='select')request('start');else if(mode==='paused')request('resume');else if(['victory','defeat'].includes(mode))request('retry');}mergeInput();});
+on(window,'keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(canInput())keys.add(e.code);if(e.code==='KeyP'&&!e.repeat)request(mode==='paused'?'resume':'pause');if(e.code==='Enter'&&!e.repeat&&ready){if(mode==='select')request('start');else if(mode==='training_complete')request('battle');else if(mode==='paused')request('resume');else if(['victory','defeat'].includes(mode))request('retry');}mergeInput();});
 on(window,'keyup',e=>{keys.delete(e.code);mergeInput();});
 function suspend(){clearInput();if(current?.mode==='battle'||input.command==='resume'||input.command==='start'||input.command==='retry')input.command='pause';}
 on(window,'blur',suspend);on(document,'visibilitychange',()=>{if(document.hidden)suspend();});
@@ -68,7 +68,7 @@ on(window,'resize',orientation);on(window.visualViewport,'resize',orientation);o
 function resumeAudio(){const audio=window.pyxelContext?.pyodide?._module?.SDL2?.audioContext;if(audio?.state==='suspended')audio.resume().catch(()=>{});}
 function request(command){if(['start','resume','retry'].includes(command)&&(landscape()||document.hidden))return;clearInput();input.command=command;resumeAudio();}
 root.querySelectorAll('[data-weapon]').forEach(el=>on(el,'click',()=>{input.weapon=Number(el.dataset.weapon);root.querySelectorAll('[data-weapon]').forEach(b=>b.classList.toggle('selected',b===el));}));
-on($('start'),'click',()=>request(mode==='select'?'start':mode==='paused'?'resume':'retry'));
+on($('start'),'click',()=>request(mode==='select'?'start':mode==='training_complete'?'battle':mode==='paused'?'resume':'retry'));
 on($('back'),'click',()=>request('select'));
 on($('pause'),'click',()=>request(mode==='paused'?'resume':'pause'));
 on($('mute'),'click',()=>{input.muted=!input.muted;$('mute').textContent=input.muted?'音 OFF':'音 ON';resumeAudio();});
@@ -83,7 +83,7 @@ window.receiveLancerState = raw => {
   const poiseRow=root.querySelector('.poise-row'); if(poiseRow)poiseRow.hidden=!s.tutorialDone;
   bar('poise-bar',s.poise);text('hp-value',s.hp);bar('hp-bar',s.hp);text('st-value',s.stamina);bar('st-bar',s.stamina);text('potion-value',`回復薬 ${s.potions}`);
   const combatState=$('combat-state');
-  const inBattle=s.mode==='battle';
+  const inBattle=s.mode==='battle'||s.mode==='training';
   combatState.hidden=!inBattle;
   if(inBattle){
     let stateName='WATCH',hint='次の攻撃を見ろ';
@@ -98,10 +98,11 @@ window.receiveLancerState = raw => {
   }
   text('charge-label',s.charge>0?(s.chargeAffordable?`溜め ${Math.round(s.charge*100)}%`:'ST不足→通常'):s.weapon===2?`出血 ${s.bleed}%`:['正槍','重槍'][s.weapon]);$('charge-label').classList.toggle('insufficient',s.charge>0&&!s.chargeAffordable);
   if(mode===s.mode)return;mode=s.mode;
-  $('overlay').hidden=s.mode==='battle';$('weapons').hidden=s.mode!=='select';$('back').hidden=s.mode==='select';$('pause').disabled=s.mode!=='battle'&&s.mode!=='paused';
+  $('overlay').hidden=s.mode==='battle'||s.mode==='training';$('weapons').hidden=s.mode!=='select';$('back').hidden=s.mode==='select';$('pause').disabled=s.mode!=='battle'&&s.mode!=='paused';
   $('pause').textContent=s.mode==='paused'?'再開':'一時停止';
   const rankLadder=$('clear-ranks');rankLadder.hidden=true;rankLadder.querySelectorAll('[data-clear-rank]').forEach(el=>el.classList.remove('earned'));
-  if(s.mode==='select'){$('panel-kicker').textContent='CHALLENGER';$('panel-title').textContent='槍を選び、門を越えろ。';$('panel-tip').textContent='槍を選んで、ヘクトランに挑め。';$('start').textContent='この槍で戦う';}
+  if(s.mode==='select'){$('panel-kicker').textContent='CHALLENGER';$('panel-title').textContent='槍を選び、門を越えろ。';$('panel-tip').textContent='まず30秒ほどの訓練で、予告→回避→反撃を試します。';$('start').textContent='この槍で訓練する';}
+  else if(s.mode==='training_complete'){$('panel-kicker').textContent='TRAINING COMPLETE';$('panel-title').textContent='基本動作、習得。';$('panel-tip').textContent='予告を見る。避ける。隙を突く。';$('start').textContent='RANK 10へ';}
   else if(s.mode==='paused'){$('panel-kicker').textContent='PAUSED';$('panel-title').textContent='一時停止';$('panel-tip').textContent='準備ができたら、闘技場へ。';$('start').textContent='戦闘に戻る';}
   else if(s.mode==='victory'||s.mode==='defeat'){const win=s.mode==='victory';const clearRank=s.seconds<35?'S':s.seconds<45?'A':s.seconds<60?'B':'C';if(win){rankLadder.hidden=false;rankLadder.querySelector(`[data-clear-rank="${clearRank}"]`)?.classList.add('earned');}$('panel-kicker').textContent=win?'':'TRY AGAIN';$('panel-title').textContent=win?'城門、突破。':'まだ、槍は折れない。';$('panel-tip').textContent=win?`討伐 ${s.seconds}秒 / 残りHP ${s.hp} / 回復薬 ${s.potions}`:`ヘクトラン 残りHP ${s.bossHp}。赤い予告から横へ避け、攻撃後の隙を狙おう。`;$('start').textContent='もう一度挑む';}
 };
