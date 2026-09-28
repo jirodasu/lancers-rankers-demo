@@ -82,6 +82,9 @@ window.receiveLancerState = raw => {
   text('boss-value',`${s.bossHp} / 600`);bar('boss-bar',s.bossHp/6);text('phase',`PHASE ${s.phase}`);
   const poiseRow=root.querySelector('.poise-row'); if(poiseRow)poiseRow.hidden=!s.tutorialDone;
   bar('poise-bar',s.poise);text('hp-value',s.hp);bar('hp-bar',s.hp);text('st-value',s.stamina);bar('st-bar',s.stamina);text('potion-value',`回復薬 ${s.potions}`);
+  const practiceCountdown=$('practice-countdown');
+  practiceCountdown.hidden=s.mode!=='training_intro';
+  if(s.mode==='training_intro'){const t=s.trainingCountdown||0;text('countdown-value',t>3?'':t>2?'3':t>1?'2':t>0?'1':'スタート');}
   const practiceBadge=$('practice-badge');
   practiceBadge.hidden=s.mode!=='training';
   if(s.mode==='training')text('practice-step',`練習 ${Math.min(3,s.tutorialStep+1)} / 3`);
@@ -101,7 +104,7 @@ window.receiveLancerState = raw => {
   }
   text('charge-label',s.charge>0?(s.chargeAffordable?`溜め ${Math.round(s.charge*100)}%`:'ST不足→通常'):s.weapon===2?`出血 ${s.bleed}%`:['正槍','重槍'][s.weapon]);$('charge-label').classList.toggle('insufficient',s.charge>0&&!s.chargeAffordable);
   if(mode===s.mode)return;mode=s.mode;
-  $('overlay').hidden=s.mode==='battle'||s.mode==='training';$('weapons').hidden=s.mode!=='select';$('back').hidden=s.mode==='select';$('pause').disabled=s.mode!=='battle'&&s.mode!=='paused';
+  $('overlay').hidden=s.mode==='battle'||s.mode==='training'||s.mode==='training_intro';$('weapons').hidden=s.mode!=='select';$('back').hidden=s.mode==='select';$('pause').disabled=s.mode!=='battle'&&s.mode!=='paused';
   $('pause').textContent=s.mode==='paused'?'再開':'一時停止';
   const rankLadder=$('clear-ranks');rankLadder.hidden=true;rankLadder.querySelectorAll('[data-clear-rank]').forEach(el=>el.classList.remove('earned'));
   if(s.mode==='select'){$('panel-kicker').textContent='PRACTICE / 練習';$('panel-title').textContent='まずは基本操作を試そう';$('panel-tip').innerHTML='赤い予告を避けて、敵の隙に槍を突き込め。<br><b>3つできれば練習終了</b>';$('start').textContent='練習をはじめる';}
