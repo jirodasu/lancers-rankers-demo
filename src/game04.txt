@@ -185,6 +185,7 @@ class App:
         self.tutorial_step = 0
         self.tutorial_attack = -1
         self.tutorial_done = False
+        self.training_failed = False
         self.shots, self.fx = [], []
         self.hit_vfx = []
         self.last_tech, self.repeats = '', 0
@@ -241,10 +242,18 @@ class App:
             self.mode = 'select'
         if self.mode == 'select':
             self.weapon_index = max(0, min(2, c.get('weapon', self.weapon_index)))
-        if command in ('start', 'retry'):
+        if command == 'start':
             self.stop_bgm()
             self.reset()
+            self.mode = 'training'
+            self.notice = 'STEP 1/3　赤い予告を見て避けろ'
+            self.sound(2)
+        if command in ('battle', 'retry'):
+            self.stop_bgm()
+            self.reset()
+            self.tutorial_done = True
             self.mode = 'battle'
+            self.notice = '間合いを取り、次の予告を見る'
             self.start_bgm()
             self.sound(2)
         pause = c.get('pause', False)
@@ -255,7 +264,7 @@ class App:
             self.mode = 'battle'
             self.start_bgm()
         self.previous_pause = pause
-        if self.mode != 'battle':
+        if self.mode not in ('battle', 'training'):
             self.charging, self.pending = False, None
             self.previous_attack = c.get('attack', False)
             self.publish()
