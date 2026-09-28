@@ -245,8 +245,9 @@ class App:
         if command == 'start':
             self.stop_bgm()
             self.reset()
-            self.mode = 'training'
-            self.notice = 'STEP 1/3　赤い予告を見て避けろ'
+            self.mode = 'training_intro'
+            self.training_countdown = 4.0
+            self.notice = 'PRACTICE MODE'
             self.sound(2)
         if command in ('battle', 'retry'):
             self.stop_bgm()
@@ -264,6 +265,18 @@ class App:
             self.mode = 'battle'
             self.start_bgm()
         self.previous_pause = pause
+        if self.mode == 'training_intro':
+            self.training_countdown = max(0., self.training_countdown-DT)
+            if self.training_countdown <= 0:
+                self.mode = 'training'
+                self.state, self.timer = 'idle', .25
+                self.notice = 'STEP 1/3　赤い予告を見て避けろ'
+            self.charging, self.pending = False, None
+            self.previous_attack = c.get('attack', False)
+            self.previous_dodge = c.get('dodge', False)
+            self.previous_heal = c.get('heal', False)
+            self.publish()
+            return
         if self.mode not in ('battle', 'training'):
             self.charging, self.pending = False, None
             self.previous_attack = c.get('attack', False)
