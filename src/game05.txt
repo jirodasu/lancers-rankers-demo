@@ -116,6 +116,18 @@
                 self.px, self.py = x, y
         if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
             damage = w['charged'] if full else w['damage']
+            if self.mode == 'training' and self.state == 'recover':
+                if self.tutorial_step == 1 and not full:
+                    self.tutorial_step = 2
+                    self.tutorial_attack = -1
+                    self.state, self.timer = 'idle', .35
+                    self.notice = '✓ 反撃成功　STEP 3/3　次は長押しで溜めろ'
+                elif self.tutorial_step == 2 and full:
+                    self.tutorial_step = 3
+                    self.tutorial_done = True
+                    self.stop_bgm()
+                    self.mode = 'training_complete'
+                    self.notice = '✓ 溜め突き成功'
             was_break = self.state == 'break'
             punish = full and self.state in ('recover', 'break')
             if punish:
@@ -160,11 +172,18 @@
                 self.sound(2)
 
     def hurt(self, damage):
-        if self.mode != 'battle':
+        if self.mode not in ('battle', 'training'):
             return False
         if self.invuln:
             # Normal dodge success stays silent. Preserve the existing hit-consumption behavior.
             return bool(self.dodge)
+        if self.mode == 'training':
+            self.training_failed = True
+            self.invuln, self.charging = .65, False
+            self.pending = None
+            self.text(self.px, self.py-12, 'TRY AGAIN', 8)
+            self.sound(1)
+            return True
         self.hp = max(0, self.hp-damage)
         self.invuln, self.charging = .65, False
         self.pending = None
