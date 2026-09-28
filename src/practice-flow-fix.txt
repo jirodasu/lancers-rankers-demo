@@ -1,0 +1,65 @@
+// PRACTICE_FLOW_FIX v4.6a23
+// Keep practice progress and combat state on separate rows, and repair
+// training_complete / training_paused UI flow without changing combat logic.
+style.textContent += `
+#practice-badge:not([hidden]) ~ #combat-state{
+  left:auto;
+  right:8px;
+  top:52px;
+  transform:none;
+  max-width:calc(100% - 16px);
+}
+#mode-choice.single{grid-template-columns:1fr}
+#mode-choice.single .primary{grid-column:1}
+`;
+
+queueMicrotask(()=>{
+  const originalReceiveLancerState = window.receiveLancerState;
+  if(typeof originalReceiveLancerState !== 'function') return;
+
+  window.receiveLancerState = raw => {
+    originalReceiveLancerState(raw);
+    const s = JSON.parse(raw);
+
+    // Show the requested sequence for a full second each:
+    // 3 -> 2 -> 1 -> START, then controls become active.
+    if(s.mode === 'training_intro'){
+      const t = s.trainingCountdown || 0;
+      text('countdown-value', t > 3 ? '3' : t > 2 ? '2' : t > 1 ? '1' : 'スタート');
+    }
+
+    // The mode-choice container owns the main action button.
+    // Keep it visible on overlay states so training_complete and pause can continue.
+    const modeChoice = $('mode-choice');
+    const practiceStart = $('practice-start');
+    const activePlay = ['battle','training','training_intro'].includes(s.mode);
+    modeChoice.hidden = activePlay;
+    practiceStart.hidden = s.mode !== 'select';
+    modeChoice.classList.toggle('single', s.mode !== 'select');
+
+    // Both normal battle pause and practice pause use the same Resume wording.
+    $('pause').textContent = (s.mode === 'paused' || s.mode === 'training_paused') ? '再開' : '一時停止';
+  };
+
+  // The existing start handler treats training_paused as retry.
+  // Capture the click first and turn it into resume instead.
+  const startButton = $('start');
+  const resumeTrainingClick = event => {
+    if(mode !== 'training_paused') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    request('resume');
+  };
+  startButton.addEventListener('click', resumeTrainingClick, true);
+  removers.push(()=>startButton.removeEventListener('click', resumeTrainingClick, true));
+
+  // Keyboard Enter should mirror the same practice resume behavior.
+  const resumeTrainingKey = event => {
+    if(event.code !== 'Enter' || event.repeat || mode !== 'training_paused') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    request('resume');
+  };
+  window.addEventListener('keydown', resumeTrainingKey, true);
+  removers.push(()=>window.removeEventListener('keydown', resumeTrainingKey, true));
+});
