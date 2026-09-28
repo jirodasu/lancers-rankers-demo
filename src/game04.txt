@@ -258,12 +258,15 @@ class App:
             self.start_bgm()
             self.sound(2)
         pause = c.get('pause', False)
-        if (pause and not self.previous_pause or command == 'pause') and self.mode == 'battle':
+        if (pause and not self.previous_pause or command == 'pause') and self.mode in ('battle', 'training'):
+            was_training = self.mode == 'training'
             self.stop_bgm()
-            self.mode = 'paused'
-        if command == 'resume' and self.mode == 'paused':
-            self.mode = 'battle'
-            self.start_bgm()
+            self.mode = 'training_paused' if was_training else 'paused'
+        if command == 'resume' and self.mode in ('paused', 'training_paused'):
+            was_training = self.mode == 'training_paused'
+            self.mode = 'training' if was_training else 'battle'
+            if not was_training:
+                self.start_bgm()
         self.previous_pause = pause
         if self.mode == 'training_intro':
             self.training_countdown = max(0., self.training_countdown-DT)
