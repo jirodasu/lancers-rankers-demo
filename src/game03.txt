@@ -82,6 +82,9 @@ window.receiveLancerState = raw => {
   text('boss-value',`${s.bossHp} / 600`);bar('boss-bar',s.bossHp/6);text('phase',`PHASE ${s.phase}`);
   const poiseRow=root.querySelector('.poise-row'); if(poiseRow)poiseRow.hidden=!s.tutorialDone;
   bar('poise-bar',s.poise);text('hp-value',s.hp);bar('hp-bar',s.hp);text('st-value',s.stamina);bar('st-bar',s.stamina);text('potion-value',`回復薬 ${s.potions}`);
+  const practiceBadge=$('practice-badge');
+  practiceBadge.hidden=s.mode!=='training';
+  if(s.mode==='training')text('practice-step',`練習 ${Math.min(3,s.tutorialStep+1)} / 3`);
   const combatState=$('combat-state');
   const inBattle=s.mode==='battle'||s.mode==='training';
   combatState.hidden=!inBattle;
@@ -101,8 +104,8 @@ window.receiveLancerState = raw => {
   $('overlay').hidden=s.mode==='battle'||s.mode==='training';$('weapons').hidden=s.mode!=='select';$('back').hidden=s.mode==='select';$('pause').disabled=s.mode!=='battle'&&s.mode!=='paused';
   $('pause').textContent=s.mode==='paused'?'再開':'一時停止';
   const rankLadder=$('clear-ranks');rankLadder.hidden=true;rankLadder.querySelectorAll('[data-clear-rank]').forEach(el=>el.classList.remove('earned'));
-  if(s.mode==='select'){$('panel-kicker').textContent='CHALLENGER';$('panel-title').textContent='槍を選び、門を越えろ。';$('panel-tip').textContent='まず30秒ほどの訓練で、予告→回避→反撃を試します。';$('start').textContent='この槍で訓練する';}
-  else if(s.mode==='training_complete'){$('panel-kicker').textContent='TRAINING COMPLETE';$('panel-title').textContent='基本動作、習得。';$('panel-tip').textContent='予告を見る。避ける。隙を突く。';$('start').textContent='RANK 10へ';}
+  if(s.mode==='select'){$('panel-kicker').textContent='PRACTICE / 練習';$('panel-title').textContent='まずは基本操作を試そう';$('panel-tip').innerHTML='赤い予告を避けて、敵の隙に槍を突き込め。<br><b>3つできれば練習終了</b>';$('start').textContent='練習をはじめる';}
+  else if(s.mode==='training_complete'){$('panel-kicker').textContent='PRACTICE COMPLETE → RANK 10';$('panel-title').textContent='基本動作、習得。';$('panel-tip').textContent='予告を見る。避ける。隙を突く。ここから本番。';$('start').textContent='RANK 10へ';}
   else if(s.mode==='paused'){$('panel-kicker').textContent='PAUSED';$('panel-title').textContent='一時停止';$('panel-tip').textContent='準備ができたら、闘技場へ。';$('start').textContent='戦闘に戻る';}
   else if(s.mode==='victory'||s.mode==='defeat'){const win=s.mode==='victory';const clearRank=s.seconds<35?'S':s.seconds<45?'A':s.seconds<60?'B':'C';if(win){rankLadder.hidden=false;rankLadder.querySelector(`[data-clear-rank="${clearRank}"]`)?.classList.add('earned');}$('panel-kicker').textContent=win?'':'TRY AGAIN';$('panel-title').textContent=win?'城門、突破。':'まだ、槍は折れない。';$('panel-tip').textContent=win?`討伐 ${s.seconds}秒 / 残りHP ${s.hp} / 回復薬 ${s.potions}`:`ヘクトラン 残りHP ${s.bossHp}。赤い予告から横へ避け、攻撃後の隙を狙おう。`;$('start').textContent='もう一度挑む';}
 };
