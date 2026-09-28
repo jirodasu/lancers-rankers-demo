@@ -2,6 +2,6 @@ style.textContent="@import url(\'https://fonts.googleapis.com/css2?family=WDXL+L
 
 style.textContent += ":host,#app,#app *,#rotate,#rotate *{font-family:\'WDXL Lubrifont JP N\',sans-serif!important}";
 
-style.textContent += "#practice-badge{position:absolute;z-index:10;left:8px;top:8px;display:flex;align-items:center;gap:7px;padding:5px 8px;border:1px solid #d6b574;background:#17140dcc;pointer-events:none;box-shadow:0 3px 10px #0008}#practice-badge b{font-size:11px;letter-spacing:1.4px;color:#f0d7a5}#practice-badge span{font-size:11px;color:#d8e0e8}";
+style.textContent += "#practice-badge{position:absolute;z-index:10;left:8px;top:8px;display:flex;align-items:center;gap:7px;padding:5px 8px;border:1px solid #d6b574;background:#17140dcc;pointer-events:none;box-shadow:0 3px 10px #0008}#practice-badge b{font-size:20px;letter-spacing:1.4px;color:#f0d7a5}#practice-badge span{font-size:16px;color:#d8e0e8}";
 
 style.textContent += "#clear-ranks{display:flex;align-items:center;justify-content:center;gap:15px;height:62px;margin:0 0 6px}#clear-ranks .clear-rank-label{flex:none;color:#a8b7c9;font:700 11px/1 monospace;letter-spacing:1.6px;margin-left:1px}#clear-ranks span{display:grid;place-items:center;width:38px;height:38px;border:0;color:#68778a;background:transparent;font:800 23px/1 monospace;transition:transform .18s ease,color .18s ease,text-shadow .18s ease}#clear-ranks span.earned{transform:scale(1.42);color:#e1c687;background:transparent;text-shadow:0 0 16px #d6b57488}";
