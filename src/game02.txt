@@ -2,6 +2,8 @@ style.textContent="@import url(\'https://fonts.googleapis.com/css2?family=WDXL+L
 
 style.textContent += ":host,#app,#app *,#rotate,#rotate *{font-family:\'WDXL Lubrifont JP N\',sans-serif!important}";
 
+style.textContent += "#mode-choice{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:absolute;left:12px;right:12px;bottom:12px;z-index:20}#mode-choice .primary{position:static;inset:auto;width:100%;min-height:52px;box-shadow:none}#practice-start{min-height:52px;border:1px solid #d6b574;background:#171f2b;color:#f0d7a5;font-weight:800}";
+
 style.textContent += "#practice-countdown{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#020712c9;pointer-events:none;text-align:center}#practice-countdown b{font-size:28px;letter-spacing:3px;color:#f0d7a5}#practice-countdown strong{font-size:64px;line-height:1;color:#fff}";
 
 style.textContent += "#practice-badge{position:absolute;z-index:10;left:8px;top:8px;display:flex;align-items:center;gap:7px;padding:5px 8px;border:1px solid #d6b574;background:#17140dcc;pointer-events:none;box-shadow:0 3px 10px #0008}#practice-badge b{font-size:20px;letter-spacing:1.4px;color:#f0d7a5}#practice-badge span{font-size:16px;color:#d8e0e8}";
