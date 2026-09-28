@@ -132,7 +132,7 @@
                 self.state, self.timer = 'idle', .4 if self.phase==3 else .65
 
     def snapshot(self):
-        return dict(mode=self.mode, hp=self.hp, stamina=round(self.stamina), potions=self.potions, bossHp=self.bhp, phase=self.phase, poise=round(self.poise), bleed=self.bleed, charge=round(min(1,self.charge/self.weapon['charge']),2) if self.charging else 0, chargeAffordable=self.stamina>=self.weapon['ccost'], weapon=self.weapon_index, notice=self.feedback if self.feedback_time else self.notice, state=self.state, seconds=round(self.elapsed,1), tutorialStep=self.tutorial_step, tutorialDone=self.tutorial_done)
+        return dict(mode=self.mode, hp=self.hp, stamina=round(self.stamina), potions=self.potions, bossHp=self.bhp, phase=self.phase, poise=round(self.poise), bleed=self.bleed, charge=round(min(1,self.charge/self.weapon['charge']),2) if self.charging else 0, chargeAffordable=self.stamina>=self.weapon['ccost'], weapon=self.weapon_index, notice=self.feedback if self.feedback_time else self.notice, state=self.state, seconds=round(self.elapsed,1), tutorialStep=self.tutorial_step, tutorialDone=self.tutorial_done, trainingCountdown=round(getattr(self, 'training_countdown', 0),2))
 
     def publish(self):
         if window is not None:
