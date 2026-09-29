@@ -166,10 +166,29 @@
             self.flash = .12
             self.text(self.bx, self.by-11, damage)
             self.phase = 3 if self.bhp <= 180 else 2 if self.bhp <= 360 else 1
-            if self.bhp == 0:
+            if self.bhp == 0 and self.mode == 'battle':
+                # v4.6a29: let the killing blow breathe before the result screen.
+                # 21F (~0.35 s) hit stop, then a short knockback into a kneeling pose,
+                # followed by a silent victory title beat before the normal result UI.
                 self.stop_bgm()
-                self.mode = 'victory'
-                self.sound(2)
+                self.victory_pending = True
+                self.victory_timer = 2.0
+                self.hitstop_frames = 21
+                self.lock = max(self.lock, 3.0)
+                self.invuln = max(self.invuln, 3.0)
+                self.charging, self.pending = False, None
+                self.state = 'recover'
+                self.flash = .12
+                self.notice = 'RANK 10 撃破'
+                kx, ky = unit(self.bx-self.px, self.by-self.py)
+                start_x, start_y = self.bx, self.by
+                target_x, target_y = start_x+kx*22, start_y+ky*22
+                target_dist = math.hypot(target_x-CX, target_y-CY)
+                if target_dist > R-10:
+                    tx, ty = unit(target_x-CX, target_y-CY)
+                    target_x, target_y = CX+tx*(R-10), CY+ty*(R-10)
+                self.victory_start = (start_x, start_y)
+                self.victory_target = (target_x, target_y)
 
     def hurt(self, damage):
         if self.mode not in ('battle', 'training'):
