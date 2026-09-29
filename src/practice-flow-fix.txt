@@ -1,7 +1,8 @@
-// PRACTICE_FLOW_FIX v4.6a27
+// PRACTICE_FLOW_FIX v4.6a29
 // Four-step clear tutorial: movement -> dodge -> attack -> charged attack.
 // Each instruction is latched on screen and changes only after the player performs
 // the instructed control and the corresponding core lesson has been cleared.
+// Also owns the browser-side presentation for the Hectoran defeat beat.
 style.textContent += `
 #combat-state.practice-mode{
   left:50%;
@@ -61,6 +62,46 @@ style.textContent += `
   font-style:normal;
   color:#8fcce8;
 }
+#victory-flash{
+  position:absolute;
+  inset:0;
+  z-index:40;
+  background:#fff;
+  pointer-events:none;
+}
+#victory-banner{
+  position:absolute;
+  z-index:39;
+  left:0;
+  right:0;
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  padding:15px 12px 16px;
+  border-top:1px solid #d6b574;
+  border-bottom:1px solid #d6b574;
+  background:#04080ee8;
+  box-shadow:0 0 28px #000;
+  text-align:center;
+  pointer-events:none;
+}
+#victory-banner b{
+  color:#f2d89b;
+  font-size:28px;
+  font-weight:900;
+  letter-spacing:.08em;
+  line-height:1.15;
+  text-shadow:0 2px 12px #000;
+}
+#victory-banner span{
+  color:#d9e1e8;
+  font-size:14px;
+  font-weight:600;
+  letter-spacing:.04em;
+}
 .action.practice-disabled{opacity:.28!important;filter:saturate(.25) brightness(.7)!important}
 #mode-choice.single{grid-template-columns:1fr}
 #mode-choice.single .primary{grid-column:1}
@@ -85,12 +126,28 @@ queueMicrotask(()=>{
   practiceCountdown.appendChild(practiceIntroGuide);
   removers.push(()=>practiceIntroGuide.remove());
 
+  const victoryFlash = document.createElement('div');
+  victoryFlash.id = 'victory-flash';
+  victoryFlash.hidden = true;
+  arena.appendChild(victoryFlash);
+  removers.push(()=>victoryFlash.remove());
+
+  const victoryBanner = document.createElement('div');
+  victoryBanner.id = 'victory-banner';
+  victoryBanner.hidden = true;
+  victoryBanner.innerHTML = '<b>RANK 10 撃破</b><span>城門の守槍 ヘクトラン</span>';
+  arena.appendChild(victoryBanner);
+  removers.push(()=>victoryBanner.remove());
+
   let practiceStage = 0; // 0 move, 1 dodge, 2 attack, 3 charged attack
   let moveProgress = 0;
   let previousMode = '';
   let latestCoreStep = 0;
   let dodgePressedForStage = false;
   let attackPressedForStage = false;
+  let victorySequenceActive = false;
+  let victoryBannerTimer = 0;
+  let victoryFlashToken = 0;
 
   const stages = [
     {title:'1/4　移動', instruction:'スティックを動かして移動しよう', detail:'少し移動できれば次へ', state:'watch'},
@@ -130,6 +187,44 @@ queueMicrotask(()=>{
     if(practiceStage === 0) return false;
     if(practiceStage === 1) return name === 'dodge';
     return name === 'attack';
+  }
+
+  function stopVictoryPresentation(){
+    victorySequenceActive = false;
+    victoryFlashToken += 1;
+    victoryFlash.hidden = true;
+    victoryBanner.hidden = true;
+    if(victoryBannerTimer){
+      clearTimeout(victoryBannerTimer);
+      victoryBannerTimer = 0;
+    }
+  }
+
+  function startVictoryPresentation(){
+    if(victorySequenceActive) return;
+    victorySequenceActive = true;
+
+    // Two browser frames of white flash. The combat simulation itself handles
+    // the separate 21-frame (~0.35 s) killing-blow hit stop.
+    const token = ++victoryFlashToken;
+    let frames = 2;
+    victoryFlash.hidden = false;
+    const flashFrame = () => {
+      if(token !== victoryFlashToken) return;
+      frames -= 1;
+      if(frames <= 0){
+        victoryFlash.hidden = true;
+        return;
+      }
+      requestAnimationFrame(flashFrame);
+    };
+    requestAnimationFrame(flashFrame);
+
+    // 0.35 s hit stop + about 1 s of silent recoil/kneel, then hold the title
+    // for the final second before the existing result panel appears.
+    victoryBannerTimer = setTimeout(()=>{
+      if(victorySequenceActive) victoryBanner.hidden = false;
+    },1350);
   }
 
   for(const name of ['attack','dodge','heal']){
@@ -237,8 +332,41 @@ queueMicrotask(()=>{
       $('heal').classList.remove('practice-disabled');
     }
 
+    // A zero-HP Hectoran stays in battle mode for the cinematic beat. Hide combat
+    // prompts, dim all controls, block pause, flash white, then reveal the victory title.
+    const defeatSequence = s.mode === 'battle' && Number(s.bossHp) <= 0;
+    if(defeatSequence){
+      startVictoryPresentation();
+      combatState.hidden = true;
+      practiceGuide.hidden = true;
+      $('attack').classList.add('practice-disabled');
+      $('dodge').classList.add('practice-disabled');
+      $('heal').classList.add('practice-disabled');
+      $('pause').disabled = true;
+    }else if(victorySequenceActive){
+      stopVictoryPresentation();
+    }
+
     previousMode = s.mode;
   };
+
+  // Do not let the regular pause handler interrupt the fixed defeat sequence.
+  const pauseButton = $('pause');
+  const blockVictoryPauseClick = event => {
+    if(!victorySequenceActive) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+  pauseButton.addEventListener('click',blockVictoryPauseClick,true);
+  removers.push(()=>pauseButton.removeEventListener('click',blockVictoryPauseClick,true));
+
+  const blockVictoryPauseKey = event => {
+    if(!victorySequenceActive || event.code !== 'KeyP') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+  window.addEventListener('keydown',blockVictoryPauseKey,true);
+  removers.push(()=>window.removeEventListener('keydown',blockVictoryPauseKey,true));
 
   // The existing start handler treats training_paused as retry.
   // Capture the click first and turn it into resume instead.
@@ -261,4 +389,6 @@ queueMicrotask(()=>{
   };
   window.addEventListener('keydown',resumeTrainingKey,true);
   removers.push(()=>window.removeEventListener('keydown',resumeTrainingKey,true));
+
+  removers.push(()=>stopVictoryPresentation());
 });
