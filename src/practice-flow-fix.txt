@@ -1,7 +1,7 @@
-// PRACTICE_FLOW_FIX v4.6a25
+// PRACTICE_FLOW_FIX v4.6a26
 // Four-step clear tutorial: movement -> dodge -> attack -> charged attack.
-// Keep the existing Python training logic for dodge/attack/charge, and add a
-// lightweight movement gate plus focused UI/input guidance in the browser layer.
+// Each instruction is latched on screen and changes only after the player performs
+// the instructed control and the corresponding core lesson has been cleared.
 style.textContent += `
 #combat-state.practice-mode{
   left:50%;
@@ -55,26 +55,40 @@ queueMicrotask(()=>{
   let practiceStage = 0; // 0 move, 1 dodge, 2 attack, 3 charged attack
   let moveProgress = 0;
   let previousMode = '';
-  let lastCoreStep = 0;
-  let clearMessage = '';
-  let clearUntil = 0;
+  let latestCoreStep = 0;
+  let dodgePressedForStage = false;
+  let attackPressedForStage = false;
 
   const stages = [
-    {title:'1/4　移動', instruction:'スティックを動かして移動しよう', detail:'少し移動できればクリア', state:'watch'},
-    {title:'2/4　回避', instruction:'赤い予告が出たら「避」を押そう', detail:'攻撃を受けずに避ければクリア', state:'danger'},
-    {title:'3/4　攻撃', instruction:'敵の隙に「突」を押そう', detail:'通常の突きを1回当てればクリア', state:'chance'},
+    {title:'1/4　移動', instruction:'スティックを動かして移動しよう', detail:'少し移動できれば次へ', state:'watch'},
+    {title:'2/4　回避', instruction:'赤い予告が出たら「避」を押そう', detail:'「避」を使って攻撃をかわす', state:'danger'},
+    {title:'3/4　攻撃', instruction:'敵の隙に「突」を押そう', detail:'通常の突きを1回当てる', state:'chance'},
     {title:'4/4　溜め攻撃', instruction:'「突」を長押し → 離す', detail:'溜め突きを1回当てれば練習終了', state:'chance'},
   ];
 
-  function flashClear(label){
-    clearMessage = `✓ ${label} CLEAR`;
-    clearUntil = performance.now() + 700;
+  function setPracticeStage(next){
+    if(next <= practiceStage) return;
+    practiceStage = Math.min(3,next);
+    if(practiceStage === 1) dodgePressedForStage = false;
+    if(practiceStage === 2) attackPressedForStage = false;
   }
 
-  function setPracticeStage(next, clearLabel=''){
-    if(next <= practiceStage) return;
-    if(clearLabel) flashClear(clearLabel);
-    practiceStage = Math.min(3,next);
+  function syncPracticeSwitch(){
+    // Do not advance merely because the boss state changed.
+    // The screen switches only after the instructed control was actually used.
+    if(practiceStage === 1 && dodgePressedForStage && latestCoreStep >= 1){
+      setPracticeStage(2);
+    }
+    if(practiceStage === 2 && attackPressedForStage && latestCoreStep >= 2){
+      setPracticeStage(3);
+    }
+  }
+
+  function markExpectedInput(name){
+    if(mode !== 'training') return;
+    if(practiceStage === 1 && name === 'dodge') dodgePressedForStage = true;
+    if(practiceStage === 2 && name === 'attack') attackPressedForStage = true;
+    syncPracticeSwitch();
   }
 
   function actionAllowed(name){
@@ -87,20 +101,23 @@ queueMicrotask(()=>{
 
   for(const name of ['attack','dodge','heal']){
     const el = $(name);
-    const blockIrrelevantPracticeAction = event => {
+    const handlePracticeAction = event => {
+      if(mode === 'training' && actionAllowed(name)) markExpectedInput(name);
       if(actionAllowed(name)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
     };
-    el.addEventListener('pointerdown',blockIrrelevantPracticeAction,true);
-    removers.push(()=>el.removeEventListener('pointerdown',blockIrrelevantPracticeAction,true));
+    el.addEventListener('pointerdown',handlePracticeAction,true);
+    removers.push(()=>el.removeEventListener('pointerdown',handlePracticeAction,true));
   }
 
-  const blockIrrelevantPracticeKey = event => {
+  const handlePracticeKey = event => {
     if(mode !== 'training') return;
     const attackKey = ['KeyZ','Space'].includes(event.code);
     const dodgeKey = ['KeyX','ShiftLeft','ShiftRight'].includes(event.code);
     const healKey = ['KeyC','KeyE'].includes(event.code);
+    if(attackKey && actionAllowed('attack')) markExpectedInput('attack');
+    if(dodgeKey && actionAllowed('dodge')) markExpectedInput('dodge');
     if((attackKey && !actionAllowed('attack')) ||
        (dodgeKey && !actionAllowed('dodge')) ||
        (healKey && !actionAllowed('heal'))){
@@ -108,16 +125,14 @@ queueMicrotask(()=>{
       event.stopImmediatePropagation();
     }
   };
-  window.addEventListener('keydown',blockIrrelevantPracticeKey,true);
-  removers.push(()=>window.removeEventListener('keydown',blockIrrelevantPracticeKey,true));
+  window.addEventListener('keydown',handlePracticeKey,true);
+  removers.push(()=>window.removeEventListener('keydown',handlePracticeKey,true));
 
   const moveWatch = setInterval(()=>{
     if(mode !== 'training' || practiceStage !== 0) return;
     const mag = Math.min(1,Math.hypot(Number(input.x)||0,Number(input.y)||0));
     if(mag > .25) moveProgress += mag * .05;
-    if(moveProgress >= .38){
-      setPracticeStage(1,'1/4　移動');
-    }
+    if(moveProgress >= .38) setPracticeStage(1);
   },50);
   removers.push(()=>clearInterval(moveWatch));
 
@@ -128,9 +143,9 @@ queueMicrotask(()=>{
     if(s.mode === 'training_intro' && previousMode !== 'training_intro'){
       practiceStage = 0;
       moveProgress = 0;
-      lastCoreStep = 0;
-      clearMessage = '';
-      clearUntil = 0;
+      latestCoreStep = 0;
+      dodgePressedForStage = false;
+      attackPressedForStage = false;
     }
 
     // Show the requested sequence for a full second each:
@@ -152,18 +167,12 @@ queueMicrotask(()=>{
     // Both normal battle pause and practice pause use the same Resume wording.
     $('pause').textContent = (s.mode === 'paused' || s.mode === 'training_paused') ? '再開' : '一時停止';
 
-    // Sync the remaining three clear steps with the proven Python tutorial states.
-    // Core step 0=dodge, 1=normal attack, 2=charged attack, 3=complete.
     if(s.mode === 'training'){
-      const coreStep = Number(s.tutorialStep)||0;
-      if(practiceStage >= 1 && coreStep > lastCoreStep){
-        if(coreStep === 1) setPracticeStage(2,'2/4　回避');
-        else if(coreStep === 2) setPracticeStage(3,'3/4　攻撃');
-        lastCoreStep = coreStep;
-      }
+      latestCoreStep = Number(s.tutorialStep)||0;
+      syncPracticeSwitch();
     }
 
-    // Practice mode uses one task window only. The old PRACTICE progress badge stays hidden.
+    // Practice mode uses one latched task window only. Boss state changes never rewrite it.
     const practiceBadge = $('practice-badge');
     const combatState = $('combat-state');
     const inTraining = s.mode === 'training';
@@ -174,10 +183,9 @@ queueMicrotask(()=>{
     if(inTraining){
       const stage = stages[practiceStage];
       combatState.dataset.state = stage.state;
-      const showingClear = clearUntil > performance.now();
-      text('state-label', showingClear ? 'CLEAR' : stage.title);
-      text('notice', showingClear ? clearMessage : stage.instruction);
-      text('practice-guide-detail', showingClear ? '次の項目へ' : stage.detail);
+      text('state-label',stage.title);
+      text('notice',stage.instruction);
+      text('practice-guide-detail',stage.detail);
 
       $('attack').classList.toggle('practice-disabled',!actionAllowed('attack'));
       $('dodge').classList.toggle('practice-disabled',!actionAllowed('dodge'));
@@ -201,7 +209,7 @@ queueMicrotask(()=>{
     request('resume');
   };
   startButton.addEventListener('click', resumeTrainingClick, true);
-  removers.push(()=>startButton.removeEventListener('click', resumeTrainingClick, true));
+  removers.push(()=>startButton.removeEventListener('click',resumeTrainingClick,true));
 
   // Keyboard Enter should mirror the same practice resume behavior.
   const resumeTrainingKey = event => {
@@ -210,6 +218,6 @@ queueMicrotask(()=>{
     event.stopImmediatePropagation();
     request('resume');
   };
-  window.addEventListener('keydown', resumeTrainingKey, true);
-  removers.push(()=>window.removeEventListener('keydown', resumeTrainingKey, true));
+  window.addEventListener('keydown',resumeTrainingKey,true);
+  removers.push(()=>window.removeEventListener('keydown',resumeTrainingKey,true));
 });
