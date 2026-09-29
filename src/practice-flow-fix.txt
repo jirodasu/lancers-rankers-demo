@@ -1,13 +1,36 @@
-// PRACTICE_FLOW_FIX v4.6a23
-// Keep practice progress and combat state on separate rows, and repair
-// training_complete / training_paused UI flow without changing combat logic.
+// PRACTICE_FLOW_FIX v4.6a24
+// Keep practice instructions readable without adding another status window.
 style.textContent += `
-#practice-badge:not([hidden]) ~ #combat-state{
+#combat-state.practice-mode{
   left:auto;
   right:8px;
-  top:52px;
+  top:8px;
   transform:none;
   max-width:calc(100% - 16px);
+}
+#practice-guide{
+  position:absolute;
+  z-index:9;
+  right:10px;
+  top:50px;
+  max-width:calc(100% - 20px);
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:2px;
+  pointer-events:none;
+  text-align:right;
+  text-shadow:0 2px 6px #000;
+}
+#practice-guide b{
+  font-size:15px;
+  line-height:1.35;
+  color:#f3f6fa;
+}
+#practice-guide span{
+  font-size:12px;
+  line-height:1.35;
+  color:#c2cfdd;
 }
 #mode-choice.single{grid-template-columns:1fr}
 #mode-choice.single .primary{grid-column:1}
@@ -16,6 +39,14 @@ style.textContent += `
 queueMicrotask(()=>{
   const originalReceiveLancerState = window.receiveLancerState;
   if(typeof originalReceiveLancerState !== 'function') return;
+
+  const arena = $('arena');
+  const practiceGuide = document.createElement('div');
+  practiceGuide.id = 'practice-guide';
+  practiceGuide.hidden = true;
+  practiceGuide.innerHTML = '<b id="practice-guide-action"></b><span id="practice-guide-detail"></span>';
+  arena.appendChild(practiceGuide);
+  removers.push(()=>practiceGuide.remove());
 
   window.receiveLancerState = raw => {
     originalReceiveLancerState(raw);
@@ -39,6 +70,30 @@ queueMicrotask(()=>{
 
     // Both normal battle pause and practice pause use the same Resume wording.
     $('pause').textContent = (s.mode === 'paused' || s.mode === 'training_paused') ? '再開' : '一時停止';
+
+    // Practice mode: remove the PRACTICE progress window and use only the combat-state window.
+    // Directly below it, tell the player which control to use and what to do now.
+    const practiceBadge = $('practice-badge');
+    const combatState = $('combat-state');
+    const inTraining = s.mode === 'training';
+    practiceBadge.hidden = true;
+    combatState.classList.toggle('practice-mode', inTraining);
+    practiceGuide.hidden = !inTraining;
+
+    if(inTraining){
+      let action = '移動スティックで位置を調整';
+      let detail = '次の攻撃予告を見る';
+      if(s.state === 'prep' || s.state === 'attack'){
+        action = '「避」を押して回避';
+        detail = '赤い予告範囲から外れる';
+      }else if(s.state === 'recover' || s.state === 'break'){
+        const charged = s.tutorialStep >= 2 || s.state === 'break' || /長押し|長い隙|溜め/.test(s.notice || '');
+        action = charged ? '「突」を長押し → 離す' : '「突」を押して攻撃';
+        detail = charged ? '溜め突きを敵に当てる' : '敵の隙に槍を当てる';
+      }
+      text('practice-guide-action', action);
+      text('practice-guide-detail', detail);
+    }
   };
 
   // The existing start handler treats training_paused as retry.
