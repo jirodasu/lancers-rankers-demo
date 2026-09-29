@@ -1,4 +1,4 @@
-// PRACTICE_FLOW_FIX v4.6a26
+// PRACTICE_FLOW_FIX v4.6a27
 // Four-step clear tutorial: movement -> dodge -> attack -> charged attack.
 // Each instruction is latched on screen and changes only after the player performs
 // the instructed control and the corresponding core lesson has been cleared.
@@ -35,6 +35,32 @@ style.textContent += `
   line-height:1.35;
   color:#c2cfdd;
 }
+#practice-intro-guide{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  width:min(330px,calc(100% - 28px));
+  margin-top:8px;
+  padding:10px 12px;
+  border:1px solid #46566b;
+  background:#07101bd9;
+  box-shadow:0 4px 14px #0008;
+}
+#practice-intro-guide b{
+  font-size:17px;
+  letter-spacing:0;
+  color:#f0d7a5;
+}
+#practice-intro-guide span{
+  font-size:13px;
+  line-height:1.45;
+  color:#d8e0e8;
+}
+#practice-intro-guide em{
+  font-style:normal;
+  color:#8fcce8;
+}
 .action.practice-disabled{opacity:.28!important;filter:saturate(.25) brightness(.7)!important}
 #mode-choice.single{grid-template-columns:1fr}
 #mode-choice.single .primary{grid-column:1}
@@ -51,6 +77,13 @@ queueMicrotask(()=>{
   practiceGuide.innerHTML = '<span id="practice-guide-detail"></span>';
   arena.appendChild(practiceGuide);
   removers.push(()=>practiceGuide.remove());
+
+  const practiceCountdown = $('practice-countdown');
+  const practiceIntroGuide = document.createElement('div');
+  practiceIntroGuide.id = 'practice-intro-guide';
+  practiceIntroGuide.innerHTML = '<b>先ずは移動から</b><span><em>スマホ</em> → 左指でスティック操作</span><span><em>PC</em> → WASDキーか、マウスでスティックをドラッグ</span>';
+  practiceCountdown.appendChild(practiceIntroGuide);
+  removers.push(()=>practiceIntroGuide.remove());
 
   let practiceStage = 0; // 0 move, 1 dodge, 2 attack, 3 charged attack
   let moveProgress = 0;
@@ -102,8 +135,12 @@ queueMicrotask(()=>{
   for(const name of ['attack','dodge','heal']){
     const el = $(name);
     const handlePracticeAction = event => {
-      if(mode === 'training' && actionAllowed(name)) markExpectedInput(name);
-      if(actionAllowed(name)) return;
+      // Snapshot permission BEFORE markExpectedInput() because marking the expected
+      // input may advance the latched stage. Re-checking after the stage switch used
+      // to swallow the very dodge/attack pointerdown that cleared the instruction.
+      const allowed = actionAllowed(name);
+      if(mode === 'training' && allowed) markExpectedInput(name);
+      if(allowed) return;
       event.preventDefault();
       event.stopImmediatePropagation();
     };
@@ -116,11 +153,16 @@ queueMicrotask(()=>{
     const attackKey = ['KeyZ','Space'].includes(event.code);
     const dodgeKey = ['KeyX','ShiftLeft','ShiftRight'].includes(event.code);
     const healKey = ['KeyC','KeyE'].includes(event.code);
-    if(attackKey && actionAllowed('attack')) markExpectedInput('attack');
-    if(dodgeKey && actionAllowed('dodge')) markExpectedInput('dodge');
-    if((attackKey && !actionAllowed('attack')) ||
-       (dodgeKey && !actionAllowed('dodge')) ||
-       (healKey && !actionAllowed('heal'))){
+    // Same permission snapshot as pointer input: stage switching must never consume
+    // the keydown that triggered the switch.
+    const attackAllowed = actionAllowed('attack');
+    const dodgeAllowed = actionAllowed('dodge');
+    const healAllowed = actionAllowed('heal');
+    if(attackKey && attackAllowed) markExpectedInput('attack');
+    if(dodgeKey && dodgeAllowed) markExpectedInput('dodge');
+    if((attackKey && !attackAllowed) ||
+       (dodgeKey && !dodgeAllowed) ||
+       (healKey && !healAllowed)){
       event.preventDefault();
       event.stopImmediatePropagation();
     }
@@ -148,8 +190,7 @@ queueMicrotask(()=>{
       attackPressedForStage = false;
     }
 
-    // Show the requested sequence for a full second each:
-    // 3 -> 2 -> 1 -> START, then controls become active.
+    // 3 -> 2 -> 1 -> START. Keep the movement instructions visible throughout.
     if(s.mode === 'training_intro'){
       const t = s.trainingCountdown || 0;
       text('countdown-value', t > 3 ? '3' : t > 2 ? '2' : t > 1 ? '1' : 'スタート');
@@ -208,7 +249,7 @@ queueMicrotask(()=>{
     event.stopImmediatePropagation();
     request('resume');
   };
-  startButton.addEventListener('click', resumeTrainingClick, true);
+  startButton.addEventListener('click',resumeTrainingClick,true);
   removers.push(()=>startButton.removeEventListener('click',resumeTrainingClick,true));
 
   // Keyboard Enter should mirror the same practice resume behavior.
