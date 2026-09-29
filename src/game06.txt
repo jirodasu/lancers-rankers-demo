@@ -48,6 +48,33 @@
     def boss_update(self):
         if self.mode not in ('battle', 'training'):
             return
+        # v4.6a29: after the 21F killing-blow hit stop, move Hectoran backward,
+        # then hold the existing kneeling/break pose while the arena stays silent.
+        # The final result screen is delayed until this two-second post-hit beat ends.
+        if getattr(self, 'victory_pending', False) and self.bhp == 0:
+            if self.hitstop_frames > 0:
+                return
+            self.victory_timer = max(0., self.victory_timer-DT)
+            elapsed = 2.0-self.victory_timer
+            start_x, start_y = self.victory_start
+            target_x, target_y = self.victory_target
+            if elapsed < .35:
+                t = max(0., min(1., elapsed/.35))
+                # Ease out so the initial recoil is sharp and the landing settles quickly.
+                eased = 1-(1-t)*(1-t)
+                self.bx = start_x+(target_x-start_x)*eased
+                self.by = start_y+(target_y-start_y)*eased
+                self.state = 'recover'
+                self.flash = .12
+            else:
+                self.bx, self.by = target_x, target_y
+                self.state = 'break'
+                self.flash = 0.
+            if self.victory_timer <= 0:
+                self.victory_pending = False
+                self.mode = 'victory'
+                self.sound(2)
+            return
         self.timer -= DT  # Timers decrement exactly once per simulation step.
         if self.state == 'idle':
             dx, dy = self.px-self.bx, self.py-self.by
