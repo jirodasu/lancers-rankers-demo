@@ -1,37 +1,41 @@
-// PRACTICE_FLOW_FIX v4.6a24
-// Keep practice instructions readable without adding another status window.
+// PRACTICE_FLOW_FIX v4.6a25
+// Four-step clear tutorial: movement -> dodge -> attack -> charged attack.
+// Keep the existing Python training logic for dodge/attack/charge, and add a
+// lightweight movement gate plus focused UI/input guidance in the browser layer.
 style.textContent += `
 #combat-state.practice-mode{
-  left:auto;
-  right:8px;
+  left:50%;
+  right:auto;
   top:8px;
-  transform:none;
-  max-width:calc(100% - 16px);
+  transform:translateX(-50%);
+  max-width:calc(100% - 20px);
+  min-width:min(300px,calc(100% - 20px));
+  justify-content:center;
 }
+#combat-state.practice-mode b{font-size:14px}
+#combat-state.practice-mode #notice{font-size:13px}
 #practice-guide{
   position:absolute;
   z-index:9;
+  left:10px;
   right:10px;
-  top:50px;
-  max-width:calc(100% - 20px);
+  top:48px;
   display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:2px;
+  justify-content:center;
   pointer-events:none;
-  text-align:right;
+  text-align:center;
   text-shadow:0 2px 6px #000;
 }
-#practice-guide b{
-  font-size:15px;
-  line-height:1.35;
-  color:#f3f6fa;
-}
 #practice-guide span{
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:4px;
+  background:#07101bcc;
   font-size:12px;
   line-height:1.35;
   color:#c2cfdd;
 }
+.action.practice-disabled{opacity:.28!important;filter:saturate(.25) brightness(.7)!important}
 #mode-choice.single{grid-template-columns:1fr}
 #mode-choice.single .primary{grid-column:1}
 `;
@@ -44,13 +48,90 @@ queueMicrotask(()=>{
   const practiceGuide = document.createElement('div');
   practiceGuide.id = 'practice-guide';
   practiceGuide.hidden = true;
-  practiceGuide.innerHTML = '<b id="practice-guide-action"></b><span id="practice-guide-detail"></span>';
+  practiceGuide.innerHTML = '<span id="practice-guide-detail"></span>';
   arena.appendChild(practiceGuide);
   removers.push(()=>practiceGuide.remove());
+
+  let practiceStage = 0; // 0 move, 1 dodge, 2 attack, 3 charged attack
+  let moveProgress = 0;
+  let previousMode = '';
+  let lastCoreStep = 0;
+  let clearMessage = '';
+  let clearUntil = 0;
+
+  const stages = [
+    {title:'1/4　移動', instruction:'スティックを動かして移動しよう', detail:'少し移動できればクリア', state:'watch'},
+    {title:'2/4　回避', instruction:'赤い予告が出たら「避」を押そう', detail:'攻撃を受けずに避ければクリア', state:'danger'},
+    {title:'3/4　攻撃', instruction:'敵の隙に「突」を押そう', detail:'通常の突きを1回当てればクリア', state:'chance'},
+    {title:'4/4　溜め攻撃', instruction:'「突」を長押し → 離す', detail:'溜め突きを1回当てれば練習終了', state:'chance'},
+  ];
+
+  function flashClear(label){
+    clearMessage = `✓ ${label} CLEAR`;
+    clearUntil = performance.now() + 700;
+  }
+
+  function setPracticeStage(next, clearLabel=''){
+    if(next <= practiceStage) return;
+    if(clearLabel) flashClear(clearLabel);
+    practiceStage = Math.min(3,next);
+  }
+
+  function actionAllowed(name){
+    if(mode !== 'training') return true;
+    if(name === 'heal') return false;
+    if(practiceStage === 0) return false;
+    if(practiceStage === 1) return name === 'dodge';
+    return name === 'attack';
+  }
+
+  for(const name of ['attack','dodge','heal']){
+    const el = $(name);
+    const blockIrrelevantPracticeAction = event => {
+      if(actionAllowed(name)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+    el.addEventListener('pointerdown',blockIrrelevantPracticeAction,true);
+    removers.push(()=>el.removeEventListener('pointerdown',blockIrrelevantPracticeAction,true));
+  }
+
+  const blockIrrelevantPracticeKey = event => {
+    if(mode !== 'training') return;
+    const attackKey = ['KeyZ','Space'].includes(event.code);
+    const dodgeKey = ['KeyX','ShiftLeft','ShiftRight'].includes(event.code);
+    const healKey = ['KeyC','KeyE'].includes(event.code);
+    if((attackKey && !actionAllowed('attack')) ||
+       (dodgeKey && !actionAllowed('dodge')) ||
+       (healKey && !actionAllowed('heal'))){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  };
+  window.addEventListener('keydown',blockIrrelevantPracticeKey,true);
+  removers.push(()=>window.removeEventListener('keydown',blockIrrelevantPracticeKey,true));
+
+  const moveWatch = setInterval(()=>{
+    if(mode !== 'training' || practiceStage !== 0) return;
+    const mag = Math.min(1,Math.hypot(Number(input.x)||0,Number(input.y)||0));
+    if(mag > .25) moveProgress += mag * .05;
+    if(moveProgress >= .38){
+      setPracticeStage(1,'1/4　移動');
+    }
+  },50);
+  removers.push(()=>clearInterval(moveWatch));
 
   window.receiveLancerState = raw => {
     originalReceiveLancerState(raw);
     const s = JSON.parse(raw);
+
+    if(s.mode === 'training_intro' && previousMode !== 'training_intro'){
+      practiceStage = 0;
+      moveProgress = 0;
+      lastCoreStep = 0;
+      clearMessage = '';
+      clearUntil = 0;
+    }
 
     // Show the requested sequence for a full second each:
     // 3 -> 2 -> 1 -> START, then controls become active.
@@ -71,29 +152,43 @@ queueMicrotask(()=>{
     // Both normal battle pause and practice pause use the same Resume wording.
     $('pause').textContent = (s.mode === 'paused' || s.mode === 'training_paused') ? '再開' : '一時停止';
 
-    // Practice mode: remove the PRACTICE progress window and use only the combat-state window.
-    // Directly below it, tell the player which control to use and what to do now.
+    // Sync the remaining three clear steps with the proven Python tutorial states.
+    // Core step 0=dodge, 1=normal attack, 2=charged attack, 3=complete.
+    if(s.mode === 'training'){
+      const coreStep = Number(s.tutorialStep)||0;
+      if(practiceStage >= 1 && coreStep > lastCoreStep){
+        if(coreStep === 1) setPracticeStage(2,'2/4　回避');
+        else if(coreStep === 2) setPracticeStage(3,'3/4　攻撃');
+        lastCoreStep = coreStep;
+      }
+    }
+
+    // Practice mode uses one task window only. The old PRACTICE progress badge stays hidden.
     const practiceBadge = $('practice-badge');
     const combatState = $('combat-state');
     const inTraining = s.mode === 'training';
     practiceBadge.hidden = true;
-    combatState.classList.toggle('practice-mode', inTraining);
+    combatState.classList.toggle('practice-mode',inTraining);
     practiceGuide.hidden = !inTraining;
 
     if(inTraining){
-      let action = '移動スティックで位置を調整';
-      let detail = '次の攻撃予告を見る';
-      if(s.state === 'prep' || s.state === 'attack'){
-        action = '「避」を押して回避';
-        detail = '赤い予告範囲から外れる';
-      }else if(s.state === 'recover' || s.state === 'break'){
-        const charged = s.tutorialStep >= 2 || s.state === 'break' || /長押し|長い隙|溜め/.test(s.notice || '');
-        action = charged ? '「突」を長押し → 離す' : '「突」を押して攻撃';
-        detail = charged ? '溜め突きを敵に当てる' : '敵の隙に槍を当てる';
-      }
-      text('practice-guide-action', action);
-      text('practice-guide-detail', detail);
+      const stage = stages[practiceStage];
+      combatState.dataset.state = stage.state;
+      const showingClear = clearUntil > performance.now();
+      text('state-label', showingClear ? 'CLEAR' : stage.title);
+      text('notice', showingClear ? clearMessage : stage.instruction);
+      text('practice-guide-detail', showingClear ? '次の項目へ' : stage.detail);
+
+      $('attack').classList.toggle('practice-disabled',!actionAllowed('attack'));
+      $('dodge').classList.toggle('practice-disabled',!actionAllowed('dodge'));
+      $('heal').classList.toggle('practice-disabled',true);
+    }else{
+      $('attack').classList.remove('practice-disabled');
+      $('dodge').classList.remove('practice-disabled');
+      $('heal').classList.remove('practice-disabled');
     }
+
+    previousMode = s.mode;
   };
 
   // The existing start handler treats training_paused as retry.
