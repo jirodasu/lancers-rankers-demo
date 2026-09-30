@@ -23,6 +23,7 @@ jobs:
             src/game02.txt \
             src/layout-fix.txt \
             src/practice-flow-fix.txt \
+            src/balance-ui-fix.txt \
             src/game03.txt \
             src/game04.txt \
             src/game05.txt \
