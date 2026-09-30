@@ -26,7 +26,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v4.6a29 — MADE WITH PYXEL</small>
+    <small>LANCERS / RANKERS — v4.6a30 — MADE WITH PYXEL</small>
     <h1>ランサーズ・ランカーズ<br>RANK 10 体験版</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
@@ -37,10 +37,11 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='4.6a29';
+  const VERSION='4.6a30';
 
-  // Browser-native hit SFX bootstrap. Keep this outside the concatenated Python source.
-  // Future swaps only need replacing the three files under assets/sfx/.
+  // Browser-native confirmed-hit SFX. Keep this outside the concatenated Python source.
+  // Prime every Audio element from the explicit boot gesture so iOS/Safari is less
+  // likely to reject a later hit sound that originates from the Pyxel update loop.
   const sfxSources={
     normal:`./assets/sfx/hit_normal.mp3?v=${VERSION}`,
     charge:`./assets/sfx/hit_charge.mp3?v=${VERSION}`,
@@ -48,14 +49,44 @@ small{display:block;color:#8999ad;margin-top:14px}
   };
   const sfxPools={};
   const sfxCursors={normal:0,charge:0,break:0};
+  const primedHitAudio=new WeakSet();
   for(const [name,src] of Object.entries(sfxSources)){
-    sfxPools[name]=Array.from({length:3},()=>{
+    sfxPools[name]=Array.from({length:4},()=>{
       const audio=new Audio(src);
       audio.preload='auto';
+      audio.playsInline=true;
       audio.volume=0.1;
       audio.load();
       return audio;
     });
+  }
+  function primeLancerHitSfx(){
+    for(const pool of Object.values(sfxPools)){
+      for(const audio of pool){
+        if(primedHitAudio.has(audio))continue;
+        primedHitAudio.add(audio);
+        const wasMuted=audio.muted;
+        audio.muted=true;
+        try{
+          const result=audio.play();
+          const settle=()=>{
+            try{audio.pause();if(audio.readyState>=1)audio.currentTime=0;}catch{}
+            audio.muted=wasMuted;
+          };
+          if(result?.then){
+            result.then(settle).catch(()=>{
+              audio.muted=wasMuted;
+              primedHitAudio.delete(audio);
+            });
+          }else{
+            settle();
+          }
+        }catch{
+          audio.muted=wasMuted;
+          primedHitAudio.delete(audio);
+        }
+      }
+    }
   }
   window.lancerHitSfxSources=sfxSources;
   window.playLancerHitSfx=kind=>{
@@ -63,12 +94,41 @@ small{display:block;color:#8999ad;margin-top:14px}
     const key=Object.prototype.hasOwnProperty.call(sfxPools,kind)?kind:'normal';
     const pool=sfxPools[key];
     const audio=pool[sfxCursors[key]++%pool.length];
-    try{
-      audio.pause();
-      audio.currentTime=0;
-      const result=audio.play();
-      if(result?.catch)result.catch(()=>{});
-    }catch{}
+    let retried=false;
+    const playNow=()=>{
+      try{
+        audio.pause();
+        if(audio.readyState>=1)audio.currentTime=0;
+        const result=audio.play();
+        if(result?.catch)result.catch(()=>{
+          // A not-yet-ready media element can reject intermittently on mobile.
+          // Retry once after it becomes playable instead of silently dropping the hit.
+          if(retried)return;
+          retried=true;
+          const retry=()=>{
+            try{
+              if(audio.readyState>=1)audio.currentTime=0;
+              const again=audio.play();
+              if(again?.catch)again.catch(()=>{});
+            }catch{}
+          };
+          if(audio.readyState<3){
+            audio.addEventListener('canplay',retry,{once:true});
+            audio.load();
+          }
+        });
+      }catch{
+        if(retried)return;
+        retried=true;
+        try{
+          audio.addEventListener('canplay',()=>{
+            try{audio.currentTime=0;audio.play().catch?.(()=>{});}catch{}
+          },{once:true});
+          audio.load();
+        }catch{}
+      }
+    };
+    playNow();
   };
 
   const SOURCE_PARTS=[
@@ -99,6 +159,7 @@ small{display:block;color:#8999ad;margin-top:14px}
   }
   reload.onclick=()=>location.reload();
   button.onclick=()=>{
+    primeLancerHitSfx();
     if(window.pyxelContext?.resolveInput){
       window.pyxelContext.resolveInput();
       button.disabled=true;
