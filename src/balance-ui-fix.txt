@@ -1,0 +1,24 @@
+// BALANCE_UI_FIX v4.6a31
+// Keep weapon-select copy and the in-battle weapon label aligned with current balance.
+queueMicrotask(()=>{
+  const weaponButtons = root.querySelectorAll('[data-weapon]');
+  const weaponCopy = [
+    '威力20 / 溜め40 · バランス型',
+    '威力38 / 溜め70 · 体勢を崩す',
+    '威力11 / 溜め19 · 手数型',
+  ];
+  weaponButtons.forEach((button,index)=>{
+    const detail = button.querySelector('span');
+    if(detail && weaponCopy[index]) detail.textContent = weaponCopy[index];
+  });
+
+  const previousReceiveLancerState = window.receiveLancerState;
+  if(typeof previousReceiveLancerState !== 'function') return;
+  window.receiveLancerState = raw => {
+    previousReceiveLancerState(raw);
+    const s = JSON.parse(raw);
+    if(Number(s.weapon) === 2 && !(Number(s.charge) > 0)){
+      text('charge-label','双短槍');
+    }
+  };
+});
