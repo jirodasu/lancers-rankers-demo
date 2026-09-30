@@ -1,4 +1,4 @@
-// PRACTICE_FLOW_FIX v4.6a29
+// PRACTICE_FLOW_FIX v4.6a30
 // Four-step clear tutorial: movement -> dodge -> attack -> charged attack.
 // Each instruction is latched on screen and changes only after the player performs
 // the instructed control and the corresponding core lesson has been cleared.
@@ -220,11 +220,11 @@ queueMicrotask(()=>{
     };
     requestAnimationFrame(flashFrame);
 
-    // 0.35 s hit stop + about 1 s of silent recoil/kneel, then hold the title
-    // for the final second before the existing result panel appears.
+    // Wait two full seconds after the killing blow before revealing the title,
+    // then keep it visible for about one second before the result panel appears.
     victoryBannerTimer = setTimeout(()=>{
       if(victorySequenceActive) victoryBanner.hidden = false;
-    },1350);
+    },2000);
   }
 
   for(const name of ['attack','dodge','heal']){
