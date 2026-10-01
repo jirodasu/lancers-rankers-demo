@@ -26,7 +26,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v4.6a37 — MADE WITH PYXEL</small>
+    <small>LANCERS / RANKERS — v4.6a38 — MADE WITH PYXEL</small>
     <h1>ランサーズ・ランカーズ<br>RANK 10 体験版</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
@@ -37,7 +37,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='4.6a37';
+  const VERSION='4.6a38';
 
   const sfxSources={
     normal:`./assets/sfx/hit_normal.mp3?v=${VERSION}`,
@@ -319,6 +319,120 @@ small{display:block;color:#8999ad;margin-top:14px}
     def hurt(self, damage):`,
         '連突処理'
       );
+
+      // v4.6a38: user-authored Pyxel MML Studio theme for the weapon-select screen.
+      const SELECT_BGM_CH1=`T108 @1 V58 Q72 O4 L8
+D R F A G F E D
+D R F A >C <A G F
+E R G B- A G F E
+D R A R G F E R
+D F A >D <C A G F
+E G B- >C <B- A G E
+F A >C D <A G F E
+D R A R D4 R4`;
+      const SELECT_BGM_CH2=`T108 @2 V34 Q48 Y-6 O4 L8
+[D F A F D F A F
+C E G E C E G E
+B- D F D B- D F D
+A C# E C# A C# E C#]2`;
+      const SELECT_BGM_CH3=`T108 @0 V52 Q82 O2 L4
+[D D A A
+C C G G
+B- B- F F
+A A E E]2`;
+      const SELECT_BGM_CH4=`T108 @3 V30 Q38 O2 L16
+[C R R R G R R R C R R R G R R R]8`;
+
+      const unitMarker='\ndef unit(x, y):';
+      if(!source.includes(unitMarker))throw new Error('武器選択BGMの挿入位置が見つかりません。ページを再読み込みしてください。');
+      source=source.replace(unitMarker,
+`\n# CHOOSE YOUR SPEAR — weapon select theme, authored in Pyxel MML Studio.
+SELECT_BGM_CH1 = """${SELECT_BGM_CH1}"""
+SELECT_BGM_CH2 = """${SELECT_BGM_CH2}"""
+SELECT_BGM_CH3 = """${SELECT_BGM_CH3}"""
+SELECT_BGM_CH4 = """${SELECT_BGM_CH4}"""
+\ndef unit(x, y):`);
+
+      const oldBgmSetup=`            pyxel.sounds[10].mml(BGM_CH1)
+            pyxel.sounds[11].mml(BGM_CH2)
+            pyxel.sounds[12].mml(BGM_CH3)
+            pyxel.sounds[13].mml(BGM_CH4)
+            if self.extended_audio:
+                pyxel.musics[0].set([10], [11], [12], [13])
+            else:
+                pyxel.musics[0].set([10], [11], [12])
+            self.ready_bgm = True`;
+      const newBgmSetup=`            pyxel.sounds[10].mml(BGM_CH1)
+            pyxel.sounds[11].mml(BGM_CH2)
+            pyxel.sounds[12].mml(BGM_CH3)
+            pyxel.sounds[13].mml(BGM_CH4)
+            pyxel.sounds[14].mml(SELECT_BGM_CH1)
+            pyxel.sounds[15].mml(SELECT_BGM_CH2)
+            pyxel.sounds[16].mml(SELECT_BGM_CH3)
+            pyxel.sounds[17].mml(SELECT_BGM_CH4)
+            if self.extended_audio:
+                pyxel.musics[0].set([10], [11], [12], [13])
+                pyxel.musics[1].set([14], [15], [16], [17])
+            else:
+                pyxel.musics[0].set([10], [11], [12])
+                pyxel.musics[1].set([14], [15], [16])
+            self.ready_bgm = True`;
+      if(!source.includes(oldBgmSetup))throw new Error('BGM初期化部分が見つかりません。ページを再読み込みしてください。');
+      source=source.replace(oldBgmSetup,newBgmSetup);
+
+      const oldBgmMethods=`    def start_bgm(self):
+        if self.ready_bgm and not self.muted and self.mode == 'battle' and not self.bgm_playing:
+            pyxel.playm(0, loop=True)
+            self.bgm_playing = True
+
+    def stop_bgm(self):`;
+      const newBgmMethods=`    def start_bgm(self):
+        if self.ready_bgm and not self.muted and self.mode == 'battle' and not self.bgm_playing:
+            pyxel.playm(0, loop=True)
+            self.bgm_playing = True
+
+    def start_select_bgm(self):
+        if self.ready_bgm and not self.muted and self.mode == 'select' and not self.bgm_playing:
+            pyxel.playm(1, loop=True)
+            self.bgm_playing = True
+
+    def stop_bgm(self):`;
+      if(!source.includes(oldBgmMethods))throw new Error('BGM再生処理が見つかりません。ページを再読み込みしてください。');
+      source=source.replace(oldBgmMethods,newBgmMethods);
+
+      const oldInitialPublish=`        self.reset()
+        self.publish()
+        if auto_run:`;
+      const newInitialPublish=`        self.reset()
+        self.publish()
+        self.start_select_bgm()
+        if auto_run:`;
+      if(!source.includes(oldInitialPublish))throw new Error('初期画面BGMの開始位置が見つかりません。ページを再読み込みしてください。');
+      source=source.replace(oldInitialPublish,newInitialPublish);
+
+      const oldMuteResume=`            elif self.mode == 'battle':
+                self.start_bgm()`;
+      const newMuteResume=`            elif self.mode == 'battle':
+                self.start_bgm()
+            elif self.mode == 'select':
+                self.start_select_bgm()`;
+      if(!source.includes(oldMuteResume))throw new Error('ミュート解除処理が見つかりません。ページを再読み込みしてください。');
+      source=source.replace(oldMuteResume,newMuteResume);
+
+      const oldSelectCommand=`        if command == 'select':
+            self.stop_bgm()
+            self.mode = 'select'
+        if self.mode == 'select':
+            self.weapon_index = max(0, min(2, c.get('weapon', self.weapon_index)))`;
+      const newSelectCommand=`        if command == 'select':
+            self.stop_bgm()
+            self.mode = 'select'
+            self.start_select_bgm()
+        if self.mode == 'select':
+            self.weapon_index = max(0, min(2, c.get('weapon', self.weapon_index)))
+            self.start_select_bgm()`;
+      if(!source.includes(oldSelectCommand))throw new Error('武器選択画面の遷移処理が見つかりません。ページを再読み込みしてください。');
+      source=source.replace(oldSelectCommand,newSelectCommand);
 
       if(!source.includes('BROWSER_UI = r')||!source.includes('class App:')||!source.includes('練習モード')||!source.includes('本番をはじめる')||!source.includes('BGM_CH1')||!source.includes('LAYOUT_STABILITY_FIX')||!source.includes('PRACTICE_FLOW_FIX')||!source.includes('BALANCE_UI_FIX')||!source.includes('RANK_TIMER_FIX')){
         throw new Error('ゲームデータが不完全です。ページを再読み込みしてください。');
