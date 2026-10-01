@@ -1,0 +1,46 @@
+// RANK_TIMER_FIX v4.6a32
+// Freeze the clear time on the exact state update where Hectoran reaches 0 HP.
+// Result presentation can continue for several seconds without changing the recorded time.
+// Clear-rank thresholds: S <= 40.0s, A <= 50.0s, B <= 65.0s, C > 65.0s.
+queueMicrotask(()=>{
+  const previousReceiveLancerState = window.receiveLancerState;
+  if(typeof previousReceiveLancerState !== 'function') return;
+
+  let frozenClearSeconds = null;
+
+  window.receiveLancerState = raw => {
+    const s = JSON.parse(raw);
+    const bossHp = Number(s.bossHp);
+    const liveSeconds = Number(s.seconds);
+
+    // A fresh battle/training state with a living boss starts a new timing session.
+    if((s.mode === 'battle' || s.mode === 'training' || s.mode === 'training_intro') && bossHp > 0){
+      frozenClearSeconds = null;
+    }
+
+    // The first 0-HP battle snapshot is the killing-blow frame. Keep that time forever
+    // through hit stop, recoil/kneel presentation and the delayed result transition.
+    if(s.mode === 'battle' && bossHp <= 0 && frozenClearSeconds === null && Number.isFinite(liveSeconds)){
+      frozenClearSeconds = liveSeconds;
+    }
+
+    if(frozenClearSeconds !== null && bossHp <= 0 && (s.mode === 'battle' || s.mode === 'victory')){
+      s.seconds = frozenClearSeconds;
+    }
+
+    previousReceiveLancerState(JSON.stringify(s));
+
+    // The legacy result renderer still contains the old 35/45/60 thresholds.
+    // Override only the earned-rank highlight here so gameplay/battle code stays untouched.
+    if(s.mode !== 'victory') return;
+    const seconds = Number(s.seconds);
+    if(!Number.isFinite(seconds)) return;
+
+    const clearRank = seconds <= 40 ? 'S' : seconds <= 50 ? 'A' : seconds <= 65 ? 'B' : 'C';
+    const rankLadder = $('clear-ranks');
+    if(!rankLadder) return;
+    rankLadder.hidden = false;
+    rankLadder.querySelectorAll('[data-clear-rank]').forEach(el=>el.classList.remove('earned'));
+    rankLadder.querySelector(`[data-clear-rank="${clearRank}"]`)?.classList.add('earned');
+  };
+});
