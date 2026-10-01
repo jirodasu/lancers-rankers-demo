@@ -26,7 +26,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v4.6a36 — MADE WITH PYXEL</small>
+    <small>LANCERS / RANKERS — v4.6a37 — MADE WITH PYXEL</small>
     <h1>ランサーズ・ランカーズ<br>RANK 10 体験版</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
@@ -37,7 +37,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='4.6a36';
+  const VERSION='4.6a37';
 
   const sfxSources={
     normal:`./assets/sfx/hit_normal.mp3?v=${VERSION}`,
@@ -175,7 +175,7 @@ small{display:block;color:#8999ad;margin-top:14px}
       }
       let source=(await Promise.all(responses.map(r=>r.text()))).join('\n');
 
-      // v4.6a36: 双短槍・紅牙の溜めを、実時間差のある3連突きへ試験変更。
+      // v4.6a37: 双短槍・紅牙の溜めを、実時間差のある3連突きへ試験変更。
       const patchRequired=(before,after,label)=>{
         if(!source.includes(before))throw new Error(`紅牙${label}の調整元データが見つかりません。ページを再読み込みしてください。`);
         source=source.replace(before,after);
@@ -215,7 +215,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 `        if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
             # v4.6a31: explicit per-weapon hit values.`,
 `        if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
-            # v4.6a36: 双短槍・紅牙の溜めは0.08秒間隔の3連突き。
+            # v4.6a37: 双短槍・紅牙の溜めは0.08秒間隔の3連突き。
             if full and self.weapon_index == 2:
                 if self.mode == 'training' and self.state == 'recover' and self.tutorial_step == 2:
                     self.tutorial_step = 3
@@ -283,7 +283,16 @@ small{display:block;color:#8999ad;margin-top:14px}
         contact_y = self.by - uy*8 + vy*offset
         self.hit_vfx.append([contact_x, contact_y, self.aa, 2 if burst_index == 2 else 1, .36])
         self.flash = .08
-        self.text(self.bx+vx*offset, self.by-11, damage)
+
+        # v4.6a37: spread the three damage numbers across the screen and show a clear total.
+        # Using screen-space offsets keeps them readable regardless of spear direction.
+        damage_x = self.bx + (-12, 0, 12)[burst_index]
+        damage_y = self.by - 14 - burst_index*2
+        damage_col = 10 if burst_index == 2 else 7
+        self.fx.append([damage_x, damage_y, str(damage), damage_col, .72])
+        if burst_index == 2:
+            self.fx.append([self.bx-13, self.by-29, 'TOTAL '+str(damage*3), 10, 1.05])
+
         self.phase = 3 if self.bhp <= 180 else 2 if self.bhp <= 360 else 1
 
         if self.bhp == 0 and self.mode == 'battle':
