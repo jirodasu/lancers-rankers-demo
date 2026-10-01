@@ -99,7 +99,9 @@
         if self.stamina < cost:
             return
         self.stamina -= cost
-        self.regen_delay = .65
+        # v4.6a33: Benikiba is the rapid-hit weapon, so repeated attacks should not
+        # suppress stamina recovery for as long as the other two spears.
+        self.regen_delay = .25 if self.weapon_index == 2 else .65
         # Weapon identity applies to both normal and charged attacks.
         self.lock = w['duration'] + w['recovery']
         self.attack_anim = w['duration']
