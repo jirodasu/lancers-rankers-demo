@@ -26,7 +26,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v4.6a35 — MADE WITH PYXEL</small>
+    <small>LANCERS / RANKERS — v4.6a36 — MADE WITH PYXEL</small>
     <h1>ランサーズ・ランカーズ<br>RANK 10 体験版</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
@@ -37,11 +37,8 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='4.6a35';
+  const VERSION='4.6a36';
 
-  // Browser-native confirmed-hit SFX. Keep this outside the concatenated Python source.
-  // Prime every Audio element from the explicit boot gesture so iOS/Safari is less
-  // likely to reject a later hit sound that originates from the Pyxel update loop.
   const sfxSources={
     normal:`./assets/sfx/hit_normal.mp3?v=${VERSION}`,
     charge:`./assets/sfx/hit_charge.mp3?v=${VERSION}`,
@@ -78,9 +75,7 @@ small{display:block;color:#8999ad;margin-top:14px}
               audio.muted=wasMuted;
               primedHitAudio.delete(audio);
             });
-          }else{
-            settle();
-          }
+          }else settle();
         }catch{
           audio.muted=wasMuted;
           primedHitAudio.delete(audio);
@@ -101,8 +96,6 @@ small{display:block;color:#8999ad;margin-top:14px}
         if(audio.readyState>=1)audio.currentTime=0;
         const result=audio.play();
         if(result?.catch)result.catch(()=>{
-          // A not-yet-ready media element can reject intermittently on mobile.
-          // Retry once after it becomes playable instead of silently dropping the hit.
           if(retried)return;
           retried=true;
           const retry=()=>{
@@ -144,6 +137,7 @@ small{display:block;color:#8999ad;margin-top:14px}
     './src/game06.txt',
     './src/game07.txt'
   ].map(path=>`${path}?v=${VERSION}`);
+
   const status=document.getElementById('boot-status');
   const button=document.getElementById('boot');
   const reload=document.getElementById('reload');
@@ -179,21 +173,143 @@ small{display:block;color:#8999ad;margin-top:14px}
       for(const response of responses){
         if(!response.ok)throw new Error(`ゲームデータを取得できませんでした: ${response.status}`);
       }
-      // Always put a newline between source fragments. This prevents a missing EOF newline
-      // in one fragment from joining two Python statements at the file boundary.
       let source=(await Promise.all(responses.map(r=>r.text()))).join('\n');
 
-      // v4.6a35: apply the current Benikiba balance trial to the concatenated source.
-      // Keep the original split files stable while this value set is being playtested.
-      const balanceReplacements=[
-        ["dict(name='双短槍・紅牙', damage=11, charged=19, cost=10, ccost=22, charge=.5, duration=.14, recovery=.28, reach=20, width=6, poise=2, cpoise=6, color=14)","dict(name='双短槍・紅牙', damage=15, charged=19, cost=8, ccost=30, charge=.5, duration=.14, recovery=.28, reach=20, width=6, poise=2, cpoise=6, color=14)"],
-        ["damage_table = ((20,40,52), (38,70,84), (11,19,25))","damage_table = ((20,40,52), (38,70,84), (15,19,25))"],
-      ];
-      for(const [before,after] of balanceReplacements){
-        if(!source.includes(before))throw new Error('紅牙の調整元データが見つかりません。ページを再読み込みしてください。');
+      // v4.6a36: 双短槍・紅牙の溜めを、実時間差のある3連突きへ試験変更。
+      const patchRequired=(before,after,label)=>{
+        if(!source.includes(before))throw new Error(`紅牙${label}の調整元データが見つかりません。ページを再読み込みしてください。`);
         source=source.replace(before,after);
-      }
-      source=source.replaceAll('威力11 / 溜め19','威力15 / 溜め19');
+      };
+
+      patchRequired(
+        "dict(name='双短槍・紅牙', damage=11, charged=19, cost=10, ccost=22, charge=.5, duration=.14, recovery=.28, reach=20, width=6, poise=2, cpoise=6, color=14)",
+        "dict(name='双短槍・紅牙', damage=15, charged=24, cost=8, ccost=30, charge=.5, duration=.14, recovery=.28, reach=20, width=6, poise=2, cpoise=9, color=14)",
+        '基本値'
+      );
+      patchRequired(
+        "damage_table = ((20,40,52), (38,70,84), (11,19,25))",
+        "damage_table = ((20,40,52), (38,70,84), (15,24,30))",
+        'ダメージ表'
+      );
+      source=source.replaceAll('威力11 / 溜め19','威力15 / 連突8×3');
+
+      patchRequired(
+`        self.hit_vfx = []
+        self.charging = False`,
+`        self.hit_vfx = []
+        self.benikiba_burst = []
+        self.charging = False`,
+        '連突初期化'
+      );
+
+      patchRequired(
+`        self.elapsed += DT
+        for name in ('invuln', 'dodge', 'lock', 'regen_delay', 'attack_anim', 'flash'):`,
+`        self.elapsed += DT
+        self.update_benikiba_burst(DT)
+        for name in ('invuln', 'dodge', 'lock', 'regen_delay', 'attack_anim', 'flash'):`,
+        '連突更新'
+      );
+
+      patchRequired(
+`        if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
+            # v4.6a31: explicit per-weapon hit values.`,
+`        if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
+            # v4.6a36: 双短槍・紅牙の溜めは0.08秒間隔の3連突き。
+            if full and self.weapon_index == 2:
+                if self.mode == 'training' and self.state == 'recover' and self.tutorial_step == 2:
+                    self.tutorial_step = 3
+                    self.tutorial_done = True
+                    self.stop_bgm()
+                    self.mode = 'training_complete'
+                    self.notice = '✓ 三連突き成功'
+                    return
+                punish = self.state in ('recover', 'break')
+                if punish:
+                    self.text(self.bx-10, self.by-22, 'PUNISH', 10)
+                per_hit = 10 if punish else 8
+                self.benikiba_burst = [
+                    [0.0, per_hit, 3, 0],
+                    [.08, per_hit, 3, 1],
+                    [.16, per_hit, 3, 2],
+                ]
+                self.update_benikiba_burst(0.0)
+                return
+            # v4.6a31: explicit per-weapon hit values.`,
+        '連突発動'
+      );
+
+      patchRequired(
+`    def hurt(self, damage):`,
+`    def update_benikiba_burst(self, dt):
+        if not self.benikiba_burst:
+            return
+        pending = self.benikiba_burst
+        self.benikiba_burst = []
+        for hit in pending:
+            hit[0] -= dt
+            if hit[0] <= 1e-8:
+                self.apply_benikiba_burst_hit(hit[1], hit[2], hit[3])
+                if self.bhp <= 0:
+                    self.benikiba_burst = []
+                    return
+            else:
+                self.benikiba_burst.append(hit)
+
+    def apply_benikiba_burst_hit(self, damage, poise_damage, burst_index):
+        if self.bhp <= 0 or self.mode not in ('battle', 'training'):
+            return
+        was_break = self.state == 'break'
+        if not was_break:
+            self.poise += poise_damage
+            if self.poise >= 100:
+                self.poise = 0
+                self.state, self.timer = 'break', 3.0
+                self.notice = 'BREAK! 溜め突きで追撃'
+                self.text(self.bx-10, self.by-16, 'BREAK!', 10)
+
+        self.bhp = max(0, self.bhp-damage)
+        if window is not None and not self.muted:
+            try:
+                window.playLancerHitSfx('charge' if burst_index == 2 else 'normal')
+            except Exception:
+                pass
+
+        self.hitstop_frames = max(self.hitstop_frames, 3 if burst_index == 2 else 1)
+        ux, uy = math.cos(self.aa), math.sin(self.aa)
+        vx, vy = -uy, ux
+        offset = (-3, 3, 0)[burst_index]
+        contact_x = self.bx - ux*8 + vx*offset
+        contact_y = self.by - uy*8 + vy*offset
+        self.hit_vfx.append([contact_x, contact_y, self.aa, 2 if burst_index == 2 else 1, .36])
+        self.flash = .08
+        self.text(self.bx+vx*offset, self.by-11, damage)
+        self.phase = 3 if self.bhp <= 180 else 2 if self.bhp <= 360 else 1
+
+        if self.bhp == 0 and self.mode == 'battle':
+            self.stop_bgm()
+            self.victory_pending = True
+            self.victory_timer = 2.65
+            self.hitstop_frames = 21
+            self.lock = max(self.lock, 3.2)
+            self.invuln = max(self.invuln, 3.2)
+            self.charging, self.pending = False, None
+            self.state = 'recover'
+            self.flash = .12
+            self.notice = 'RANK 10 撃破'
+            kx, ky = unit(self.bx-self.px, self.by-self.py)
+            start_x, start_y = self.bx, self.by
+            target_x, target_y = start_x+kx*22, start_y+ky*22
+            target_dist = math.hypot(target_x-CX, target_y-CY)
+            if target_dist > R-10:
+                tx, ty = unit(target_x-CX, target_y-CY)
+                target_x, target_y = CX+tx*(R-10), CY+ty*(R-10)
+            self.victory_start = (start_x, start_y)
+            self.victory_target = (target_x, target_y)
+
+    def hurt(self, damage):`,
+        '連突処理'
+      );
 
       if(!source.includes('BROWSER_UI = r')||!source.includes('class App:')||!source.includes('練習モード')||!source.includes('本番をはじめる')||!source.includes('BGM_CH1')||!source.includes('LAYOUT_STABILITY_FIX')||!source.includes('PRACTICE_FLOW_FIX')||!source.includes('BALANCE_UI_FIX')||!source.includes('RANK_TIMER_FIX')){
         throw new Error('ゲームデータが不完全です。ページを再読み込みしてください。');
