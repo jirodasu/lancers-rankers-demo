@@ -26,7 +26,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v4.6a33 — MADE WITH PYXEL</small>
+    <small>LANCERS / RANKERS — v4.6a34 — MADE WITH PYXEL</small>
     <h1>ランサーズ・ランカーズ<br>RANK 10 体験版</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
@@ -37,7 +37,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='4.6a33';
+  const VERSION='4.6a34';
 
   // Browser-native confirmed-hit SFX. Keep this outside the concatenated Python source.
   // Prime every Audio element from the explicit boot gesture so iOS/Safari is less
@@ -179,7 +179,9 @@ small{display:block;color:#8999ad;margin-top:14px}
       for(const response of responses){
         if(!response.ok)throw new Error(`ゲームデータを取得できませんでした: ${response.status}`);
       }
-      const source=(await Promise.all(responses.map(r=>r.text()))).join('');
+      // Always put a newline between source fragments. This prevents a missing EOF newline
+      // in one fragment from joining two Python statements at the file boundary.
+      const source=(await Promise.all(responses.map(r=>r.text()))).join('\n');
       if(!source.includes('BROWSER_UI = r')||!source.includes('class App:')||!source.includes('練習モード')||!source.includes('本番をはじめる')||!source.includes('BGM_CH1')||!source.includes('LAYOUT_STABILITY_FIX')||!source.includes('PRACTICE_FLOW_FIX')||!source.includes('BALANCE_UI_FIX')||!source.includes('RANK_TIMER_FIX')){
         throw new Error('ゲームデータが不完全です。ページを再読み込みしてください。');
       }
