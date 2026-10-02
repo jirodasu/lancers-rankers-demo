@@ -281,6 +281,8 @@ small{display:block;color:#8999ad;margin-top:14px}
         self.hit_reaction_dx = ux
         self.hit_reaction_dy = uy
         self.hit_reaction_tier = 2 if burst_index == 2 else 1
+        if was_break and burst_index == 2:
+            self.break_shake_until = self.frame + 6
         vx, vy = -uy, ux
         offset = (-3, 3, 0)[burst_index]
         contact_x = self.bx - ux*8 + vx*offset
