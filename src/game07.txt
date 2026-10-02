@@ -188,12 +188,18 @@
         pyxel.pset(bx+dx8*2,by-1+dy8,10)
 
     def draw_boss_hit_v42(self):
-        # v4.2 hit reaction: keep Hectran's v4 silhouette and recoil opposite the player.
-        a = math.atan2(self.by-self.py, self.bx-self.px)
-        dx,dy=math.cos(a),math.sin(a)
-        d=int(round(a/(math.pi/4)))%8
+        # v4.6a40: visual-only recoil follows the confirmed spear impact direction.
+        # World position, collision and boss state are unchanged.
+        dx = getattr(self, 'hit_reaction_dx', 0.0)
+        dy = getattr(self, 'hit_reaction_dy', 0.0)
+        if abs(dx)+abs(dy) < .001:
+            a = math.atan2(self.by-self.py, self.bx-self.px)
+            dx,dy=math.cos(a),math.sin(a)
+        d=int(round(math.atan2(dy,dx)/(math.pi/4)))%8
         dx8=(1,1,0,-1,-1,-1,0,1)[d]; dy8=(0,1,1,1,0,-1,-1,-1)[d]
-        x,y=int(round(self.bx+dx8*2)),int(round(self.by+dy8*2))
+        tier=max(1,min(3,int(getattr(self,'hit_reaction_tier',1))))
+        recoil=(2,3,5)[tier-1]
+        x,y=int(round(self.bx+dx*recoil)),int(round(self.by+dy*recoil))
         backx,backy=-dx8,-dy8
         pyxel.elli(x-10,y+7,20,4,0)
         # Cape/plume snap backward on impact.
