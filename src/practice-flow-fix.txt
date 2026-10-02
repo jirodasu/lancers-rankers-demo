@@ -111,26 +111,7 @@ style.textContent += `
   box-shadow:0 0 0 2px #8fcce866,0 0 18px #58bde088,inset 0 0 16px #4a9fc633;
   animation:practice-stick-pulse 1.05s ease-in-out infinite;
 }
-#stick.practice-move-focus::before{
-  content:'ここを指で動かす';
-  position:absolute;
-  z-index:5;
-  left:50%;
-  top:-31px;
-  transform:translateX(-50%);
-  width:max-content;
-  padding:4px 8px;
-  border:1px solid #8fcce8;
-  border-radius:4px;
-  background:#07101bf2;
-  color:#dff7ff;
-  font-size:12px;
-  font-weight:800;
-  line-height:1.2;
-  letter-spacing:.02em;
-  text-shadow:0 1px 4px #000;
-  pointer-events:none;
-}
+#stick.practice-move-focus::before{display:none}
 #stick.practice-move-focus::after{
   content:'↑\\A←   →\\A↓';
   white-space:pre;
@@ -150,6 +131,67 @@ style.textContent += `
   box-shadow:0 0 0 2px #8fcce844,0 0 12px #61d5ff88;
 }
 #stick.practice-move-focus .stick-cross{opacity:.22}
+
+/* v5.1.2: unmistakable first-action cue. Keep Lancers' navy / blue-gray / gold
+   palette and point from the middle of the screen toward the real left stick. */
+#app{position:relative}
+#practice-move-callout{
+  position:absolute;
+  z-index:60;
+  left:50%;
+  top:56%;
+  width:210px;
+  transform:translate(-20%,-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+  pointer-events:none;
+  filter:drop-shadow(0 4px 7px #000b);
+}
+#practice-move-callout .move-callout-label{
+  padding:7px 12px 8px;
+  border:1px solid #6f5833;
+  border-radius:5px;
+  background:#07101bf2;
+  color:#d8e0e8;
+  font-size:14px;
+  font-weight:700;
+  line-height:1.35;
+  text-align:center;
+  box-shadow:inset 0 0 0 1px #263448,0 4px 12px #0009;
+}
+#practice-move-callout .move-callout-label b{
+  color:#f0d7a5;
+  font-size:16px;
+}
+#practice-move-callout .move-callout-arrow{
+  position:relative;
+  width:104px;
+  height:10px;
+  margin-left:-48px;
+  border-radius:2px;
+  background:#d6b574;
+  transform:rotate(135deg);
+  transform-origin:center;
+  box-shadow:0 0 0 2px #152131,0 0 9px #d6b57466;
+}
+#practice-move-callout .move-callout-arrow::after{
+  content:'';
+  position:absolute;
+  right:-20px;
+  top:50%;
+  transform:translateY(-50%);
+  width:0;
+  height:0;
+  border-top:15px solid transparent;
+  border-bottom:15px solid transparent;
+  border-left:22px solid #d6b574;
+  filter:drop-shadow(2px 0 #152131);
+}
+@media(max-height:700px){
+  #practice-move-callout{top:53%;transform:translate(-18%,-50%) scale(.9)}
+}
 @keyframes practice-stick-pulse{
   0%,100%{filter:brightness(1)}
   50%{filter:brightness(1.28)}
@@ -172,6 +214,13 @@ queueMicrotask(()=>{
   practiceGuide.innerHTML = '<span id="practice-guide-detail"></span>';
   arena.appendChild(practiceGuide);
   removers.push(()=>practiceGuide.remove());
+
+  const practiceMoveCallout = document.createElement('div');
+  practiceMoveCallout.id = 'practice-move-callout';
+  practiceMoveCallout.hidden = true;
+  practiceMoveCallout.innerHTML = '<div class="move-callout-label">移動は<br><b>左下のスティック</b></div><div class="move-callout-arrow"></div>';
+  $('app').appendChild(practiceMoveCallout);
+  removers.push(()=>practiceMoveCallout.remove());
 
   const practiceCountdown = $('practice-countdown');
   const practiceIntroGuide = document.createElement('div');
@@ -328,6 +377,7 @@ queueMicrotask(()=>{
       if(!moveHintDismissed){
         moveHintDismissed = true;
         $('stick').classList.remove('practice-move-focus');
+        practiceMoveCallout.hidden = true;
       }
     }
     if(moveProgress >= .38) setPracticeStage(1);
@@ -380,7 +430,9 @@ queueMicrotask(()=>{
 
     if(inTraining){
       const stage = stages[practiceStage];
-      $('stick').classList.toggle('practice-move-focus',practiceStage === 0 && !moveHintDismissed);
+      const showMoveCue = practiceStage === 0 && !moveHintDismissed;
+      $('stick').classList.toggle('practice-move-focus',showMoveCue);
+      practiceMoveCallout.hidden = !showMoveCue;
       combatState.dataset.state = stage.state;
       text('state-label',stage.title);
       text('notice',stage.instruction);
@@ -391,6 +443,7 @@ queueMicrotask(()=>{
       $('heal').classList.toggle('practice-disabled',true);
     }else{
       $('stick').classList.remove('practice-move-focus');
+      practiceMoveCallout.hidden = true;
       $('attack').classList.remove('practice-disabled');
       $('dodge').classList.remove('practice-disabled');
       $('heal').classList.remove('practice-disabled');
