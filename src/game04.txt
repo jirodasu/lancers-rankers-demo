@@ -173,6 +173,8 @@ class App:
         self.attack_anim = self.flash = self.elapsed = 0.
         # v4.4.1: short simulation freeze on confirmed player hits (60 FPS).
         self.hitstop_frames = 0
+        # v4.6a41: tiny visual-only camera shake, reserved for BREAK punish hits.
+        self.break_shake_until = 0
         # v4.4.2: short-lived spear-tip hit VFX entries: [x, y, angle, tier, life].
         self.hit_vfx = []
         self.charging = False
