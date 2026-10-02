@@ -148,24 +148,23 @@
                     self.notice = 'BREAK! 溜め突きで追撃'
                     self.text(self.bx-10, self.by-16, 'BREAK!', 10)
             self.bhp = max(0, self.bhp-damage)
-            # v4.4.2d: confirmed-hit audio has fixed normal / charge / BREAK-punish slots.
-            if window is not None and not self.muted:
-                try:
-                    hit_sfx = 'break' if (full and was_break) else ('charge' if full else 'normal')
-                    window.playLancerHitSfx(hit_sfx)
-                except Exception:
-                    pass
-            # v4.4.1: normal 2F / charged 4F / charged during BREAK 6F.
-            self.hitstop_frames = 6 if (full and was_break) else (4 if full else 2)
-            # v4.4.2: impact originates at the spear/boss contact point, not boss center.
-            # tier 1 = normal spark, 2 = charged spark + short spear flash,
-            # tier 3 = charged hit during BREAK (largest visual reward).
+            # v4.6a39: one confirmed-hit event drives every feedback channel.
+            # Keep the existing balance/timings; only align audio, freeze, flash,
+            # contact VFX and damage text to the same impact point/frame.
+            hit_sfx = 'break' if (full and was_break) else ('charge' if full else 'normal')
+            hitstop = 6 if (full and was_break) else (4 if full else 2)
             vfx_tier = 3 if (full and was_break) else (2 if full else 1)
             contact_x = self.bx - ux*8
             contact_y = self.by - uy*8
-            self.hit_vfx.append([contact_x, contact_y, self.aa, vfx_tier, .36])
+            self.hitstop_frames = hitstop
             self.flash = .12
-            self.text(self.bx, self.by-11, damage)
+            self.hit_vfx.append([contact_x, contact_y, self.aa, vfx_tier, .36])
+            self.text(contact_x, contact_y-11, damage)
+            if window is not None and not self.muted:
+                try:
+                    window.playLancerHitSfx(hit_sfx)
+                except Exception:
+                    pass
             self.phase = 3 if self.bhp <= 180 else 2 if self.bhp <= 360 else 1
             if self.bhp == 0 and self.mode == 'battle':
                 # v4.6a30: let the killing blow breathe before the result screen.
