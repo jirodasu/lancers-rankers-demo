@@ -277,6 +277,10 @@ small{display:block;color:#8999ad;margin-top:14px}
 
         self.hitstop_frames = max(self.hitstop_frames, 3 if burst_index == 2 else 1)
         ux, uy = math.cos(self.aa), math.sin(self.aa)
+        # v4.6a40: 紅牙も描画だけ命中方向へ反応。3発目だけ一段強くする。
+        self.hit_reaction_dx = ux
+        self.hit_reaction_dy = uy
+        self.hit_reaction_tier = 2 if burst_index == 2 else 1
         vx, vy = -uy, ux
         offset = (-3, 3, 0)[burst_index]
         contact_x = self.bx - ux*8 + vx*offset
