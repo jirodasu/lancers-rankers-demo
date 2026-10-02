@@ -169,6 +169,7 @@ style.textContent += `
   position:relative;
   width:104px;
   height:10px;
+  margin-top:42px;
   margin-left:-48px;
   border-radius:2px;
   background:#d6b574;
