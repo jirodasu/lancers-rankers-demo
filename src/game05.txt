@@ -158,6 +158,11 @@
             contact_y = self.by - uy*8
             self.hitstop_frames = hitstop
             self.flash = .12
+            # v4.6a40: visual-only boss recoil. Store the confirmed spear direction
+            # and impact tier; boss world position/collision never moves.
+            self.hit_reaction_dx = ux
+            self.hit_reaction_dy = uy
+            self.hit_reaction_tier = vfx_tier
             self.hit_vfx.append([contact_x, contact_y, self.aa, vfx_tier, .36])
             self.text(contact_x, contact_y-11, damage)
             if window is not None and not self.muted:
