@@ -103,6 +103,60 @@ style.textContent += `
   letter-spacing:.04em;
 }
 .action.practice-disabled{opacity:.28!important;filter:saturate(.25) brightness(.7)!important}
+
+/* v4.6a43: first-touch guidance. Highlight the control itself instead of adding
+   another explanatory panel. It disappears as soon as movement is detected. */
+#stick.practice-move-focus{
+  border-color:#8fcce8;
+  box-shadow:0 0 0 2px #8fcce866,0 0 18px #58bde088,inset 0 0 16px #4a9fc633;
+  animation:practice-stick-pulse 1.05s ease-in-out infinite;
+}
+#stick.practice-move-focus::before{
+  content:'ここを指で動かす';
+  position:absolute;
+  z-index:5;
+  left:50%;
+  top:-31px;
+  transform:translateX(-50%);
+  width:max-content;
+  padding:4px 8px;
+  border:1px solid #8fcce8;
+  border-radius:4px;
+  background:#07101bf2;
+  color:#dff7ff;
+  font-size:12px;
+  font-weight:800;
+  line-height:1.2;
+  letter-spacing:.02em;
+  text-shadow:0 1px 4px #000;
+  pointer-events:none;
+}
+#stick.practice-move-focus::after{
+  content:'↑\\A←   →\\A↓';
+  white-space:pre;
+  position:absolute;
+  z-index:4;
+  inset:7px;
+  display:grid;
+  place-items:center;
+  color:#9ce7ff;
+  font:800 15px/1.65 monospace;
+  text-align:center;
+  text-shadow:0 0 7px #4cc8f0;
+  pointer-events:none;
+}
+#stick.practice-move-focus #knob{
+  border-color:#b9efff;
+  box-shadow:0 0 0 2px #8fcce844,0 0 12px #61d5ff88;
+}
+#stick.practice-move-focus .stick-cross{opacity:.22}
+@keyframes practice-stick-pulse{
+  0%,100%{filter:brightness(1)}
+  50%{filter:brightness(1.28)}
+}
+@media(prefers-reduced-motion:reduce){
+  #stick.practice-move-focus{animation:none}
+}
 #mode-choice.single{grid-template-columns:1fr}
 #mode-choice.single .primary{grid-column:1}
 `;
@@ -141,6 +195,7 @@ queueMicrotask(()=>{
 
   let practiceStage = 0; // 0 move, 1 dodge, 2 attack, 3 charged attack
   let moveProgress = 0;
+  let moveHintDismissed = false;
   let previousMode = '';
   let latestCoreStep = 0;
   let dodgePressedForStage = false;
@@ -150,7 +205,7 @@ queueMicrotask(()=>{
   let victoryFlashToken = 0;
 
   const stages = [
-    {title:'1/4　移動', instruction:'スティックを動かして移動しよう', detail:'少し移動できれば次へ', state:'watch'},
+    {title:'1/4　移動', instruction:'左下の光るスティックを動かそう', detail:'少し移動できれば次へ', state:'watch'},
     {title:'2/4　回避', instruction:'赤い予告が出たら「避」を押そう', detail:'「避」を使って攻撃をかわす', state:'danger'},
     {title:'3/4　攻撃', instruction:'敵の隙に「突」を押そう', detail:'通常の突きを1回当てる', state:'chance'},
     {title:'4/4　溜め攻撃', instruction:'「突」を長押し → 離す', detail:'溜め突きを1回当てれば練習終了', state:'chance'},
@@ -268,7 +323,13 @@ queueMicrotask(()=>{
   const moveWatch = setInterval(()=>{
     if(mode !== 'training' || practiceStage !== 0) return;
     const mag = Math.min(1,Math.hypot(Number(input.x)||0,Number(input.y)||0));
-    if(mag > .25) moveProgress += mag * .05;
+    if(mag > .25){
+      moveProgress += mag * .05;
+      if(!moveHintDismissed){
+        moveHintDismissed = true;
+        $('stick').classList.remove('practice-move-focus');
+      }
+    }
     if(moveProgress >= .38) setPracticeStage(1);
   },50);
   removers.push(()=>clearInterval(moveWatch));
@@ -280,6 +341,7 @@ queueMicrotask(()=>{
     if(s.mode === 'training_intro' && previousMode !== 'training_intro'){
       practiceStage = 0;
       moveProgress = 0;
+      moveHintDismissed = false;
       latestCoreStep = 0;
       dodgePressedForStage = false;
       attackPressedForStage = false;
@@ -318,6 +380,7 @@ queueMicrotask(()=>{
 
     if(inTraining){
       const stage = stages[practiceStage];
+      $('stick').classList.toggle('practice-move-focus',practiceStage === 0 && !moveHintDismissed);
       combatState.dataset.state = stage.state;
       text('state-label',stage.title);
       text('notice',stage.instruction);
@@ -327,6 +390,7 @@ queueMicrotask(()=>{
       $('dodge').classList.toggle('practice-disabled',!actionAllowed('dodge'));
       $('heal').classList.toggle('practice-disabled',true);
     }else{
+      $('stick').classList.remove('practice-move-focus');
       $('attack').classList.remove('practice-disabled');
       $('dodge').classList.remove('practice-disabled');
       $('heal').classList.remove('practice-disabled');
