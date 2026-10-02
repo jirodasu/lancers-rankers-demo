@@ -217,7 +217,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 `        if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
             # v4.6a37: 双短槍・紅牙の溜めは0.08秒間隔の3連突き。
             if full and self.weapon_index == 2:
-                if self.mode == 'training' and self.state == 'recover' and self.tutorial_step == 2:
+                if self.mode == 'training' and self.tutorial_step == 2:
                     self.tutorial_step = 3
                     self.tutorial_done = True
                     self.stop_bgm()
