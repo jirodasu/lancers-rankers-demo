@@ -54,7 +54,7 @@ for(const name of ['attack','dodge','heal']){
   on(el,'pointerdown',e=>{if(!canInput())return;e.preventDefault();if(!capture(el,e))return;pressed[name].add(e.pointerId);mergeInput();});
   for(const ev of ['pointerup','pointercancel','lostpointercapture'])on(el,ev,e=>{if(!pressed[name].has(e.pointerId))return;pressed[name].delete(e.pointerId);mergeInput(ev==='pointerup'?'up':'cancel');});
 }
-function moveStick(e){const r=$('stick').getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,limit=r.width*.32,len=Math.hypot(dx,dy),scale=len>limit?limit/len:1;stickVector=len<limit*.14?{x:0,y:0}:{x:dx*scale/limit,y:dy*scale/limit};$('knob').style.transform=`translate(${stickVector.x*32}px,${stickVector.y*32}px)`;mergeInput();}
+function moveStick(e){const r=$('stick').getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,limit=r.width*.32,len=Math.hypot(dx,dy),scale=len>limit?limit/len:1;stickVector=len<limit*.14?{x:0,y:0}:{x:dx*scale/limit,y:dy*scale/limit};$('knob').style.transform=`translate(${stickVector.x*36}px,${stickVector.y*36}px)`;mergeInput();}
 on($('stick'),'pointerdown',e=>{if(stickId!==null||!canInput())return;e.preventDefault();if(!capture($('stick'),e))return;stickId=e.pointerId;moveStick(e);});
 on($('stick'),'pointermove',e=>{if(e.pointerId===stickId)moveStick(e);});
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])on($('stick'),ev,e=>{if(e.pointerId!==stickId)return;stickId=null;stickVector={x:0,y:0};$('knob').style.transform='';mergeInput();});
