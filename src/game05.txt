@@ -164,7 +164,7 @@
             self.hit_reaction_dy = uy
             self.hit_reaction_tier = vfx_tier
             if full and was_break:
-                self.break_shake_until = self.frame + 6
+                self.break_shake_until = self.frame + 8
             self.hit_vfx.append([contact_x, contact_y, self.aa, vfx_tier, .36])
             self.text(contact_x, contact_y-11, damage)
             if window is not None and not self.muted:
