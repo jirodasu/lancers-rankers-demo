@@ -111,7 +111,7 @@ style.textContent += `
   box-shadow:0 0 0 2px #8fcce866,0 0 18px #58bde088,inset 0 0 16px #4a9fc633;
   animation:practice-stick-pulse 1.05s ease-in-out infinite;
 }
-#stick.practice-move-focus::before{display:none}
+#stick.practice-move-focus::before{display:block}
 #stick.practice-move-focus::after{
   content:'↑\\A←   →\\A↓';
   white-space:pre;
