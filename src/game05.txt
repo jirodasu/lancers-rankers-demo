@@ -122,8 +122,11 @@
             # 白銀 [20,40,52], 岩穿 [38,70,84], 紅牙 [11,19,25].
             damage_table = ((20,40,52), (38,70,84), (11,19,25))
             damage = damage_table[self.weapon_index][1 if full else 0]
-            if self.mode == 'training' and self.state == 'recover':
-                if self.tutorial_step == 1 and not full:
+            if self.mode == 'training':
+                # v4.6a42: the final practice task promises "land one charged hit".
+                # Keep the normal counter-thrust tied to recovery, but accept the
+                # final charged hit whenever it is actually confirmed.
+                if self.tutorial_step == 1 and not full and self.state == 'recover':
                     self.tutorial_step = 2
                     self.tutorial_attack = -1
                     self.state, self.timer = 'idle', .35
