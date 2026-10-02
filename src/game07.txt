@@ -526,6 +526,14 @@
 
     def draw(self):
         pyxel.cls(0)
+        # v4.6a41: BREAK punish only. One-pixel deterministic camera impulse;
+        # no shake on normal hits or ordinary charged hits.
+        if self.frame < getattr(self, 'break_shake_until', 0):
+            shake_pattern = ((-1,0),(1,0),(0,-1),(1,0),(-1,0),(0,1))
+            sx,sy = shake_pattern[self.frame % len(shake_pattern)]
+            pyxel.camera(sx,sy)
+        else:
+            pyxel.camera(0,0)
         pyxel.circ(CX,CY,R+5,1)
         pyxel.circ(CX,CY,R,5)
         pyxel.circ(CX,CY,R-2,1)
@@ -604,6 +612,7 @@
             pyxel.text(x-len(label)*2,y-1,label,col)
         if self.mode in ('select','paused'):
             pyxel.text(72,25,'LANCERS',7)
+        pyxel.camera(0,0)
         if self.canvas_fallback:
             window.presentPyxel(self._screen_view)
 
