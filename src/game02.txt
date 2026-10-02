@@ -35,12 +35,15 @@ style.textContent += `
 footer{
   position:relative;
 }
+/* Keep the main thrust button anchored; lift the two secondary actions
+   slightly so the right-hand cluster reads as a deliberate arc. */
+.actions .heal,
+.actions .dodge{
+  transform:translateY(-10px);
+}
 footer>div{
   position:absolute;
-  left:calc(50% - 46px);
+  left:50%;
   transform:translateX(-50%);
-}
-@media(max-width:350px){
-  footer>div{left:calc(50% - 36px)}
 }
 `;
