@@ -155,19 +155,27 @@
             # Keep the existing balance/timings; only align audio, freeze, flash,
             # contact VFX and damage text to the same impact point/frame.
             hit_sfx = 'break' if (full and was_break) else ('charge' if full else 'normal')
-            hitstop = 6 if (full and was_break) else (4 if full else 2)
             vfx_tier = 3 if (full and was_break) else (2 if full else 1)
+            dev = dev_monster_tuning()
+            hs = dev.get('hitstop', {}) if isinstance(dev.get('hitstop', {}), dict) else {}
+            rc = dev.get('recoil', {}) if isinstance(dev.get('recoil', {}), dict) else {}
+            hit_key = 'break' if vfx_tier == 3 else ('charge' if vfx_tier == 2 else 'normal')
+            hitstop = int(hs.get(hit_key, 6 if vfx_tier == 3 else 4 if vfx_tier == 2 else 2))
+            recoil_default = 5 if vfx_tier == 3 else 3 if vfx_tier == 2 else 2
+            self.hit_reaction_px = float(rc.get(hit_key, recoil_default))
             contact_x = self.bx - ux*8
             contact_y = self.by - uy*8
-            self.hitstop_frames = hitstop
-            self.flash = .12
+            self.hitstop_frames = max(0, hitstop)
+            self.flash = max(.01, float(dev.get('flash', .12)))
+            self.dev_fx_scale = max(.25, float(dev.get('fxScale', 1.0)))
+            self.dev_fx_type = str(dev.get('fxType', 'spear'))
             # v4.6a40: visual-only boss recoil. Store the confirmed spear direction
             # and impact tier; boss world position/collision never moves.
             self.hit_reaction_dx = ux
             self.hit_reaction_dy = uy
             self.hit_reaction_tier = vfx_tier
             if full and was_break:
-                self.break_shake_until = self.frame + 8
+                self.break_shake_until = self.frame + max(0, int(dev.get('shakeFrames', 8)))
             self.hit_vfx.append([contact_x, contact_y, self.aa, vfx_tier, .36])
             self.text(contact_x, contact_y-11, damage)
             if window is not None and not self.muted:
