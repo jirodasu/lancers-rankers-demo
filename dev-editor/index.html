@@ -223,7 +223,19 @@ function setPath(obj,path,val){var a=path.split("."),last=a.pop(),o=obj;a.forEac
 function syncFx(){var m=state.monster.hectoran;Object.keys(fxFields).forEach(function(id){var v=getPath(m,fxFields[id]);q(id).value=v;q(id+"o").textContent=(id==="flash"||id==="fxLife"?v.toFixed(2)+"s":id==="fxScale"?v.toFixed(1)+"×":v+(id==="shakeFrames"?"F":id==="shakePx"?"px":""))});q("fxType").value=m.fxType;publishTuning();dump()}
 Object.keys(fxFields).forEach(function(id){q(id).oninput=function(){setPath(state.monster.hectoran,fxFields[id],this.value);syncFx()}});
 q("fxType").onchange=function(){state.monster.hectoran.fxType=this.value;syncFx()};
-function publishTuning(){try{frame.contentWindow.getLancerDevTuning=function(){return JSON.stringify(state.monster)}}catch(e){}}
+function publishTuning(){try{
+ var live=JSON.parse(JSON.stringify(state.monster)),h=live.hectoran||{},base=window.lancersCanonicalConfig&&window.lancersCanonicalConfig.monster&&window.lancersCanonicalConfig.monster.hectoran;
+ if(base){
+  h.benikiba=h.benikiba||{};
+  if(Number(h.flash)!==Number(base.flash))h.benikiba.flash=h.flash;
+  ["normal","charge","break"].forEach(function(k){
+   if(Number(h.hitstop&&h.hitstop[k])!==Number(base.hitstop&&base.hitstop[k])){h.benikiba.hitstop=h.benikiba.hitstop||{};h.benikiba.hitstop[k]=h.hitstop[k]}
+   if(Number(h.recoil&&h.recoil[k])!==Number(base.recoil&&base.recoil[k])){h.benikiba.recoil=h.benikiba.recoil||{};h.benikiba.recoil[k]=h.recoil[k]}
+  });
+  if(Number(h.shakeFrames)!==Number(base.shakeFrames))h.benikiba.shakeFrames=h.shakeFrames;
+ }
+ frame.contentWindow.getLancerDevTuning=function(){return JSON.stringify(live)}
+}catch(e){}}
 function previewHit(kind){
  if(!root)return;var arena=root.getElementById("arena");if(!arena)return;var old=root.getElementById("dev-hit-preview");if(old)old.remove();
  var m=state.monster.hectoran,d=document.createElement("div");d.id="dev-hit-preview";d.style.cssText="position:absolute;z-index:80;left:64%;top:43%;width:18px;height:18px;pointer-events:none;transform:scale("+m.fxScale+");";
