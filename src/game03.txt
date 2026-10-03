@@ -3,7 +3,7 @@ root.appendChild(style);
 let expanded=false,frame=null,oldFrameStyle='';
 try{frame=window.frameElement;if(frame)oldFrameStyle=frame.style.cssText;}catch{}
 function expand(value){if(!frame)return;expanded=value;frame.style.cssText=value?'position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;z-index:99999!important;border:0!important;':oldFrameStyle;root.getElementById('editor-toggle').textContent=value?'コードへ':'拡大';}
-expand(true);
+expand(!new URLSearchParams(window.location.search).has('dev-editor'));
 'use strict';
 const $ = id => root.getElementById(id);
 window.loadFailure = message => { $('loading').hidden=false; $('load-label').textContent=message; $('start').disabled=true; root.querySelector('.spinner').hidden=true; };
