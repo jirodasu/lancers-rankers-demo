@@ -21,7 +21,7 @@ function record(source,label){
  entries.push({id:Date.now()+"-"+Math.random().toString(36).slice(2,7),time:new Date().toISOString(),label:label||describe(before,now,source),state:now});
  if(entries.length>200)entries.shift();cursor=entries.length-1;lastSerialized=s;persist();render();
 }
-function restore(st,msg){if(!api()||!st)return;suppress=true;api().setState(clone(st));api().apply();lastSerialized=serial(current());suppress=false;if(msg)api().setStatus(msg,true);render()}
+function restore(st,msg){if(!api()||!st)return;suppress=true;api().setState(clone(st));api().apply();lastSerialized=serial(current());suppress=false;if(msg)api().setStatus(msg,true);render();window.lancersCanonical?.renderSync()}
 function undo(){if(cursor<0)return;const target=cursor===0?(baseline||entries[0].state):entries[cursor-1].state;cursor--;restore(target,"1つ前の調整へ戻しました");persist()}
 function redo(){if(cursor>=entries.length-1)return;cursor++;restore(entries[cursor].state,"調整をやり直しました");persist()}
 function fmt(t){return new Date(t).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}
@@ -37,8 +37,10 @@ function saveSnapshot(){const name=$("snapshotName").value.trim()||"案 "+(snaps
 function exportPayload(){return {format:"lancers-dev-editor-v0.2",config:current(),history:{entries,cursor,snapshots,baseline}}}
 function downloadJson(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(exportPayload(),null,2)],{type:"application/json"}));a.download="lancers-dev-config-with-history.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function importPayload(obj){if(!obj||!obj.config)return false;suppress=true;api().setState(obj.config);api().apply();suppress=false;const h=obj.history||{};entries=h.entries||[];cursor=Number.isInteger(h.cursor)?h.cursor:entries.length-1;snapshots=h.snapshots||[];baseline=h.baseline||clone(obj.config);lastSerialized=serial(current());persist();render();return true}
-function init(){
- if(!api()){setTimeout(init,150);return}loadPersisted();baseline=baseline||current();lastSerialized=serial(current());
+async function init(){
+ if(!api()){setTimeout(init,150);return}
+ if(window.lancersCanonicalReady){try{await window.lancersCanonicalReady}catch(_){}}
+ loadPersisted();baseline=baseline||current();lastSerialized=serial(current());
  $("undoHistory").onclick=undo;$("redoHistory").onclick=redo;$("saveSnapshot").onclick=saveSnapshot;
  $("clearHistory").onclick=()=>{if(confirm("調整履歴を消去しますか？ 名前付きスナップショットは残します。")){entries=[];cursor=-1;baseline=current();lastSerialized=serial(baseline);persist();render()}};
  document.addEventListener("change",e=>{if(labels[e.target.id])setTimeout(()=>record(e.target),0)},true);
