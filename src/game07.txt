@@ -531,7 +531,8 @@
         if self.frame < getattr(self, 'break_shake_until', 0):
             shake_pattern = ((-1,0),(1,0),(0,-1),(1,0),(-1,0),(0,1))
             sx,sy = shake_pattern[self.frame % len(shake_pattern)]
-            pyxel.camera(sx,sy)
+            shake_px=max(0,int(getattr(self, 'dev_shake_px', 1)))
+            pyxel.camera(sx*shake_px,sy*shake_px)
         else:
             pyxel.camera(0,0)
         pyxel.circ(CX,CY,R+5,1)
@@ -580,7 +581,8 @@
         for hx,hy,ha,tier,life in self.hit_vfx:
             dx,dy=math.cos(ha),math.sin(ha)
             vx,vy=-dy,dx
-            age=max(0.,min(1.,1-life/.36))
+            fx_life=max(.05,float(getattr(self, 'dev_fx_life', .36)))
+            age=max(0.,min(1.,1-life/fx_life))
             fx_scale=max(.25,float(getattr(self, 'dev_fx_scale', 1.0)))
             fx_type=str(getattr(self, 'dev_fx_type', 'spear'))
             radius=max(2,int((8 if tier==1 else 14 if tier==2 else 22)*fx_scale))
