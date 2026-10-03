@@ -2,7 +2,7 @@
   "schema": "lancers-tuning/v1",
   "authority": "canonical",
   "updatedAt": "2026-10-03T15:46:00+09:00",
-  "updatedBy": "bootstrap-from-production",
+  "updatedBy": "bootstrap-from-production-preserving-weapon-feel",
   "ui": {},
   "monster": {
     "hectoran": {
@@ -21,7 +21,21 @@
         "break": 5
       },
       "shakeFrames": 8,
-      "shakePx": 1
+      "shakePx": 1,
+      "benikiba": {
+        "flash": 0.08,
+        "hitstop": {
+          "normal": 1,
+          "charge": 3,
+          "break": 6
+        },
+        "recoil": {
+          "normal": 2,
+          "charge": 3,
+          "break": 3
+        },
+        "shakeFrames": 6
+      }
     }
   },
   "sound": {
