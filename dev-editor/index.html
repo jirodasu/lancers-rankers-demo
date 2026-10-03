@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LANCERS DEV EDITOR</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#070b12;color:#dbe5ef}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#070b12}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+header{height:58px;display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid #263448;background:#0b121e;position:sticky;top:0;z-index:20}
+.brand{font-weight:900;letter-spacing:.08em;color:#e7c989}.brand small{display:block;font-size:9px;color:#71839a;letter-spacing:.18em}
+.status{margin-left:auto;font-size:12px;color:#8fa2b8}.status.ok{color:#8fd0ad}.status.warn{color:#e5bf77}
+.topbtn{border:1px solid #40536b;background:#142235;padding:7px 11px;border-radius:6px;font-weight:700}
+main{display:grid;grid-template-columns:minmax(390px,1fr) 390px;height:calc(100vh - 58px)}
+.stage{position:relative;display:grid;place-items:center;overflow:auto;padding:22px;background:radial-gradient(circle at 50% 35%,#15233a 0,#090f19 52%,#060a10 100%)}
+.device{position:relative;width:min(460px,100%);height:min(900px,calc(100vh - 104px));min-height:620px;border:1px solid #34475f;border-radius:18px;overflow:hidden;background:#080e19;box-shadow:0 24px 70px #000b}
+iframe{width:100%;height:100%;border:0;background:#080e19}
+.tip{position:absolute;left:18px;bottom:16px;max-width:330px;padding:9px 11px;background:#07101be8;border:1px solid #2b3c52;color:#91a4ba;font-size:11px;line-height:1.5;pointer-events:none}
+.panel{overflow:auto;border-left:1px solid #263448;background:#0b121e}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);position:sticky;top:0;background:#0b121e;z-index:5;border-bottom:1px solid #263448}
+.tab{border:0;border-bottom:2px solid transparent;background:transparent;padding:13px 4px;color:#8295aa;font-size:12px;font-weight:800}.tab.active{color:#f0d7a5;border-bottom-color:#d6b574;background:#111b29}
+.pane{display:none;padding:16px}.pane.active{display:block}
+h2{font-size:15px;margin:0 0 12px;color:#f0d7a5}h3{font-size:12px;margin:18px 0 8px;color:#9fb0c4;text-transform:uppercase;letter-spacing:.08em}
+.note{font-size:11px;line-height:1.6;color:#788ba1;margin:8px 0 12px}
+select,.num,input[type=text]{width:100%;background:#101b2a;border:1px solid #304158;border-radius:5px;padding:8px}
+.row{display:grid;grid-template-columns:86px 1fr 64px;align-items:center;gap:8px;margin:9px 0}.row label{font-size:12px;color:#a9b8c9}.row output{font:700 12px monospace;text-align:right;color:#e3c88f}
+input[type=range]{width:100%;accent-color:#c7a96b}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{width:100%;border:1px solid #3b4f68;background:#142235;padding:9px;border-radius:5px;font-weight:800}.btn.gold{background:#d6b574;color:#111a26;border-color:#d6b574}.btn.danger{border-color:#754747;color:#e8aaaa}
+.card{border:1px solid #26384e;background:#0e1826;padding:12px;margin:10px 0;border-radius:7px}
+.badge{display:inline-block;padding:3px 6px;border:1px solid #5d4c2f;color:#e2c78f;background:#211b12;font:700 10px monospace;border-radius:3px}
+.fxbuttons{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.fxbuttons button{border:1px solid #42556e;background:#152235;padding:9px 4px;border-radius:5px;font-size:11px}
+.file{display:block;border:1px dashed #40536b;padding:10px;border-radius:6px;font-size:11px;color:#9db0c5;margin:8px 0}.file input{width:100%;margin-top:6px}
+textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d8;border:1px solid #304158;padding:10px;font:11px/1.5 ui-monospace,monospace}
+.selected-readout{padding:10px;border:1px solid #5f5135;background:#1b1812;color:#e9d09c;font-size:12px;margin-bottom:12px}
+@media(max-width:850px){main{grid-template-columns:1fr;height:auto}.stage{height:72vh;padding:10px}.device{height:68vh;min-height:540px}.panel{border-left:0;border-top:1px solid #263448}.tip{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">LANCERS DEV EDITOR<small>LOCAL TUNING / v0.1</small></div>
+  <button class="topbtn" id="bootGame">本編を起動</button>
+  <button class="topbtn" id="reloadGame">再読込</button>
+  <span id="status" class="status warn">本編を読込中…</span>
+</header>
+<main>
+<section class="stage">
+  <div class="device"><iframe id="game" src="../?dev-editor=1"></iframe></div>
+  <div class="tip">UIタブで対象を選び、ゲーム画面上をドラッグできます。変更は本編へ直接保存されず、開発設定として保持されます。</div>
+</section>
+<aside class="panel">
+  <nav class="tabs">
+    <button class="tab active" data-tab="ui">UI</button>
+    <button class="tab" data-tab="fx">MONSTER</button>
+    <button class="tab" data-tab="sound">SOUND</button>
+    <button class="tab" data-tab="data">DATA</button>
+  </nav>
+
+  <section class="pane active" id="pane-ui">
+    <h2>UI レイアウト</h2>
+    <div id="selectedReadout" class="selected-readout">移動スティックを編集中</div>
+    <select id="target">
+      <option value="stick">移動スティック</option>
+      <option value="heal">薬</option>
+      <option value="dodge">避</option>
+      <option value="attack">突</option>
+      <option value="mute">音 ON/OFF</option>
+      <option value="pause">一時停止</option>
+      <option value="combat-state">戦闘ヒント</option>
+      <option value="practice-badge">PRACTICE表示</option>
+      <option value="practice-move-callout">移動チュートリアル案内</option>
+    </select>
+    <h3>位置</h3>
+    <div class="row"><label>X</label><input id="x" type="range" min="-180" max="180" step="1"><output id="xo">0px</output></div>
+    <div class="row"><label>Y</label><input id="y" type="range" min="-180" max="180" step="1"><output id="yo">0px</output></div>
+    <h3>サイズ</h3>
+    <div class="row"><label>幅</label><input id="w" type="range" min="32" max="240" step="1"><output id="wo">--</output></div>
+    <div class="row"><label>高さ</label><input id="h" type="range" min="32" max="180" step="1"><output id="ho">--</output></div>
+    <div class="grid2"><button class="btn" id="resetTarget">この項目を戻す</button><button class="btn" id="resetUI">UI全部戻す</button></div>
+    <p class="note">ドラッグ移動とスライダーは同じ設定を編集します。確定値はDATAからCSS/JSONとして書き出せます。</p>
+  </section>
+
+  <section class="pane" id="pane-fx">
+    <h2>モンスター / HIT調整</h2>
+    <select id="monster"><option value="hectoran">ヘクトラン / RANK 10</option></select>
+    <div class="card"><span class="badge">LIVE TUNING</span><p class="note">この設定は開発プレビュー用。HIT時の値を本編ランタイムへ渡せる形式で保持します。</p></div>
+    <div class="row"><label>被弾表示</label><input id="flash" type="range" min="0.04" max="0.35" step="0.01"><output id="flasho"></output></div>
+    <div class="row"><label>FX倍率</label><input id="fxScale" type="range" min="0.5" max="2.5" step="0.1"><output id="fxScaleo"></output></div>
+    <h3>HITSTOP</h3>
+    <div class="row"><label>通常</label><input id="hsNormal" type="range" min="0" max="12" step="1"><output id="hsNormalo"></output></div>
+    <div class="row"><label>溜め</label><input id="hsCharge" type="range" min="0" max="14" step="1"><output id="hsChargeo"></output></div>
+    <div class="row"><label>BREAK</label><input id="hsBreak" type="range" min="0" max="18" step="1"><output id="hsBreako"></output></div>
+    <h3>リアクション</h3>
+    <div class="row"><label>通常</label><input id="recoilNormal" type="range" min="0" max="10" step="1"><output id="recoilNormalo"></output></div>
+    <div class="row"><label>溜め</label><input id="recoilCharge" type="range" min="0" max="12" step="1"><output id="recoilChargeo"></output></div>
+    <div class="row"><label>BREAK</label><input id="recoilBreak" type="range" min="0" max="16" step="1"><output id="recoilBreako"></output></div>
+    <div class="row"><label>揺れ時間</label><input id="shakeFrames" type="range" min="0" max="18" step="1"><output id="shakeFrameso"></output></div>
+    <h3>エフェクト種類</h3>
+    <select id="fxType"><option value="spear">槍閃</option><option value="star">衝撃星</option><option value="ring">衝撃輪</option></select>
+    <div class="fxbuttons" style="margin-top:9px"><button data-preview-hit="normal">通常HIT</button><button data-preview-hit="charge">溜めHIT</button><button data-preview-hit="break">BREAK</button></div>
+  </section>
+
+  <section class="pane" id="pane-sound">
+    <h2>SE / サウンド</h2>
+    <div class="row"><label>SE音量</label><input id="seVolume" type="range" min="0" max="1" step="0.05"><output id="seVolumeo"></output></div>
+    <div class="fxbuttons"><button data-test-sfx="normal">▶ 通常HIT</button><button data-test-sfx="charge">▶ 溜めHIT</button><button data-test-sfx="break">▶ BREAK</button></div>
+    <label class="file">通常HIT SE<input type="file" id="fileNormal" accept="audio/*"></label>
+    <label class="file">溜めHIT SE<input type="file" id="fileCharge" accept="audio/*"></label>
+    <label class="file">BREAK SE<input type="file" id="fileBreak" accept="audio/*"></label>
+    <h3>BGM指定 / プレビュー</h3>
+    <label class="file">BGMファイル<input type="file" id="fileBgm" accept="audio/*"></label>
+    <div class="grid2"><button class="btn" id="playBgm">▶ BGM試聴</button><button class="btn" id="stopBgm">■ 停止</button></div>
+    <p class="note">ローカル音源はブラウザ内だけで試聴します。ファイル名は設定JSONに保存されますが、音源そのものはリポジトリへ自動アップロードしません。</p>
+  </section>
+
+  <section class="pane" id="pane-data">
+    <h2>保存 / 書き出し</h2>
+    <div class="grid2"><button class="btn gold" id="saveLocal">ブラウザに保存</button><button class="btn" id="loadLocal">保存値を読込</button></div>
+    <div class="grid2" style="margin-top:8px"><button class="btn" id="downloadJson">JSON保存</button><button class="btn" id="copyCss">CSSコピー</button></div>
+    <label class="file">JSONを読み込む<input type="file" id="importJson" accept=".json,application/json"></label>
+    <h3>現在の設定</h3>
+    <textarea id="dump" readonly></textarea>
+    <p class="note">ここでの変更は開発ツール用です。本編へ確定反映する時は、このJSONまたはCSSを基準にコードへ適用します。</p>
+  </section>
+</aside>
+</main>
+<script>
+(function(){
+"use strict";
+var frame=document.getElementById("game"),status=document.getElementById("status"),root=null,drag=null,bgm=null;
+var defaults={ui:{},monster:{hectoran:{flash:0.12,fxScale:1,fxType:"spear",hitstop:{normal:2,charge:4,break:6},recoil:{normal:2,charge:3,break:5},shakeFrames:8}},sound:{volume:0.1,files:{normal:"hit_normal.mp3",charge:"hit_charge.mp3",break:"hit_break.mp3",bgm:"Pyxel BGM"}}};
+var state=JSON.parse(JSON.stringify(defaults));
+var ids=["stick","heal","dodge","attack","mute","pause","combat-state","practice-badge","practice-move-callout"];
+var audioUrls={};
+function q(id){return document.getElementById(id)}
+function gameRoot(){try{return frame.contentDocument.getElementById("lancer-shell")?.shadowRoot||null}catch(e){return null}}
+function targetEl(id){return root&&root.getElementById(id)}
+function setStatus(t,ok){status.textContent=t;status.className="status "+(ok?"ok":"warn")}
+function ensureUi(id){
+ if(!state.ui[id]){var el=targetEl(id);if(!el)return null;var r=el.getBoundingClientRect();state.ui[id]={x:0,y:0,w:Math.round(r.width),h:Math.round(r.height)}}
+ return state.ui[id]
+}
+function applyOne(id){
+ var el=targetEl(id),v=state.ui[id];if(!el||!v)return;
+ el.style.setProperty("translate",v.x+"px "+v.y+"px","important");
+ el.style.setProperty("width",v.w+"px","important");
+ el.style.setProperty("height",v.h+"px","important");
+}
+function applyAll(){ids.forEach(function(id){ensureUi(id);applyOne(id)});syncControls();dump()}
+function syncControls(){
+ var id=q("target").value,v=ensureUi(id);if(!v)return;
+ [["x","x","px"],["y","y","px"],["w","w","px"],["h","h","px"]].forEach(function(a){q(a[0]).value=v[a[1]];q(a[0]+"o").textContent=v[a[1]]+a[2]});
+ q("selectedReadout").textContent=q("target").selectedOptions[0].text+" を編集中";
+}
+function updateUi(prop,val){var v=ensureUi(q("target").value);if(!v)return;v[prop]=Number(val);applyOne(q("target").value);syncControls();dump()}
+function installDrag(){
+ ids.forEach(function(id){var el=targetEl(id);if(!el||el.dataset.devDrag)return;el.dataset.devDrag="1";
+  el.addEventListener("pointerdown",function(e){if(e.button!==0)return;e.preventDefault();e.stopPropagation();q("target").value=id;syncControls();var v=ensureUi(id);drag={id:id,sx:e.clientX,sy:e.clientY,x:v.x,y:v.y,pid:e.pointerId};try{el.setPointerCapture(e.pointerId)}catch(_){}},true);
+ });
+ frame.contentWindow.addEventListener("pointermove",function(e){if(!drag||e.pointerId!==drag.pid)return;var v=ensureUi(drag.id);v.x=Math.round(drag.x+e.clientX-drag.sx);v.y=Math.round(drag.y+e.clientY-drag.sy);applyOne(drag.id);syncControls()},true);
+ frame.contentWindow.addEventListener("pointerup",function(e){if(drag&&e.pointerId===drag.pid){drag=null;dump()}},true);
+}
+function connect(){
+ root=gameRoot();
+ if(!root){setStatus("本編の「ゲームを起動」を押してください",false);return false}
+ setStatus("DEV EDITOR 接続済み",true);applyAll();installDrag();return true
+}
+frame.addEventListener("load",function(){root=null;setStatus("本編を読込中…",false);setTimeout(connect,1200)});
+setInterval(function(){if(!root)connect()},700);
+q("bootGame").onclick=function(){try{var b=frame.contentDocument.getElementById("boot");if(b&&!b.disabled)b.click();else frame.contentWindow.pyxelContext?.resolveInput?.()}catch(e){}setTimeout(connect,700)};
+q("reloadGame").onclick=function(){root=null;frame.src="../?dev-editor=1&t="+Date.now()};
+document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){document.querySelectorAll(".tab,.pane").forEach(function(x){x.classList.remove("active")});b.classList.add("active");q("pane-"+b.dataset.tab).classList.add("active")}});
+q("target").onchange=syncControls;
+["x","y","w","h"].forEach(function(id){q(id).oninput=function(){updateUi(id,this.value)}});
+q("resetTarget").onclick=function(){delete state.ui[q("target").value];var el=targetEl(q("target").value);if(el){el.style.removeProperty("translate");el.style.removeProperty("width");el.style.removeProperty("height")}ensureUi(q("target").value);syncControls();dump()};
+q("resetUI").onclick=function(){state.ui={};ids.forEach(function(id){var el=targetEl(id);if(el){el.style.removeProperty("translate");el.style.removeProperty("width");el.style.removeProperty("height")}});applyAll()};
+var fxFields={flash:"flash",fxScale:"fxScale",hsNormal:"hitstop.normal",hsCharge:"hitstop.charge",hsBreak:"hitstop.break",recoilNormal:"recoil.normal",recoilCharge:"recoil.charge",recoilBreak:"recoil.break",shakeFrames:"shakeFrames"};
+function getPath(obj,path){return path.split(".").reduce(function(o,k){return o[k]},obj)}
+function setPath(obj,path,val){var a=path.split("."),last=a.pop(),o=obj;a.forEach(function(k){o=o[k]});o[last]=Number(val)}
+function syncFx(){var m=state.monster.hectoran;Object.keys(fxFields).forEach(function(id){var v=getPath(m,fxFields[id]);q(id).value=v;q(id+"o").textContent=(id==="flash"?v.toFixed(2)+"s":id==="fxScale"?v.toFixed(1)+"×":v+(id==="shakeFrames"?"F":""))});q("fxType").value=m.fxType;publishTuning();dump()}
+Object.keys(fxFields).forEach(function(id){q(id).oninput=function(){setPath(state.monster.hectoran,fxFields[id],this.value);syncFx()}});
+q("fxType").onchange=function(){state.monster.hectoran.fxType=this.value;syncFx()};
+function publishTuning(){try{frame.contentWindow.getLancerDevTuning=function(){return JSON.stringify(state.monster)}}catch(e){}}
+function previewHit(kind){
+ if(!root)return;var arena=root.getElementById("arena");if(!arena)return;var old=root.getElementById("dev-hit-preview");if(old)old.remove();
+ var m=state.monster.hectoran,d=document.createElement("div");d.id="dev-hit-preview";d.style.cssText="position:absolute;z-index:80;left:64%;top:43%;width:18px;height:18px;pointer-events:none;transform:scale("+m.fxScale+");";
+ var color=kind==="break"?"#f0d7a5":kind==="charge"?"#e7edf5":"#9fc9df";
+ if(m.fxType==="ring")d.style.cssText+="border:3px solid "+color+";border-radius:50%;box-shadow:0 0 16px "+color+";";
+ else if(m.fxType==="star")d.innerHTML="<span style=\"position:absolute;left:-15px;top:7px;width:48px;height:3px;background:"+color+";transform:rotate(45deg);box-shadow:0 0 8px "+color+"\"></span><span style=\"position:absolute;left:-15px;top:7px;width:48px;height:3px;background:"+color+";transform:rotate(-45deg);box-shadow:0 0 8px "+color+"\"></span>";
+ else d.innerHTML="<span style=\"position:absolute;left:-22px;top:7px;width:62px;height:4px;background:"+color+";transform:rotate(-18deg);box-shadow:0 0 10px "+color+"\"></span>";
+ arena.appendChild(d);d.animate([{opacity:1,transform:"scale("+m.fxScale+")"},{opacity:0,transform:"scale("+(m.fxScale*1.5)+")"}],{duration:260,easing:"ease-out"}).onfinish=function(){d.remove()};
+ testSfx(kind)
+}
+document.querySelectorAll("[data-preview-hit]").forEach(function(b){b.onclick=function(){previewHit(b.dataset.previewHit)}});
+function installSoundOverride(){
+ try{var w=frame.contentWindow;if(!w.__devOriginalHitSfx&&w.playLancerHitSfx)w.__devOriginalHitSfx=w.playLancerHitSfx;
+  w.playLancerHitSfx=function(kind){if(audioUrls[kind]){var a=new Audio(audioUrls[kind]);a.volume=state.sound.volume;a.play().catch(function(){})}else if(w.__devOriginalHitSfx)w.__devOriginalHitSfx(kind)}
+ }catch(e){}
+}
+function testSfx(kind){if(audioUrls[kind]){var a=new Audio(audioUrls[kind]);a.volume=state.sound.volume;a.play().catch(function(){})}else{try{installSoundOverride();frame.contentWindow.__devOriginalHitSfx?.(kind)}catch(e){}}}
+document.querySelectorAll("[data-test-sfx]").forEach(function(b){b.onclick=function(){testSfx(b.dataset.testSfx)}});
+q("seVolume").oninput=function(){state.sound.volume=Number(this.value);q("seVolumeo").textContent=Math.round(state.sound.volume*100)+"%";dump()};
+[["fileNormal","normal"],["fileCharge","charge"],["fileBreak","break"]].forEach(function(a){q(a[0]).onchange=function(){var f=this.files[0];if(!f)return;if(audioUrls[a[1]])URL.revokeObjectURL(audioUrls[a[1]]);audioUrls[a[1]]=URL.createObjectURL(f);state.sound.files[a[1]]=f.name;installSoundOverride();dump()}});
+q("fileBgm").onchange=function(){var f=this.files[0];if(!f)return;if(audioUrls.bgm)URL.revokeObjectURL(audioUrls.bgm);audioUrls.bgm=URL.createObjectURL(f);state.sound.files.bgm=f.name;dump()};
+q("playBgm").onclick=function(){if(!audioUrls.bgm)return;if(bgm)bgm.pause();bgm=new Audio(audioUrls.bgm);bgm.loop=true;bgm.volume=state.sound.volume;bgm.play().catch(function(){})};
+q("stopBgm").onclick=function(){if(bgm){bgm.pause();bgm.currentTime=0}};
+function cssText(){return Object.keys(state.ui).map(function(id){var v=state.ui[id];return "#"+id+"{translate:"+v.x+"px "+v.y+"px!important;width:"+v.w+"px!important;height:"+v.h+"px!important}"}).join("\n")}
+function dump(){q("dump").value=JSON.stringify(state,null,2)}
+q("saveLocal").onclick=function(){localStorage.setItem("lancers-dev-editor",JSON.stringify(state));setStatus("設定をブラウザへ保存しました",true)};
+q("loadLocal").onclick=function(){var s=localStorage.getItem("lancers-dev-editor");if(s){state=JSON.parse(s);applyAll();syncFx();syncSound()}};
+q("downloadJson").onclick=function(){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:"application/json"}));a.download="lancers-dev-config.json";a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000)};
+q("copyCss").onclick=function(){navigator.clipboard.writeText(cssText()).then(function(){setStatus("CSSをコピーしました",true)})};
+q("importJson").onchange=function(){var f=this.files[0];if(!f)return;f.text().then(function(t){state=JSON.parse(t);applyAll();syncFx();syncSound();setStatus("JSONを読み込みました",true)}).catch(function(){setStatus("JSONを読み込めませんでした",false)})};
+function syncSound(){q("seVolume").value=state.sound.volume;q("seVolumeo").textContent=Math.round(state.sound.volume*100)+"%";dump()}
+syncFx();syncSound();dump();
+})();
+</script>
+</body>
+</html>
