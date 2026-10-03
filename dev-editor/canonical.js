@@ -7,7 +7,16 @@ let canonical=null;
 
 function api(){return window.lancersDevEditor}
 function clone(v){return JSON.parse(JSON.stringify(v))}
-function configOnly(v){return {ui:clone(v?.ui||{}),monster:clone(v?.monster||{}),sound:clone(v?.sound||{})}}
+function normalizedUi(ui){
+ const out={},base=api()?.getUiBaseline?.()||{};
+ for(const [id,v] of Object.entries(ui||{})){
+   const b=base[id];
+   if(b&&Number(v.x)===Number(b.x)&&Number(v.y)===Number(b.y)&&Number(v.w)===Number(b.w)&&Number(v.h)===Number(b.h))continue;
+   out[id]=clone(v);
+ }
+ return out;
+}
+function configOnly(v){return {ui:normalizedUi(v?.ui||{}),monster:clone(v?.monster||{}),sound:clone(v?.sound||{})}}
 function stable(v){return JSON.stringify(v)}
 function same(a,b){return stable(configOnly(a))===stable(configOnly(b))}
 function pending(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||"null")}catch(_){return null}}
