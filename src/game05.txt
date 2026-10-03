@@ -168,7 +168,9 @@
             self.hitstop_frames = max(0, hitstop)
             self.flash = max(.01, float(dev.get('flash', .12)))
             self.dev_fx_scale = max(.25, float(dev.get('fxScale', 1.0)))
+            self.dev_fx_life = max(.05, float(dev.get('fxLife', .36)))
             self.dev_fx_type = str(dev.get('fxType', 'spear'))
+            self.dev_shake_px = max(0, int(dev.get('shakePx', 1)))
             # v4.6a40: visual-only boss recoil. Store the confirmed spear direction
             # and impact tier; boss world position/collision never moves.
             self.hit_reaction_dx = ux
@@ -176,7 +178,7 @@
             self.hit_reaction_tier = vfx_tier
             if full and was_break:
                 self.break_shake_until = self.frame + max(0, int(dev.get('shakeFrames', 8)))
-            self.hit_vfx.append([contact_x, contact_y, self.aa, vfx_tier, .36])
+            self.hit_vfx.append([contact_x, contact_y, self.aa, vfx_tier, self.dev_fx_life])
             self.text(contact_x, contact_y-11, damage)
             if window is not None and not self.muted:
                 try:
