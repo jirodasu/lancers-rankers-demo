@@ -38,6 +38,11 @@ jobs:
           if not m:
               raise SystemExit("Canonical payload marker not found.")
           data=json.loads(m.group(1))
+          base_match=re.search(r"<!-- LANCERS_BASE_UPDATED_AT: (.*?) -->", body)
+          current_path=pathlib.Path("config/lancers-tuning.json")
+          current=json.loads(current_path.read_text())
+          if not base_match or base_match.group(1).strip()!=str(current.get("updatedAt","")):
+              raise SystemExit("Canonical config changed after the editor loaded it. Reload the editor and try again.")
           if data.get("schema")!="lancers-tuning/v1" or data.get("authority")!="canonical":
               raise SystemExit("Invalid canonical schema.")
           allowed={"schema","authority","updatedAt","updatedBy","ui","monster","sound"}
