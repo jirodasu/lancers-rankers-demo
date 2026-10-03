@@ -16,9 +16,11 @@ function enhanceA11y(){
  document.querySelector("header")?.setAttribute("role","banner");
  $("status")?.setAttribute("aria-live","polite");
  document.querySelector(".tabs")?.setAttribute("role","tablist");
- document.querySelectorAll(".tab").forEach((b,i)=>{
-  b.setAttribute("role","tab");b.setAttribute("aria-controls","pane-"+b.dataset.tab);b.setAttribute("aria-selected",b.classList.contains("active")?"true":"false");b.id="tab-"+b.dataset.tab;
-  b.addEventListener("click",()=>document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===b?"true":"false")))
+ const tabs=[...document.querySelectorAll(".tab")];
+ tabs.forEach((b,i)=>{
+  b.setAttribute("role","tab");b.setAttribute("aria-controls","pane-"+b.dataset.tab);b.setAttribute("aria-selected",b.classList.contains("active")?"true":"false");b.setAttribute("tabindex",b.classList.contains("active")?"0":"-1");b.id="tab-"+b.dataset.tab;
+  b.addEventListener("click",()=>tabs.forEach(x=>{x.setAttribute("aria-selected",x===b?"true":"false");x.setAttribute("tabindex",x===b?"0":"-1")}));
+  b.addEventListener("keydown",e=>{if(!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;e.preventDefault();let n=e.key==="Home"?0:e.key==="End"?tabs.length-1:(i+(e.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;tabs[n].click();tabs[n].focus()})
  });
  document.querySelectorAll(".pane").forEach(p=>{p.setAttribute("role","tabpanel");const n=p.id.replace("pane-","");p.setAttribute("aria-labelledby","tab-"+n)});
  document.querySelectorAll(".row").forEach(row=>{const label=row.querySelector("label"),input=row.querySelector("input,select");if(label&&input&&!input.getAttribute("aria-label"))input.setAttribute("aria-label",label.textContent.trim())});
