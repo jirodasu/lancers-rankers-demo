@@ -144,21 +144,6 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
 
   <section class="pane" id="pane-data">
     <h2>正規設定 / 保存</h2>
-    <div class="deploy-card">
-      <div class="deploy-title"><span>PRODUCTION</span><strong>本編へ直接反映</strong></div>
-      <button class="btn implement-btn" id="implementCanonical" disabled>⚡ 本編へ実装</button>
-      <div id="deployStatus" class="deploy-status">GitHub未接続</div>
-      <div id="lastImplementation" class="deploy-last"></div>
-      <details class="github-auth">
-        <summary>初回のみ：GitHubを接続</summary>
-        <p class="note">このリポジトリだけに Contents の読み書きを許可した Fine-grained token を使います。認証情報は保存せず、このタブを閉じると消えます。</p>
-        <a class="token-link" target="_blank" rel="noopener noreferrer" href="https://github.com/settings/personal-access-tokens/new">GitHubで専用tokenを作る ↗</a>
-        <p class="note">Repository access は Only select repositories → lancers-rankers-demo、Repository permissions は Contents → Read and write を選択してください。</p>
-        <input id="githubToken" type="password" autocomplete="off" spellcheck="false" placeholder="作成したtokenをここに貼る">
-        <div class="grid2" style="margin-top:8px"><button class="btn" id="githubConnect">接続</button><button class="btn" id="githubDisconnect">切断</button></div>
-        <div id="githubIdentity" class="github-identity">未接続 · 認証情報は保存しません</div>
-      </details>
-    </div>
     <div class="implement-card">
       <div class="implement-head"><span>PRODUCTION</span><strong>本編へ反映</strong></div>
       <button class="btn implement-main" id="implementCanonical">⚡ 本編へ実装</button>
@@ -174,7 +159,7 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
         <button class="btn" id="downloadCanonicalPayload" disabled>更新JSONを保存</button>
       </div>
       <button class="btn canonical-reload" id="reloadCanonical">GitHub正規設定を再読込</button>
-      <p class="note canonical-warning">「採用確定」後はGitHub反映待ちになります。コピーされた更新データをChatGPTへ貼り付け、<code>config/lancers-tuning.json</code>へ反映すると、以後その値が作業の基準になります。</p>
+      <p class="note canonical-warning">「採用確定」は案を固定するための手動フローです。通常は上の「本編へ実装」を使えば、GitHub確認後に<code>config/lancers-tuning.json</code>へ自動反映されます。</p>
     </div>
     <h3>ローカル作業データ</h3>
     <div class="grid2"><button class="btn gold" id="saveLocal">ブラウザに保存</button><button class="btn" id="loadLocal">保存値を読込</button></div>
