@@ -87,6 +87,7 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
     <div class="card"><span class="badge">LIVE TUNING</span><p class="note">この設定は開発プレビュー用。HIT時の値を本編ランタイムへ渡せる形式で保持します。</p></div>
     <div class="row"><label>被弾表示</label><input id="flash" type="range" min="0.04" max="0.35" step="0.01"><output id="flasho"></output></div>
     <div class="row"><label>FX倍率</label><input id="fxScale" type="range" min="0.5" max="2.5" step="0.1"><output id="fxScaleo"></output></div>
+    <div class="row"><label>FX時間</label><input id="fxLife" type="range" min="0.10" max="0.80" step="0.02"><output id="fxLifeo"></output></div>
     <h3>HITSTOP</h3>
     <div class="row"><label>通常</label><input id="hsNormal" type="range" min="0" max="12" step="1"><output id="hsNormalo"></output></div>
     <div class="row"><label>溜め</label><input id="hsCharge" type="range" min="0" max="14" step="1"><output id="hsChargeo"></output></div>
@@ -95,6 +96,7 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
     <div class="row"><label>通常</label><input id="recoilNormal" type="range" min="0" max="10" step="1"><output id="recoilNormalo"></output></div>
     <div class="row"><label>溜め</label><input id="recoilCharge" type="range" min="0" max="12" step="1"><output id="recoilChargeo"></output></div>
     <div class="row"><label>BREAK</label><input id="recoilBreak" type="range" min="0" max="16" step="1"><output id="recoilBreako"></output></div>
+    <div class="row"><label>揺れ強度</label><input id="shakePx" type="range" min="0" max="5" step="1"><output id="shakePxo"></output></div>
     <div class="row"><label>揺れ時間</label><input id="shakeFrames" type="range" min="0" max="18" step="1"><output id="shakeFrameso"></output></div>
     <h3>エフェクト種類</h3>
     <select id="fxType"><option value="spear">槍閃</option><option value="star">衝撃星</option><option value="ring">衝撃輪</option></select>
@@ -129,7 +131,7 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
 (function(){
 "use strict";
 var frame=document.getElementById("game"),status=document.getElementById("status"),root=null,drag=null,bgm=null;
-var defaults={ui:{},monster:{hectoran:{flash:0.12,fxScale:1,fxType:"spear",hitstop:{normal:2,charge:4,break:6},recoil:{normal:2,charge:3,break:5},shakeFrames:8}},sound:{volume:0.1,files:{normal:"hit_normal.mp3",charge:"hit_charge.mp3",break:"hit_break.mp3",bgm:"Pyxel BGM"}}};
+var defaults={ui:{},monster:{hectoran:{flash:0.12,fxScale:1,fxLife:0.36,fxType:"spear",hitstop:{normal:2,charge:4,break:6},recoil:{normal:2,charge:3,break:5},shakeFrames:8,shakePx:1}},sound:{volume:0.1,files:{normal:"hit_normal.mp3",charge:"hit_charge.mp3",break:"hit_break.mp3",bgm:"Pyxel BGM"}}};
 var state=JSON.parse(JSON.stringify(defaults));
 var ids=["stick","heal","dodge","attack","mute","pause","combat-state","practice-badge","practice-move-callout"];
 var audioUrls={};
@@ -164,7 +166,7 @@ function installDrag(){
 function connect(){
  root=gameRoot();
  if(!root){setStatus("本編の「ゲームを起動」を押してください",false);return false}
- setStatus("DEV EDITOR 接続済み",true);applyAll();installDrag();return true
+ setStatus("DEV EDITOR 接続済み",true);publishTuning();installSoundOverride();applyAll();installDrag();return true
 }
 frame.addEventListener("load",function(){root=null;setStatus("本編を読込中…",false);setTimeout(connect,1200)});
 setInterval(function(){if(!root)connect()},700);
@@ -175,10 +177,10 @@ q("target").onchange=syncControls;
 ["x","y","w","h"].forEach(function(id){q(id).oninput=function(){updateUi(id,this.value)}});
 q("resetTarget").onclick=function(){delete state.ui[q("target").value];var el=targetEl(q("target").value);if(el){el.style.removeProperty("translate");el.style.removeProperty("width");el.style.removeProperty("height")}ensureUi(q("target").value);syncControls();dump()};
 q("resetUI").onclick=function(){state.ui={};ids.forEach(function(id){var el=targetEl(id);if(el){el.style.removeProperty("translate");el.style.removeProperty("width");el.style.removeProperty("height")}});applyAll()};
-var fxFields={flash:"flash",fxScale:"fxScale",hsNormal:"hitstop.normal",hsCharge:"hitstop.charge",hsBreak:"hitstop.break",recoilNormal:"recoil.normal",recoilCharge:"recoil.charge",recoilBreak:"recoil.break",shakeFrames:"shakeFrames"};
+var fxFields={flash:"flash",fxScale:"fxScale",fxLife:"fxLife",hsNormal:"hitstop.normal",hsCharge:"hitstop.charge",hsBreak:"hitstop.break",recoilNormal:"recoil.normal",recoilCharge:"recoil.charge",recoilBreak:"recoil.break",shakePx:"shakePx",shakeFrames:"shakeFrames"};
 function getPath(obj,path){return path.split(".").reduce(function(o,k){return o[k]},obj)}
 function setPath(obj,path,val){var a=path.split("."),last=a.pop(),o=obj;a.forEach(function(k){o=o[k]});o[last]=Number(val)}
-function syncFx(){var m=state.monster.hectoran;Object.keys(fxFields).forEach(function(id){var v=getPath(m,fxFields[id]);q(id).value=v;q(id+"o").textContent=(id==="flash"?v.toFixed(2)+"s":id==="fxScale"?v.toFixed(1)+"×":v+(id==="shakeFrames"?"F":""))});q("fxType").value=m.fxType;publishTuning();dump()}
+function syncFx(){var m=state.monster.hectoran;Object.keys(fxFields).forEach(function(id){var v=getPath(m,fxFields[id]);q(id).value=v;q(id+"o").textContent=(id==="flash"||id==="fxLife"?v.toFixed(2)+"s":id==="fxScale"?v.toFixed(1)+"×":v+(id==="shakeFrames"?"F":id==="shakePx"?"px":""))});q("fxType").value=m.fxType;publishTuning();dump()}
 Object.keys(fxFields).forEach(function(id){q(id).oninput=function(){setPath(state.monster.hectoran,fxFields[id],this.value);syncFx()}});
 q("fxType").onchange=function(){state.monster.hectoran.fxType=this.value;syncFx()};
 function publishTuning(){try{frame.contentWindow.getLancerDevTuning=function(){return JSON.stringify(state.monster)}}catch(e){}}
