@@ -144,6 +144,20 @@ try:
 except ImportError:
     window = None
 
+def dev_monster_tuning(name='hectoran'):
+    """Return optional live values from dev-editor; production stays unchanged."""
+    if window is None:
+        return {}
+    try:
+        getter = getattr(window, 'getLancerDevTuning', None)
+        if getter is None:
+            return {}
+        raw = json.loads(str(getter()))
+        value = raw.get(name, {})
+        return value if isinstance(value, dict) else {}
+    except Exception:
+        return {}
+
 W, H, FPS = 195, 250, 60
 CX, CY, R = 97.5, 129, 86
 DT = 1 / FPS
