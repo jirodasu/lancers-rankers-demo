@@ -18,7 +18,7 @@ main{display:grid;grid-template-columns:minmax(390px,1fr) 390px;height:calc(100v
 iframe{width:100%;height:100%;border:0;background:#080e19}
 .tip{position:absolute;left:18px;bottom:16px;max-width:330px;padding:9px 11px;background:#07101be8;border:1px solid #2b3c52;color:#91a4ba;font-size:11px;line-height:1.5;pointer-events:none}
 .panel{overflow:auto;border-left:1px solid #263448;background:#0b121e}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);position:sticky;top:0;background:#0b121e;z-index:5;border-bottom:1px solid #263448}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);position:sticky;top:0;background:#0b121e;z-index:5;border-bottom:1px solid #263448}
 .tab{border:0;border-bottom:2px solid transparent;background:transparent;padding:13px 4px;color:#8295aa;font-size:12px;font-weight:800}.tab.active{color:#f0d7a5;border-bottom-color:#d6b574;background:#111b29}
 .pane{display:none;padding:16px}.pane.active{display:block}
 h2{font-size:15px;margin:0 0 12px;color:#f0d7a5}h3{font-size:12px;margin:18px 0 8px;color:#9fb0c4;text-transform:uppercase;letter-spacing:.08em}
@@ -34,12 +34,17 @@ input[type=range]{width:100%;accent-color:#c7a96b}
 .file{display:block;border:1px dashed #40536b;padding:10px;border-radius:6px;font-size:11px;color:#9db0c5;margin:8px 0}.file input{width:100%;margin-top:6px}
 textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d8;border:1px solid #304158;padding:10px;font:11px/1.5 ui-monospace,monospace}
 .selected-readout{padding:10px;border:1px solid #5f5135;background:#1b1812;color:#e9d09c;font-size:12px;margin-bottom:12px}
+.history-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}.history-toolbar button:disabled{opacity:.35;cursor:not-allowed}
+.history-head{display:flex;align-items:center;justify-content:space-between;margin:14px 0 7px}.history-head h3{margin:0}.history-head span{font:700 10px monospace;color:#8094aa}
+.history-list{display:grid;gap:6px;max-height:310px;overflow:auto}.history-item{display:grid;grid-template-columns:62px 1fr auto;gap:7px;align-items:center;width:100%;text-align:left;border:1px solid #2b3d53;background:#0e1826;padding:8px;border-radius:5px;color:#b8c7d8}.history-item span{font:10px monospace;color:#70849a}.history-item b{font-size:11px;font-weight:650}.history-item em{font:700 9px monospace;color:#f0d7a5;font-style:normal}.history-item.current{border-color:#8a7042;background:#1b1812}
+.history-empty{padding:16px;border:1px dashed #304158;text-align:center;color:#6f8298;font-size:11px}
+.snapshot-form{display:grid;gap:7px}.snapshot{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid #304158;background:#0e1826;padding:9px;border-radius:5px;margin-top:6px}.snapshot b,.snapshot span,.snapshot small{display:block}.snapshot b{font-size:12px;color:#e5cc99}.snapshot span{font-size:10px;color:#8094aa;margin-top:2px}.snapshot small{font-size:10px;color:#a3b2c2;margin-top:4px}.snapshot button{border:1px solid #465b75;background:#162438;border-radius:4px;padding:6px 9px}
 @media(max-width:850px){main{grid-template-columns:1fr;height:auto}.stage{height:72vh;padding:10px}.device{height:68vh;min-height:540px}.panel{border-left:0;border-top:1px solid #263448}.tip{display:none}}
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">LANCERS DEV EDITOR<small>LOCAL TUNING / v0.1</small></div>
+  <div class="brand">LANCERS DEV EDITOR<small>LOCAL TUNING / v0.2</small></div>
   <button class="topbtn" id="bootGame">本編を起動</button>
   <button class="topbtn" id="reloadGame">再読込</button>
   <span id="status" class="status warn">本編を読込中…</span>
@@ -54,6 +59,7 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
     <button class="tab active" data-tab="ui">UI</button>
     <button class="tab" data-tab="fx">MONSTER</button>
     <button class="tab" data-tab="sound">SOUND</button>
+    <button class="tab" data-tab="history">履歴</button>
     <button class="tab" data-tab="data">DATA</button>
   </nav>
 
@@ -114,6 +120,24 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
     <label class="file">BGMファイル<input type="file" id="fileBgm" accept="audio/*"></label>
     <div class="grid2"><button class="btn" id="playBgm">▶ BGM試聴</button><button class="btn" id="stopBgm">■ 停止</button></div>
     <p class="note">ローカル音源はブラウザ内だけで試聴します。ファイル名は設定JSONに保存されますが、音源そのものはリポジトリへ自動アップロードしません。</p>
+  </section>
+
+
+  <section class="pane" id="pane-history">
+    <h2>調整履歴</h2>
+    <div class="history-toolbar"><button class="btn" id="undoHistory">↶ Undo</button><button class="btn" id="redoHistory">↷ Redo</button></div>
+    <p class="note">スライダー、UI位置、HIT設定、SE/BGM指定の変更を最大200件まで自動記録します。履歴をタップすると、その時点へ復元できます。</p>
+    <div class="history-head"><h3>タイムライン</h3><span id="historyCount">0件</span></div>
+    <div class="history-list" id="historyList"></div>
+    <button class="btn danger" id="clearHistory" style="margin-top:8px">履歴だけ消去</button>
+    <div class="history-head"><h3>名前付きスナップショット</h3><span>A/B比較用</span></div>
+    <div class="snapshot-form">
+      <input type="text" id="snapshotName" placeholder="例：案A 重めのBREAK">
+      <select id="snapshotRating"><option>未評価</option><option>良かった</option><option>微妙</option><option>採用</option></select>
+      <input type="text" id="snapshotNote" placeholder="メモ：2pxの揺れが一番読みやすい">
+      <button class="btn gold" id="saveSnapshot">この状態を保存</button>
+    </div>
+    <div id="snapshotList"></div>
   </section>
 
   <section class="pane" id="pane-data">
@@ -216,7 +240,15 @@ q("copyCss").onclick=function(){navigator.clipboard.writeText(cssText()).then(fu
 q("importJson").onchange=function(){var f=this.files[0];if(!f)return;f.text().then(function(t){state=JSON.parse(t);applyAll();syncFx();syncSound();setStatus("JSONを読み込みました",true)}).catch(function(){setStatus("JSONを読み込めませんでした",false)})};
 function syncSound(){q("seVolume").value=state.sound.volume;q("seVolumeo").textContent=Math.round(state.sound.volume*100)+"%";dump()}
 syncFx();syncSound();dump();
+
+window.lancersDevEditor={
+ getState:function(){return state},
+ setState:function(next){state=JSON.parse(JSON.stringify(next))},
+ apply:function(){applyAll();syncFx();syncSound();publishTuning()},
+ setStatus:setStatus
+};
 })();
 </script>
+<script src="./history.js"></script>
 </body>
 </html>
