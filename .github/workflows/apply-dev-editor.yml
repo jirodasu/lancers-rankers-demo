@@ -1,0 +1,87 @@
+name: Apply DEV EDITOR tuning
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+  pages: write
+
+concurrency:
+  group: lancers-dev-editor-implement
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.actor == 'jirodasu' && startsWith(github.event.issue.title, '[LANCERS DEV IMPLEMENT]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate and write canonical tuning
+        env:
+          EVENT_PATH: ${{ github.event_path }}
+        run: |
+          python - <<'PY'
+          import json, os, re, pathlib, sys
+          event=json.loads(pathlib.Path(os.environ["EVENT_PATH"]).read_text())
+          issue=event["issue"]
+          if issue["user"]["login"]!="jirodasu":
+              raise SystemExit("Only the repository owner may apply editor tuning.")
+          body=issue.get("body") or ""
+          m=re.search(r"<!-- LANCERS_CANONICAL_START -->\s*```json\s*(\{.*?\})\s*```\s*<!-- LANCERS_CANONICAL_END -->", body, re.S)
+          if not m:
+              raise SystemExit("Canonical payload marker not found.")
+          data=json.loads(m.group(1))
+          if data.get("schema")!="lancers-tuning/v1" or data.get("authority")!="canonical":
+              raise SystemExit("Invalid canonical schema.")
+          allowed={"schema","authority","updatedAt","updatedBy","ui","monster","sound"}
+          extra=set(data)-allowed
+          if extra:
+              raise SystemExit("Unexpected canonical keys: "+", ".join(sorted(extra)))
+          if not isinstance(data.get("ui"),dict) or not isinstance(data.get("monster"),dict) or not isinstance(data.get("sound"),dict):
+              raise SystemExit("Canonical sections must be objects.")
+          path=pathlib.Path("config/lancers-tuning.json")
+          path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+"\n")
+          PY
+
+      - name: Commit canonical tuning
+        id: commit
+        run: |
+          if git diff --quiet -- config/lancers-tuning.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add config/lancers-tuning.json
+          git commit -m "Apply DEV EDITOR canonical tuning"
+          git push origin HEAD:main
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Request Pages rebuild
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST "repos/${GITHUB_REPOSITORY}/pages/builds" || true
+
+      - name: Close implementation request
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          SHA: ${{ steps.commit.outputs.sha }}
+          CHANGED: ${{ steps.commit.outputs.changed }}
+        run: |
+          if [ "$CHANGED" = "true" ]; then
+            MSG="実装しました。正規設定 commit: ${SHA:0:8}。GitHub Pages の再ビルドも要求しました。"
+          else
+            MSG="現在の正規設定と同じため、追加コミットは不要でした。"
+          fi
+          gh issue close "$ISSUE" --repo "$GITHUB_REPOSITORY" --comment "$MSG"
