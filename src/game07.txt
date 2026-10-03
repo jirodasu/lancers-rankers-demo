@@ -198,7 +198,7 @@
         d=int(round(math.atan2(dy,dx)/(math.pi/4)))%8
         dx8=(1,1,0,-1,-1,-1,0,1)[d]; dy8=(0,1,1,1,0,-1,-1,-1)[d]
         tier=max(1,min(3,int(getattr(self,'hit_reaction_tier',1))))
-        recoil=(2,3,5)[tier-1]
+        recoil=float(getattr(self, 'hit_reaction_px', (2,3,5)[tier-1]))
         x,y=int(round(self.bx+dx*recoil)),int(round(self.by+dy*recoil))
         backx,backy=-dx8,-dy8
         pyxel.elli(x-10,y+7,20,4,0)
@@ -581,17 +581,24 @@
             dx,dy=math.cos(ha),math.sin(ha)
             vx,vy=-dy,dx
             age=max(0.,min(1.,1-life/.36))
-            radius=8 if tier==1 else 14 if tier==2 else 22
+            fx_scale=max(.25,float(getattr(self, 'dev_fx_scale', 1.0)))
+            fx_type=str(getattr(self, 'dev_fx_type', 'spear'))
+            radius=max(2,int((8 if tier==1 else 14 if tier==2 else 22)*fx_scale))
             col=7 if tier>=2 else 10
-            # Compact impact star centered on the actual contact point.
-            pyxel.line(hx-vx*radius,hy-vy*radius,hx+vx*radius,hy+vy*radius,col)
-            pyxel.line(hx-dx*(radius-1),hy-dy*(radius-1),hx+dx*radius,hy+dy*radius,7)
-            if tier>=2:
-                # Short spear-shaped flash aligned to thrust direction.
-                tail=24 if tier==2 else 36
-                pyxel.line(hx-dx*tail,hy-dy*tail,hx+dx*3,hy+dy*3,7)
-                pyxel.line(hx-dx*(tail-2)+vx*2,hy-dy*(tail-2)+vy*2,hx+dx*1,hy+dy*1,10)
-                pyxel.line(hx-dx*(tail-2)-vx*2,hy-dy*(tail-2)-vy*2,hx+dx*1,hy+dy*1,10)
+            if fx_type == 'ring':
+                pyxel.circb(hx,hy,max(2,int(radius*(.55+age))),col)
+                if tier>=2:
+                    pyxel.circb(hx,hy,max(2,int(radius*(.30+age*.65))),7)
+            else:
+                # Compact impact star centered on the actual contact point.
+                pyxel.line(hx-vx*radius,hy-vy*radius,hx+vx*radius,hy+vy*radius,col)
+                pyxel.line(hx-dx*(radius-1),hy-dy*(radius-1),hx+dx*radius,hy+dy*radius,7)
+                if fx_type == 'spear' and tier>=2:
+                    # Short spear-shaped flash aligned to thrust direction.
+                    tail=max(3,int((24 if tier==2 else 36)*fx_scale))
+                    pyxel.line(hx-dx*tail,hy-dy*tail,hx+dx*3,hy+dy*3,7)
+                    pyxel.line(hx-dx*(tail-2)+vx*2,hy-dy*(tail-2)+vy*2,hx+dx*1,hy+dy*1,10)
+                    pyxel.line(hx-dx*(tail-2)-vx*2,hy-dy*(tail-2)-vy*2,hx+dx*1,hy+dy*1,10)
             # Sparks travel visually outward as the 0.14 s effect expires.
             spread=4+int(age*(6 if tier==1 else 10 if tier==2 else 14))
             for side in (-1,1):
