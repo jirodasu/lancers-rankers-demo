@@ -1,0 +1,36 @@
+{
+  "schema": "lancers-tuning/v1",
+  "authority": "canonical",
+  "updatedAt": "2026-10-03T15:46:00+09:00",
+  "updatedBy": "bootstrap-from-production",
+  "ui": {},
+  "monster": {
+    "hectoran": {
+      "flash": 0.12,
+      "fxScale": 1,
+      "fxLife": 0.36,
+      "fxType": "spear",
+      "hitstop": {
+        "normal": 2,
+        "charge": 4,
+        "break": 6
+      },
+      "recoil": {
+        "normal": 2,
+        "charge": 3,
+        "break": 5
+      },
+      "shakeFrames": 8,
+      "shakePx": 1
+    }
+  },
+  "sound": {
+    "volume": 0.1,
+    "files": {
+      "normal": "hit_normal.mp3",
+      "charge": "hit_charge.mp3",
+      "break": "hit_break.mp3",
+      "bgm": "Pyxel BGM"
+    }
+  }
+}
