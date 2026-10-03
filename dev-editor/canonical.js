@@ -126,5 +126,10 @@ window.lancersCanonicalReady=(async()=>{
  bind();
  try{return await reloadCanonical()}catch(_){renderSync();return null}
 })();
-window.lancersCanonical={renderSync,reloadCanonical,adopt};
+function buildAdopted(){return makeCanonical()}
+function getCanonical(){return canonical?clone(canonical):null}
+function markImplemented(next){
+ canonical=clone(next);window.lancersCanonicalConfig=clone(next);clearPending();renderSync();
+}
+window.lancersCanonical={renderSync,reloadCanonical,adopt,buildAdopted,getCanonical,markImplemented};
 })();
