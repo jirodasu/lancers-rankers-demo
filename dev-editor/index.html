@@ -172,13 +172,15 @@ var frame=document.getElementById("game"),status=document.getElementById("status
 var defaults={ui:{},monster:{hectoran:{flash:0.12,fxScale:1,fxLife:0.36,fxType:"spear",hitstop:{normal:2,charge:4,break:6},recoil:{normal:2,charge:3,break:5},shakeFrames:8,shakePx:1}},sound:{volume:0.1,files:{normal:"hit_normal.mp3",charge:"hit_charge.mp3",break:"hit_break.mp3",bgm:"Pyxel BGM"}}};
 var state=JSON.parse(JSON.stringify(defaults));
 var ids=["stick","heal","dodge","attack","mute","pause","combat-state","practice-badge","practice-move-callout"];
-var audioUrls={};
+var audioUrls={},uiBaseline={};
 function q(id){return document.getElementById(id)}
 function gameRoot(){try{return frame.contentDocument.getElementById("lancer-shell")?.shadowRoot||null}catch(e){return null}}
 function targetEl(id){return root&&root.getElementById(id)}
 function setStatus(t,ok){status.textContent=t;status.className="status "+(ok?"ok":"warn")}
 function ensureUi(id){
- if(!state.ui[id]){var el=targetEl(id);if(!el)return null;var r=el.getBoundingClientRect();state.ui[id]={x:0,y:0,w:Math.round(r.width),h:Math.round(r.height)}}
+ var el=targetEl(id);if(!el)return null;
+ if(!uiBaseline[id]){var r=el.getBoundingClientRect();uiBaseline[id]={x:0,y:0,w:Math.round(r.width),h:Math.round(r.height)}}
+ if(!state.ui[id])state.ui[id]=JSON.parse(JSON.stringify(uiBaseline[id]));
  return state.ui[id]
 }
 function applyOne(id){
@@ -257,6 +259,7 @@ syncFx();syncSound();dump();
 
 window.lancersDevEditor={
  getState:function(){return state},
+ getUiBaseline:function(){return JSON.parse(JSON.stringify(uiBaseline))},
  setState:function(next){state=JSON.parse(JSON.stringify(next))},
  apply:function(){applyAll();syncFx();syncSound();publishTuning()},
  setStatus:setStatus
