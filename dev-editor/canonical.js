@@ -43,7 +43,16 @@ function renderSync(){
 }
 
 function makeCanonical(){
- const state=configOnly(api().getState());
+ const state=configOnly(api().getState()),h=state.monster?.hectoran,base=canonical?.monster?.hectoran;
+ if(h&&base){
+   h.benikiba=h.benikiba||clone(base.benikiba||{});
+   if(Number(h.flash)!==Number(base.flash))h.benikiba.flash=h.flash;
+   ["normal","charge","break"].forEach(k=>{
+     if(Number(h.hitstop?.[k])!==Number(base.hitstop?.[k])){h.benikiba.hitstop=h.benikiba.hitstop||{};h.benikiba.hitstop[k]=h.hitstop[k]}
+     if(Number(h.recoil?.[k])!==Number(base.recoil?.[k])){h.benikiba.recoil=h.benikiba.recoil||{};h.benikiba.recoil[k]=h.recoil[k]}
+   });
+   if(Number(h.shakeFrames)!==Number(base.shakeFrames))h.benikiba.shakeFrames=h.shakeFrames;
+ }
  return {
    schema:"lancers-tuning/v1",
    authority:"canonical",
