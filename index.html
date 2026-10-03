@@ -84,6 +84,62 @@ small{display:block;color:#8999ad;margin-top:14px}
     }
   }
   window.lancerHitSfxSources=sfxSources;
+  let canonicalTuning=null;
+  const tuningConfigUrl=()=>`./config/lancers-tuning.json?v=${Date.now()}`;
+
+  function applyCanonicalSound(sound={}){
+    const volume=Math.max(0,Math.min(1,Number(sound.volume ?? .1)));
+    const files=sound.files||{};
+    for(const key of ['normal','charge','break']){
+      const file=files[key];
+      if(file && /^[a-zA-Z0-9._/-]+$/.test(file)){
+        const path=file.includes('/')?file:`assets/sfx/${file}`;
+        sfxSources[key]=`./${path}?v=${VERSION}`;
+      }
+      for(const audio of sfxPools[key]||[]){
+        audio.volume=volume;
+        if(audio.src!==new URL(sfxSources[key],location.href).href){
+          audio.src=sfxSources[key];
+          audio.load();
+        }
+      }
+    }
+  }
+
+  function applyCanonicalUi(ui={}){
+    const root=document.getElementById('lancer-shell')?.shadowRoot;
+    if(!root)return false;
+    for(const [id,v] of Object.entries(ui||{})){
+      const el=root.getElementById(id);
+      if(!el||!v)continue;
+      if(Number.isFinite(Number(v.x))&&Number.isFinite(Number(v.y)))el.style.setProperty('translate',`${Number(v.x)}px ${Number(v.y)}px`,'important');
+      if(Number.isFinite(Number(v.w)))el.style.setProperty('width',`${Number(v.w)}px`,'important');
+      if(Number.isFinite(Number(v.h)))el.style.setProperty('height',`${Number(v.h)}px`,'important');
+    }
+    return true;
+  }
+
+  function scheduleCanonicalUi(ui){
+    if(!ui||!Object.keys(ui).length)return;
+    let tries=0;
+    const timer=setInterval(()=>{
+      if(applyCanonicalUi(ui)||++tries>120)clearInterval(timer);
+    },250);
+  }
+
+  async function loadCanonicalTuning(){
+    const response=await fetch(tuningConfigUrl(),{cache:'no-store'});
+    if(!response.ok)throw new Error(`正規設定を取得できませんでした: ${response.status}`);
+    const data=await response.json();
+    if(data?.schema!=='lancers-tuning/v1')throw new Error('正規設定のschemaが不正です');
+    canonicalTuning=data;
+    window.lancerCanonicalTuning=data;
+    window.getLancerDevTuning=()=>JSON.stringify(data.monster||{});
+    applyCanonicalSound(data.sound);
+    scheduleCanonicalUi(data.ui);
+    return data;
+  }
+
   window.playLancerHitSfx=kind=>{
     if(window.lancerInput?.muted)return;
     const key=Object.prototype.hasOwnProperty.call(sfxPools,kind)?kind:'normal';
@@ -168,7 +224,12 @@ small{display:block;color:#8999ad;margin-top:14px}
     if(started)return;
     started=true;
     try{
-      status.textContent='最新のゲームデータを読み込んでいます…';
+      status.textContent='正規設定と最新ゲームデータを読み込んでいます…';
+      try{
+        await loadCanonicalTuning();
+      }catch(configError){
+        console.warn('[Lancers] canonical tuning fallback:',configError);
+      }
       const responses=await Promise.all(SOURCE_PARTS.map(path=>fetch(path,{cache:'no-store'})));
       for(const response of responses){
         if(!response.ok)throw new Error(`ゲームデータを取得できませんでした: ${response.status}`);
