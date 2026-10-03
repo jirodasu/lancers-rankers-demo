@@ -57,7 +57,7 @@ function makeCanonical(){
    schema:"lancers-tuning/v1",
    authority:"canonical",
    updatedAt:new Date().toISOString(),
-   updatedBy:"LANCERS DEV EDITOR v0.4",
+   updatedBy:"LANCERS DEV EDITOR v0.5",
    ...state
  };
 }
