@@ -106,6 +106,18 @@ textarea{height:240px;font-size:10px;line-height:1.65}
 .snapshot{padding:11px}.snapshot button{min-height:34px;border-color:#425a74;background:#142338;color:#dce6ef}
 .history-list{scrollbar-width:thin;scrollbar-color:#31455e transparent}
 .history-empty{border-color:#2b3d53;border-radius:7px;color:#687d93}
+
+.canonical-card{position:relative;margin:0 0 20px;padding:14px;border:1px solid #3d5068;border-radius:10px;background:linear-gradient(145deg,rgba(22,37,55,.9),rgba(10,18,29,.96));box-shadow:inset 0 1px rgba(255,255,255,.025),0 12px 34px rgba(0,0,0,.16);overflow:hidden}
+.canonical-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(var(--gold-hi),rgba(217,186,121,.15))}
+.canonical-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}.canonical-head>span{font:800 9px/1 ui-monospace,monospace;letter-spacing:.16em;color:#8095aa}
+.canonical-sync{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid #465a71;border-radius:99px;font:800 9px/1 system-ui;color:#a9bacb;background:#101b29;white-space:nowrap}
+.canonical-sync:before{content:"";width:6px;height:6px;border-radius:50%;background:#8091a3}
+.canonical-sync.synced{color:#aee0c5;border-color:#365c4b;background:#0d1c18}.canonical-sync.synced:before{background:var(--good);box-shadow:0 0 10px rgba(134,211,173,.45)}
+.canonical-sync.pending{color:#f0d49a;border-color:#665533;background:#211b10}.canonical-sync.pending:before{background:var(--gold);box-shadow:0 0 10px rgba(217,186,121,.38)}
+.canonical-sync.dirty{color:#dfb0a5;border-color:#65443e;background:#211513}.canonical-sync.dirty:before{background:#d89080}
+.canonical-adopt{margin-top:4px;min-height:46px;font-size:12px}.canonical-actions{margin-top:8px}.canonical-actions .btn{font-size:10px}.canonical-reload{margin-top:8px;font-size:10px;color:#91a4b7;background:#0d1723}
+.canonical-warning{margin:11px 1px 0!important;padding-top:10px;border-top:1px solid rgba(90,112,137,.2)}.canonical-warning code{font:9px ui-monospace,monospace;color:#c7d5e2}
+
 ::selection{background:rgba(217,186,121,.26);color:#fff}
 :focus-visible{outline:2px solid var(--cyan)!important;outline-offset:2px}
 button:focus:not(:focus-visible){outline:none}
