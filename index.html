@@ -337,8 +337,9 @@ small{display:block;color:#8999ad;margin-top:14px}
                 pass
 
         dev = dev_monster_tuning()
-        hs = dev.get('hitstop', {}) if isinstance(dev.get('hitstop', {}), dict) else {}
-        rc = dev.get('recoil', {}) if isinstance(dev.get('recoil', {}), dict) else {}
+        benikiba_dev = dev.get('benikiba', {}) if isinstance(dev.get('benikiba', {}), dict) else {}
+        hs = benikiba_dev.get('hitstop', {}) if isinstance(benikiba_dev.get('hitstop', {}), dict) else {}
+        rc = benikiba_dev.get('recoil', {}) if isinstance(benikiba_dev.get('recoil', {}), dict) else {}
         hit_key = 'break' if was_break and burst_index == 2 else ('charge' if burst_index == 2 else 'normal')
         burst_hitstop = int(hs.get(hit_key, 3 if burst_index == 2 else 1))
         self.hitstop_frames = max(self.hitstop_frames, max(0, burst_hitstop))
@@ -354,13 +355,13 @@ small{display:block;color:#8999ad;margin-top:14px}
         self.dev_fx_type = str(dev.get('fxType', 'spear'))
         self.dev_shake_px = max(0, int(dev.get('shakePx', 1)))
         if was_break and burst_index == 2:
-            self.break_shake_until = self.frame + max(0, int(dev.get('shakeFrames', 6)))
+            self.break_shake_until = self.frame + max(0, int(benikiba_dev.get('shakeFrames', 6)))
         vx, vy = -uy, ux
         offset = (-3, 3, 0)[burst_index]
         contact_x = self.bx - ux*8 + vx*offset
         contact_y = self.by - uy*8 + vy*offset
         self.hit_vfx.append([contact_x, contact_y, self.aa, 2 if burst_index == 2 else 1, self.dev_fx_life])
-        self.flash = max(.01, float(dev.get('flash', .08)))
+        self.flash = max(.01, float(benikiba_dev.get('flash', .08)))
 
         # v4.6a37: spread the three damage numbers across the screen and show a clear total.
         # Using screen-space offsets keeps them readable regardless of spear direction.
