@@ -1,9 +1,16 @@
 {
   "schema": "lancers-tuning/v1",
   "authority": "canonical",
-  "updatedAt": "2026-10-03T15:46:00+09:00",
-  "updatedBy": "bootstrap-from-production-preserving-weapon-feel",
-  "ui": {},
+  "updatedAt": "2026-10-03T08:03:51.973Z",
+  "updatedBy": "LANCERS DEV EDITOR v0.5",
+  "ui": {
+    "stick": {
+      "x": 18,
+      "y": 8,
+      "w": 112,
+      "h": 112
+    }
+  },
   "monster": {
     "hectoran": {
       "flash": 0.12,
