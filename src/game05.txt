@@ -158,7 +158,7 @@
             # contact VFX and damage text to the same impact point/frame.
             hit_sfx = 'break' if (full and was_break) else ('charge' if full else 'normal')
             vfx_tier = 3 if (full and was_break) else (2 if full else 1)
-            dev = dev_monster_tuning()
+            dev = dev_monster_tuning('lizel' if self.rank == 9 else 'hectoran')
             hs = dev.get('hitstop', {}) if isinstance(dev.get('hitstop', {}), dict) else {}
             rc = dev.get('recoil', {}) if isinstance(dev.get('recoil', {}), dict) else {}
             hit_key = 'break' if vfx_tier == 3 else ('charge' if vfx_tier == 2 else 'normal')
