@@ -31,8 +31,10 @@
             shot[0] += shot[2]*DT
             shot[1] += shot[3]*DT
             shot[4] -= DT
-            if segment_hit(self.px, self.py, x, y, shot[0], shot[1], SHAPES['throw'][1]):
-                self.hurt(TECH['throw'][4])
+            shot_radius = shot[6] if len(shot) > 6 else SHAPES['throw'][1]
+            shot_damage = shot[5] if len(shot) > 5 else TECH['throw'][4]
+            if segment_hit(self.px, self.py, x, y, shot[0], shot[1], shot_radius):
+                self.hurt(shot_damage)
                 self.shots.remove(shot)
             elif shot[4] <= 0 or math.hypot(shot[0]-CX, shot[1]-CY)>R:
                 self.shots.remove(shot)
@@ -185,7 +187,7 @@
                     window.playLancerHitSfx(hit_sfx)
                 except Exception:
                     pass
-            self.phase = 3 if self.bhp <= 180 else 2 if self.bhp <= 360 else 1
+            self.phase = 3 if self.bhp <= self.boss_max*.30 else 2 if self.bhp <= self.boss_max*.60 else 1
             if self.bhp == 0 and self.mode == 'battle':
                 # v4.6a30: let the killing blow breathe before the result screen.
                 # 21F (~0.35 s) hit stop, then a recoil/kneel pause. The browser-side
@@ -200,7 +202,7 @@
                 self.charging, self.pending = False, None
                 self.state = 'recover'
                 self.flash = .12
-                self.notice = 'RANK 10 撃破'
+                self.notice = 'RANK '+str(self.rank)+' 撃破'
                 kx, ky = unit(self.bx-self.px, self.by-self.py)
                 start_x, start_y = self.bx, self.by
                 target_x, target_y = start_x+kx*22, start_y+ky*22
