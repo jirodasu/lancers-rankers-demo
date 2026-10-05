@@ -103,14 +103,14 @@ window.receiveLancerState = raw => {
     combatState.dataset.state=stateName.toLowerCase();
     text('state-label',stateName);text('notice',hint);
   }
-  text('charge-label',s.charge>0?(s.chargeAffordable?`溜め ${Math.round(s.charge*100)}%`:'ST不足→通常'):s.weapon===2?`出血 ${s.bleed}%`:['正槍','重槍'][s.weapon]);$('charge-label').classList.toggle('insufficient',s.charge>0&&!s.chargeAffordable);
+  text('charge-label',s.charge>0?(s.chargeAffordable?`溜め ${Math.round(s.charge*100)}%`:'ST不足→通常'):['正槍','重槍','双短槍'][s.weapon]);$('charge-label').classList.toggle('insufficient',s.charge>0&&!s.chargeAffordable);
   if(mode===s.mode)return;mode=s.mode;
-  $('overlay').hidden=s.mode==='battle'||s.mode==='training'||s.mode==='training_intro';$('weapons').hidden=s.mode!=='select';$('mode-choice').hidden=s.mode!=='select';$('mode-choice').classList.toggle('rank9',s.rank===9);$('practice-start').hidden=s.rank===9;$('back').hidden=s.mode==='select';$('pause').disabled=!['battle','training','paused','training_paused'].includes(s.mode);
+  $('overlay').hidden=s.mode==='battle'||s.mode==='training'||s.mode==='training_intro';$('weapons').hidden=s.mode!=='select';$('mode-choice').hidden=s.mode!=='select';$('mode-choice').classList.toggle('rank9',s.rank===9);$('practice-start').hidden=s.rank===9;$('back').hidden=s.mode==='select'||(s.rank===9&&['victory','defeat'].includes(s.mode));$('pause').disabled=!['battle','training','paused','training_paused'].includes(s.mode);
   $('pause').textContent=s.mode==='paused'?'再開':'一時停止';
   const rankLadder=$('clear-ranks');rankLadder.hidden=true;rankLadder.querySelectorAll('[data-clear-rank]').forEach(el=>el.classList.remove('earned'));
   if(s.mode==='select'){
     $('panel-kicker').textContent=s.rank===9?'RANK 9 CHALLENGER':'CHALLENGER';
-    $('panel-title').textContent=s.rank===9?'槍を選び、旋槍を追え。':'槍を選び、門を越えろ。';
+    $('panel-title').textContent=s.rank===9?'槍を選び、連撃を見切れ。':'槍を選び、門を越えろ。';
     $('panel-tip').textContent=s.rank===9?'リゼルは止まらない。連撃を最後まで見切った後が、本当の攻め時。':'練習してから挑むか、すぐRANK 10本番へ進むか選べます。';
     $('practice-start').textContent='練習モード';$('start').textContent=s.rank===9?'この槍でRANK 9へ':'本番をはじめる';
   }
