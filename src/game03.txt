@@ -58,7 +58,7 @@ function moveStick(e){const r=$('stick').getBoundingClientRect(),dx=e.clientX-r.
 on($('stick'),'pointerdown',e=>{if(stickId!==null||!canInput())return;e.preventDefault();if(!capture($('stick'),e))return;stickId=e.pointerId;moveStick(e);});
 on($('stick'),'pointermove',e=>{if(e.pointerId===stickId)moveStick(e);});
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])on($('stick'),ev,e=>{if(e.pointerId!==stickId)return;stickId=null;stickVector={x:0,y:0};$('knob').style.transform='';mergeInput();});
-on(window,'keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(canInput())keys.add(e.code);if(e.code==='KeyP'&&!e.repeat)request((mode==='paused'||mode==='training_paused')?'resume':'pause');if(e.code==='Enter'&&!e.repeat&&ready){if(mode==='select')request('start');else if(mode==='training_complete')request('battle');else if(mode==='paused')request('resume');else if(['victory','defeat'].includes(mode))request('retry');}mergeInput();});
+on(window,'keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();if(canInput())keys.add(e.code);if(e.code==='KeyP'&&!e.repeat)request((mode==='paused'||mode==='training_paused')?'resume':'pause');if(e.code==='Enter'&&!e.repeat&&ready){if(mode==='select')request('battle');else if(mode==='training_complete')request('battle');else if(mode==='paused')request('resume');else if(mode==='victory'&&current?.rank===10)request('rank9_select');else if(['victory','defeat'].includes(mode)&&current?.rank===9)request('rank9_select');else if(['victory','defeat'].includes(mode))request('retry');}mergeInput();});
 on(window,'keyup',e=>{keys.delete(e.code);mergeInput();});
 function suspend(){clearInput();if(current?.mode==='battle'||input.command==='resume'||input.command==='start'||input.command==='retry')input.command='pause';}
 on(window,'blur',suspend);on(document,'visibilitychange',()=>{if(document.hidden)suspend();});
@@ -66,10 +66,10 @@ function landscape(){return innerWidth>innerHeight&&innerHeight<600;}
 function orientation(){const rotated=landscape();$('rotate').hidden=!rotated;if(rotated)suspend();}
 on(window,'resize',orientation);on(window.visualViewport,'resize',orientation);orientation();
 function resumeAudio(){const audio=window.pyxelContext?.pyodide?._module?.SDL2?.audioContext;if(audio?.state==='suspended')audio.resume().catch(()=>{});}
-function request(command){if(['start','resume','retry'].includes(command)&&(landscape()||document.hidden))return;clearInput();input.command=command;resumeAudio();}
+function request(command){if(['start','battle','resume','retry','rank9_select'].includes(command)&&(landscape()||document.hidden))return;clearInput();input.command=command;resumeAudio();}
 root.querySelectorAll('[data-weapon]').forEach(el=>on(el,'click',()=>{input.weapon=Number(el.dataset.weapon);root.querySelectorAll('[data-weapon]').forEach(b=>b.classList.toggle('selected',b===el));}));
 on($('practice-start'),'click',()=>request('start'));
-on($('start'),'click',()=>request(mode==='select'?'battle':mode==='training_complete'?'battle':mode==='paused'?'resume':'retry'));
+on($('start'),'click',()=>request(mode==='select'?'battle':mode==='training_complete'?'battle':mode==='paused'?'resume':mode==='victory'&&current?.rank===10?'rank9_select':['victory','defeat'].includes(mode)&&current?.rank===9?'rank9_select':'retry'));
 on($('back'),'click',()=>request('select'));
 on($('pause'),'click',()=>request((mode==='paused'||mode==='training_paused')?'resume':'pause'));
 on($('mute'),'click',()=>{input.muted=!input.muted;$('mute').textContent=input.muted?'音 OFF':'音 ON';resumeAudio();});
@@ -80,7 +80,7 @@ const bar=(id,value)=>{const el=$(id),str=`${value}%`;if(el.style.width!==str)el
 window.receiveLancerState = raw => {
   const s=JSON.parse(raw);current=s;
   if(!ready){ready=true;$('loading').hidden=true;$('start').disabled=false;$('practice-start').disabled=false;}
-  text('boss-value',`${s.bossHp} / 600`);bar('boss-bar',s.bossHp/6);text('phase',`PHASE ${s.phase}`);
+  const bossMax=Number(s.bossMax||600);text('boss-value',`${s.bossHp} / ${bossMax}`);bar('boss-bar',bossMax?100*s.bossHp/bossMax:0);text('phase',`PHASE ${s.phase}`);text('rank-number',s.rank||10);text('boss-title-prefix',s.rank===9?'旋槍の':'城門の守槍');text('boss-name',s.rank===9?'リゼル':'ヘクトラン');
   const poiseRow=root.querySelector('.poise-row'); if(poiseRow)poiseRow.hidden=!s.tutorialDone;
   bar('poise-bar',s.poise);text('hp-value',s.hp);bar('hp-bar',s.hp);text('st-value',s.stamina);bar('st-bar',s.stamina);text('potion-value',`回復薬 ${s.potions}`);
   const practiceCountdown=$('practice-countdown');
@@ -97,21 +97,32 @@ window.receiveLancerState = raw => {
     if(s.state==='prep'||s.state==='attack'){
       stateName='DANGER';hint='予告範囲から離れろ';
     }else if(s.state==='recover'||s.state==='break'){
-      stateName='CHANCE';
-      hint=(s.state==='break'||/長押し|長い隙|溜め/.test(s.notice))?'今なら溜め突き':'今だ！突け！';
+      if(s.rank===9&&s.state==='recover'&&!s.opening){stateName='WATCH';hint='まだ来る — 次も見ろ';}
+      else{stateName='CHANCE';hint=(s.state==='break'||/長押し|長い隙|溜め/.test(s.notice))?'今なら溜め突き':'今だ！突け！';}
     }
     combatState.dataset.state=stateName.toLowerCase();
     text('state-label',stateName);text('notice',hint);
   }
   text('charge-label',s.charge>0?(s.chargeAffordable?`溜め ${Math.round(s.charge*100)}%`:'ST不足→通常'):s.weapon===2?`出血 ${s.bleed}%`:['正槍','重槍'][s.weapon]);$('charge-label').classList.toggle('insufficient',s.charge>0&&!s.chargeAffordable);
   if(mode===s.mode)return;mode=s.mode;
-  $('overlay').hidden=s.mode==='battle'||s.mode==='training'||s.mode==='training_intro';$('weapons').hidden=s.mode!=='select';$('mode-choice').hidden=s.mode!=='select';$('back').hidden=s.mode==='select';$('pause').disabled=!['battle','training','paused','training_paused'].includes(s.mode);
+  $('overlay').hidden=s.mode==='battle'||s.mode==='training'||s.mode==='training_intro';$('weapons').hidden=s.mode!=='select';$('mode-choice').hidden=s.mode!=='select';$('mode-choice').classList.toggle('rank9',s.rank===9);$('practice-start').hidden=s.rank===9;$('back').hidden=s.mode==='select';$('pause').disabled=!['battle','training','paused','training_paused'].includes(s.mode);
   $('pause').textContent=s.mode==='paused'?'再開':'一時停止';
   const rankLadder=$('clear-ranks');rankLadder.hidden=true;rankLadder.querySelectorAll('[data-clear-rank]').forEach(el=>el.classList.remove('earned'));
-  if(s.mode==='select'){$('panel-kicker').textContent='CHALLENGER';$('panel-title').textContent='槍を選び、門を越えろ。';$('panel-tip').textContent='練習してから挑むか、すぐRANK 10本番へ進むか選べます。';$('practice-start').textContent='練習モード';$('start').textContent='本番をはじめる';}
+  if(s.mode==='select'){
+    $('panel-kicker').textContent=s.rank===9?'RANK 9 CHALLENGER':'CHALLENGER';
+    $('panel-title').textContent=s.rank===9?'槍を選び、旋槍を追え。':'槍を選び、門を越えろ。';
+    $('panel-tip').textContent=s.rank===9?'リゼルは止まらない。連撃を最後まで見切った後が、本当の攻め時。':'練習してから挑むか、すぐRANK 10本番へ進むか選べます。';
+    $('practice-start').textContent='練習モード';$('start').textContent=s.rank===9?'この槍でRANK 9へ':'本番をはじめる';
+  }
   else if(s.mode==='training_complete'){$('panel-kicker').textContent='PRACTICE COMPLETE → RANK 10';$('panel-title').textContent='基本動作、習得。';$('panel-tip').textContent='予告を見る。避ける。隙を突く。ここから本番。';$('start').textContent='RANK 10へ';}
   else if(s.mode==='paused'||s.mode==='training_paused'){$('panel-kicker').textContent='PAUSED';$('panel-title').textContent=s.mode==='training_paused'?'練習を一時停止':'一時停止';$('panel-tip').textContent='準備ができたら、闘技場へ。';$('start').textContent='戦闘に戻る';}
-  else if(s.mode==='victory'||s.mode==='defeat'){const win=s.mode==='victory';const clearRank=s.seconds<35?'S':s.seconds<45?'A':s.seconds<60?'B':'C';if(win){rankLadder.hidden=false;rankLadder.querySelector(`[data-clear-rank="${clearRank}"]`)?.classList.add('earned');}$('panel-kicker').textContent=win?'':'TRY AGAIN';$('panel-title').textContent=win?'城門、突破。':'まだ、槍は折れない。';$('panel-tip').textContent=win?`討伐 ${s.seconds}秒 / 残りHP ${s.hp} / 回復薬 ${s.potions}`:`ヘクトラン 残りHP ${s.bossHp}。赤い予告から横へ避け、攻撃後の隙を狙おう。`;$('start').textContent='もう一度挑む';}
+  else if(s.mode==='victory'||s.mode==='defeat'){
+    const win=s.mode==='victory';const clearRank=s.seconds<35?'S':s.seconds<45?'A':s.seconds<60?'B':'C';
+    if(win){rankLadder.hidden=false;rankLadder.querySelector(`[data-clear-rank="${clearRank}"]`)?.classList.add('earned');}
+    if(s.rank===10&&win){$('panel-kicker').textContent='RANK UP';$('panel-title').textContent='城門、突破。';$('panel-tip').textContent=`討伐 ${s.seconds}秒。RANK 9「旋槍のリゼル」が解禁された。`;$('start').textContent='武器を選んでRANK 9へ';}
+    else if(s.rank===9){$('panel-kicker').textContent=win?'RANK 9 CLEAR':'TRY AGAIN · RANK 9';$('panel-title').textContent=win?'旋槍、撃破。':'連撃は、まだ見切れる。';$('panel-tip').textContent=win?`討伐 ${s.seconds}秒 / 残りHP ${s.hp} / 回復薬 ${s.potions}`:`リゼル 残りHP ${s.bossHp}。最初の一撃で欲張らず、連撃の最後を待とう。`;$('start').textContent='武器を選んでもう一度';}
+    else{$('panel-kicker').textContent='TRY AGAIN';$('panel-title').textContent='まだ、槍は折れない。';$('panel-tip').textContent=`ヘクトラン 残りHP ${s.bossHp}。赤い予告から横へ避け、攻撃後の隙を狙おう。`;$('start').textContent='もう一度挑む';}
+  }
 };
 window.loadFailure = message => {$('overlay').hidden=true;$('loading').hidden=false;$('activate').hidden=true;$('load-label').textContent=message;$('reload').hidden=false;root.querySelector('.spinner').hidden=true;};
 
