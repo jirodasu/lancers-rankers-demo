@@ -32,3 +32,5 @@ jobs:
             src/game07.txt > /tmp/lancers_runtime.py
       - name: Validate Python syntax
         run: python -m py_compile /tmp/lancers_runtime.py
+      - name: Run Rank 9 five-battle regression
+        run: python tests/rank9_five_battle_regression.py
