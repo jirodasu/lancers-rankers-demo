@@ -548,15 +548,17 @@
         for a in range(8):
             dx,dy=math.cos(a*math.pi/4),math.sin(a*math.pi/4)
             pyxel.line(CX+dx*80,CY+dy*80,CX+dx*85,CY+dy*85,6)
-        pyxel.text(73,15,'RANK / 10',10)
-        pyxel.text(61,232,'HECTORAN  ARENA',6)
+        pyxel.text(73,15,'RANK / '+str(self.rank),10)
+        pyxel.text(61 if self.rank == 10 else 66,232,'HECTORAN  ARENA' if self.rank == 10 else 'LIZEL  CIRCUIT',6)
         self.telegraph()
         for s in self.shots:
             ux,uy=unit(s[2],s[3])
             pyxel.line(s[0]-ux*7,s[1]-uy*7,s[0]+ux*3,s[1]+uy*3,10)
             pyxel.pset(s[0]+ux*3,s[1]+uy*3,7)
         bosscol = 7 if self.flash else 10 if self.state=='break' else 9
-        if self.state in ('prep','attack'):
+        if self.rank == 9:
+            self.draw_rank9_boss()
+        elif self.state in ('prep','attack'):
             self.draw_boss_attack_v41()
         elif self.flash and self.state!='break':
             self.draw_boss_hit_v42()
