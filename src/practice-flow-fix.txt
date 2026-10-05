@@ -305,8 +305,12 @@ queueMicrotask(()=>{
     }
   }
 
-  function startVictoryPresentation(){
+  function startVictoryPresentation(s){
     if(victorySequenceActive) return;
+    const clearedRank = Number(s?.rank) === 9 ? 9 : 10;
+    victoryBanner.innerHTML = clearedRank === 9
+      ? '<b>RANK 9 撃破</b><span>旋槍のリゼル</span>'
+      : '<b>RANK 10 撃破</b><span>城門の守槍 ヘクトラン</span>';
     victorySequenceActive = true;
 
     // Two browser frames of white flash. The combat simulation itself handles
@@ -450,11 +454,11 @@ queueMicrotask(()=>{
       $('heal').classList.remove('practice-disabled');
     }
 
-    // A zero-HP Hectoran stays in battle mode for the cinematic beat. Hide combat
+    // A defeated ranker stays in battle mode for the cinematic beat. Hide combat
     // prompts, dim all controls, block pause, flash white, then reveal the victory title.
     const defeatSequence = s.mode === 'battle' && Number(s.bossHp) <= 0;
     if(defeatSequence){
-      startVictoryPresentation();
+      startVictoryPresentation(s);
       combatState.hidden = true;
       practiceGuide.hidden = true;
       $('attack').classList.add('practice-disabled');
