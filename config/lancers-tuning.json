@@ -1,8 +1,8 @@
 {
   "schema": "lancers-tuning/v1",
   "authority": "canonical",
-  "updatedAt": "2026-10-03T08:03:51.973Z",
-  "updatedBy": "LANCERS DEV EDITOR v0.5",
+  "updatedAt": "2026-10-05T13:53:48.225Z",
+  "updatedBy": "Rank 9 bootstrap preserving adopted hit feel",
   "ui": {
     "stick": {
       "x": 18,
@@ -13,6 +13,38 @@
   },
   "monster": {
     "hectoran": {
+      "flash": 0.12,
+      "fxScale": 1,
+      "fxLife": 0.36,
+      "fxType": "spear",
+      "hitstop": {
+        "normal": 2,
+        "charge": 4,
+        "break": 6
+      },
+      "recoil": {
+        "normal": 2,
+        "charge": 3,
+        "break": 5
+      },
+      "shakeFrames": 8,
+      "shakePx": 1,
+      "benikiba": {
+        "flash": 0.08,
+        "hitstop": {
+          "normal": 1,
+          "charge": 3,
+          "break": 6
+        },
+        "recoil": {
+          "normal": 2,
+          "charge": 3,
+          "break": 3
+        },
+        "shakeFrames": 6
+      }
+    },
+    "lizel": {
       "flash": 0.12,
       "fxScale": 1,
       "fxLife": 0.36,
