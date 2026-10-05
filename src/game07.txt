@@ -610,6 +610,9 @@
                 else:
                     self.rank9_chain = 0
                     self.rank9_opening = True
+                    # A true CHANCE must match the UI promise: no late fan projectile
+                    # from the finished chain may remain active during this opening.
+                    self.shots = []
                     self.rank9_orbit *= -1
                     self.state, self.timer = 'recover', 1.15
                     self.notice = 'CHANCE — 連撃が切れた！'
