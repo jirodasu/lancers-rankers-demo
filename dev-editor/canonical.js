@@ -43,21 +43,22 @@ function renderSync(){
 }
 
 function makeCanonical(){
- const state=configOnly(api().getState()),h=state.monster?.hectoran,base=canonical?.monster?.hectoran;
- if(h&&base){
-   h.benikiba=h.benikiba||clone(base.benikiba||{});
-   if(Number(h.flash)!==Number(base.flash))h.benikiba.flash=h.flash;
+ const state=configOnly(api().getState());
+ Object.entries(state.monster||{}).forEach(([key,m])=>{
+   const base=canonical?.monster?.[key];if(!m||!base)return;
+   m.benikiba=m.benikiba||clone(base.benikiba||{});
+   if(Number(m.flash)!==Number(base.flash))m.benikiba.flash=m.flash;
    ["normal","charge","break"].forEach(k=>{
-     if(Number(h.hitstop?.[k])!==Number(base.hitstop?.[k])){h.benikiba.hitstop=h.benikiba.hitstop||{};h.benikiba.hitstop[k]=h.hitstop[k]}
-     if(Number(h.recoil?.[k])!==Number(base.recoil?.[k])){h.benikiba.recoil=h.benikiba.recoil||{};h.benikiba.recoil[k]=h.recoil[k]}
+     if(Number(m.hitstop?.[k])!==Number(base.hitstop?.[k])){m.benikiba.hitstop=m.benikiba.hitstop||{};m.benikiba.hitstop[k]=m.hitstop[k]}
+     if(Number(m.recoil?.[k])!==Number(base.recoil?.[k])){m.benikiba.recoil=m.benikiba.recoil||{};m.benikiba.recoil[k]=m.recoil[k]}
    });
-   if(Number(h.shakeFrames)!==Number(base.shakeFrames))h.benikiba.shakeFrames=h.shakeFrames;
- }
+   if(Number(m.shakeFrames)!==Number(base.shakeFrames))m.benikiba.shakeFrames=m.shakeFrames;
+ });
  return {
    schema:"lancers-tuning/v1",
    authority:"canonical",
    updatedAt:new Date().toISOString(),
-   updatedBy:"LANCERS DEV EDITOR v0.5",
+   updatedBy:"LANCERS DEV EDITOR v0.6",
    ...state
  };
 }
