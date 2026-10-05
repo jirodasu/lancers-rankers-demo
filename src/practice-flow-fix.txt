@@ -414,7 +414,7 @@ queueMicrotask(()=>{
     const practiceStart = $('practice-start');
     const activePlay = ['battle','training','training_intro'].includes(s.mode);
     modeChoice.hidden = activePlay;
-    practiceStart.hidden = s.mode !== 'select';
+    practiceStart.hidden = s.mode !== 'select' || Number(s.rank) === 9;
     modeChoice.classList.toggle('single', s.mode !== 'select');
 
     // Both normal battle pause and practice pause use the same Resume wording.
