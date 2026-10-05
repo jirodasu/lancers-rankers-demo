@@ -200,6 +200,7 @@
                 self.lock = max(self.lock, 3.2)
                 self.invuln = max(self.invuln, 3.2)
                 self.charging, self.pending = False, None
+                self.shots = []
                 self.state = 'recover'
                 self.flash = .12
                 self.notice = 'RANK '+str(self.rank)+' 撃破'
