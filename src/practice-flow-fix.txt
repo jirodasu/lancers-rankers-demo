@@ -239,7 +239,7 @@ queueMicrotask(()=>{
   const victoryBanner = document.createElement('div');
   victoryBanner.id = 'victory-banner';
   victoryBanner.hidden = true;
-  victoryBanner.innerHTML = '<b>RANK 10 撃破</b><span>城門の守槍 ヘクトラン</span>';
+  victoryBanner.innerHTML = '<b></b><span></span>';
   arena.appendChild(victoryBanner);
   removers.push(()=>victoryBanner.remove());
 
