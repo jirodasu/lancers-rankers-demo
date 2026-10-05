@@ -26,7 +26,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v5.2.3 — MADE WITH PYXEL</small>
+    <small>LANCERS / RANKERS — v5.2.4 — MADE WITH PYXEL</small>
     <h1>ランサーズ・ランカーズ<br>RANK 10 → RANK 9</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
@@ -252,7 +252,6 @@ small{display:block;color:#8999ad;margin-top:14px}
         "damage_table = ((20,40,52), (38,70,84), (15,30,30))",
         'ダメージ表'
       );
-      source=source.replaceAll('威力11 / 溜め19','威力15 / 連突10×3');
 
       patchRequired(
 `        self.hit_vfx = []
@@ -382,6 +381,7 @@ small{display:block;color:#8999ad;margin-top:14px}
             self.lock = max(self.lock, 3.2)
             self.invuln = max(self.invuln, 3.2)
             self.charging, self.pending = False, None
+            self.shots = []
             self.state = 'recover'
             self.flash = .12
             self.notice = 'RANK '+str(self.rank)+' 撃破'
