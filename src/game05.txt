@@ -140,7 +140,7 @@
                     self.mode = 'training_complete'
                     self.notice = '✓ 溜め突き成功'
             was_break = self.state == 'break'
-            punish = full and self.state in ('recover', 'break')
+            punish = full and (self.state == 'break' or (self.state == 'recover' and (self.rank != 9 or self.rank9_opening)))
             if punish:
                 damage = damage_table[self.weapon_index][2]
                 self.text(self.bx-10, self.by-22, 'PUNISH', 10)
