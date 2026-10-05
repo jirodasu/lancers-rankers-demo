@@ -645,7 +645,7 @@
             self.draw_capsule(self.bx, self.by, self.bx+ux*56, self.by+uy*56, 7, col)
         elif self.tech == 'cross':
             x, y = self.bx, self.by
-            remaining = RANK9_TECH['cross'][2]
+            remaining = self.timer if self.state == 'attack' else RANK9_TECH['cross'][2]
             while remaining > 0:
                 remaining -= DT
                 x += ux*150*DT
