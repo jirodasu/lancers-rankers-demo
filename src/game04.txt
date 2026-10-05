@@ -5,6 +5,16 @@
     'combo': ('三連守槍', .72, .18, 1.10, 16),
 }
 
+# RANK 9 — Lizel. Unlike Hectoran's single heavy punish loop, Lizel orbits
+# continuously and attacks in short chains. Telegraph geometry still locks at
+# prep start: difficulty comes from movement/rhythm, never from hidden homing.
+RANK9_TECH = {
+    'needle': ('瞬穿', .62, .16, 24),
+    'cross': ('交差疾走', .78, .38, 28),
+    'fan': ('三叉投槍', .72, .72, 16),
+    'spin': ('旋輪薙ぎ', .66, .32, 22),
+}
+
 
 # THE TENTH GATE — Hectoran Rank 10 battle theme, authored for Pyxel MML Studio.
 BGM_CH1 = """T148 Q78 @1 V92 O4 L8
