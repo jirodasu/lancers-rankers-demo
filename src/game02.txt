@@ -47,3 +47,5 @@ footer>div{
   transform:translateX(-50%);
 }
 `;
+
+style.textContent += "#mode-choice.rank9{grid-template-columns:1fr}#mode-choice.rank9 #start{grid-column:1}";
