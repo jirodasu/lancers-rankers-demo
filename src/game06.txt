@@ -75,6 +75,9 @@
                 self.mode = 'victory'
                 self.sound(2)
             return
+        if self.rank == 9:
+            self.rank9_boss_update()
+            return
         self.timer -= DT  # Timers decrement exactly once per simulation step.
         if self.state == 'idle':
             dx, dy = self.px-self.bx, self.py-self.by
@@ -159,7 +162,7 @@
                 self.state, self.timer = 'idle', .4 if self.phase==3 else .65
 
     def snapshot(self):
-        return dict(mode=self.mode, hp=self.hp, stamina=round(self.stamina), potions=self.potions, bossHp=self.bhp, phase=self.phase, poise=round(self.poise), bleed=self.bleed, charge=round(min(1,self.charge/self.weapon['charge']),2) if self.charging else 0, chargeAffordable=self.stamina>=self.weapon['ccost'], weapon=self.weapon_index, notice=self.feedback if self.feedback_time else self.notice, state=self.state, seconds=round(self.elapsed,1), tutorialStep=self.tutorial_step, tutorialDone=self.tutorial_done, trainingCountdown=round(getattr(self, 'training_countdown', 0),2))
+        return dict(mode=self.mode, rank=self.rank, hp=self.hp, stamina=round(self.stamina), potions=self.potions, bossHp=self.bhp, bossMax=self.boss_max, phase=self.phase, poise=round(self.poise), bleed=self.bleed, charge=round(min(1,self.charge/self.weapon['charge']),2) if self.charging else 0, chargeAffordable=self.stamina>=self.weapon['ccost'], weapon=self.weapon_index, notice=self.feedback if self.feedback_time else self.notice, state=self.state, opening=bool(self.rank != 9 or self.rank9_opening or self.state == 'break'), chain=self.rank9_chain if self.rank == 9 else 0, seconds=round(self.elapsed,1), tutorialStep=self.tutorial_step, tutorialDone=self.tutorial_done, trainingCountdown=round(getattr(self, 'training_countdown', 0),2))
 
     def publish(self):
         if window is not None:
@@ -186,6 +189,9 @@
         pyxel.dither(alpha)
 
     def telegraph(self):
+        if self.rank == 9:
+            self.rank9_telegraph()
+            return
         if self.state not in ('prep', 'attack'):
             return
         ux, uy = math.cos(self.ba), math.sin(self.ba)
