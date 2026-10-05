@@ -51,7 +51,7 @@ function installCraftFeedback(){
 function init(){
  installCraftFeedback();enhanceRanges();enhanceA11y();document.addEventListener("keydown",keymap);
  const observer=new MutationObserver(()=>document.querySelectorAll('input[type="range"]').forEach(rangePaint));observer.observe(document.body,{subtree:true,childList:true});
- const brand=document.querySelector(".brand small");if(brand)brand.textContent="LIVE TUNING / v0.5 · IMPLEMENT";
+ const brand=document.querySelector(".brand small");if(brand)brand.textContent="LIVE TUNING / v0.6 · RANKERS";
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
