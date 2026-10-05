@@ -336,7 +336,7 @@ small{display:block;color:#8999ad;margin-top:14px}
             except Exception:
                 pass
 
-        dev = dev_monster_tuning()
+        dev = dev_monster_tuning('lizel' if self.rank == 9 else 'hectoran')
         benikiba_dev = dev.get('benikiba', {}) if isinstance(dev.get('benikiba', {}), dict) else {}
         hs = benikiba_dev.get('hitstop', {}) if isinstance(benikiba_dev.get('hitstop', {}), dict) else {}
         rc = benikiba_dev.get('recoil', {}) if isinstance(benikiba_dev.get('recoil', {}), dict) else {}
