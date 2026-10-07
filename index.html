@@ -199,11 +199,12 @@ small{display:block;color:#8999ad;margin-top:14px}
   const reload=document.getElementById('reload');
   const errorBox=document.getElementById('error');
   let failed=false,started=false,watch=null,timeout=null;
+  const cdnWatch=setTimeout(()=>{if(!started&&!failed)fail("起動用プログラムを取得できませんでした。通信環境を確認し「再読み込み」を押してください。")},20000);
 
   function fail(message){
     if(failed)return;
     failed=true;
-    clearInterval(watch);clearTimeout(timeout);
+    clearInterval(watch);clearTimeout(timeout);clearTimeout(cdnWatch);
     status.textContent='起動に失敗しました。';
     errorBox.textContent=message;
     button.hidden=true;
@@ -221,8 +222,8 @@ small{display:block;color:#8999ad;margin-top:14px}
   };
 
   window.startLancerRuntime=async()=>{
-    if(started)return;
-    started=true;
+    if(started||failed)return;
+    started=true;clearTimeout(cdnWatch);
     try{
       status.textContent='正規設定と最新ゲームデータを読み込んでいます…';
       try{

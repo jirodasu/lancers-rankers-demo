@@ -38,6 +38,22 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}.mono{font-
 .footer-hint{margin-top:18px;color:#5f7489;font:700 8px/1.6 ui-monospace;text-align:center}
 .toast{position:fixed;right:20px;bottom:20px;z-index:100;max-width:340px;padding:11px 14px;border:1px solid #456079;border-radius:8px;background:rgba(11,22,34,.96);box-shadow:0 16px 45px #0008;font-size:10px;transform:translateY(20px);opacity:0;pointer-events:none;transition:.25s var(--ease)}.toast.show{transform:none;opacity:1}
 :focus-visible{outline:2px solid var(--cyan)!important;outline-offset:2px}@media(max-width:1120px){.shell{grid-template-columns:220px 1fr}.inspector{position:relative;top:auto;height:auto;grid-column:1/-1;border-left:0;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:14px}.form-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:760px){.topbar{height:auto;min-height:66px;padding:10px 12px;flex-wrap:wrap}.brand{min-width:0;margin-right:auto}.crumb{display:none}.status{order:4;width:100%;margin:0}.shell{display:block}.rail{position:relative;top:auto;height:auto;border-right:0;border-bottom:1px solid var(--line)}.rank-list{display:flex;overflow:auto;padding-bottom:5px}.rank-card{min-width:190px}.workspace{padding:18px 14px 60px}.section-title{display:block}.section-title p{text-align:left;margin-top:7px}.hero-grid{grid-template-columns:72px 1fr}.hero-grid>.field:last-child{grid-column:1/-1}.form-grid{grid-template-columns:1fr 1fr}.tech{grid-template-columns:28px 1fr 1fr}.tech .field:nth-of-type(n+3){grid-column:span 1}.iconbtn{grid-column:3}.inspector{display:block;padding:14px}.topbtn{min-height:44px}.span2{grid-column:span 2}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
+
+/* Guided, safe authoring */
+.explain{border:1px solid #304961;border-radius:8px;padding:10px 12px;margin:12px 0;background:#0d1926;color:#aebfd0;font-size:11px;line-height:1.75}.explain summary{cursor:pointer;font-weight:800;color:#bdd8e8}.explain p{margin:10px 0 0}.rail h2,.inspector h2{font-size:11px}.field label{font-size:10px}.rank-name{font-size:12px}.rank-meta{font-size:10px}.rail-note{font-size:11px}.pill{font-size:9px}.section-title p{font-size:11px}.score p,.check,.sim-summary{font-size:11px}.topbtn{font-size:11px}
+.onboarding{padding:18px;margin-bottom:17px;border:1px solid #4d6852;border-radius:12px;background:linear-gradient(145deg,#15291f,#0c1823)}
+.onboarding>strong{color:#ccebd4;font-size:14px}.onboarding ol{list-style:none;padding:0;margin:14px 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.onboarding li{display:grid;align-content:start;gap:5px;border:1px solid #365344;border-radius:8px;background:#0e211c;padding:10px}
+.onboarding li b{font-size:11px;color:#d2e9d8}.onboarding li span,.onboarding p{font-size:10px;line-height:1.65;color:#a9c3b4}
+.onboarding p{margin:8px 0 14px}.edit-notice{margin-bottom:16px;padding:11px 13px;border:1px solid #675839;border-radius:8px;background:#1c1a13;color:#e2d3a6;font-size:11px;line-height:1.6}
+.edit-notice.draft{border-color:#3d665a;background:#10221e;color:#bce6d5}
+.load-error{padding:18px;margin-bottom:18px;border:1px solid #a56d62;border-radius:10px;background:#2b181b;color:#f2d5d1}
+.load-error strong{font-size:13px}.load-error p{font-size:11px;line-height:1.6}
+.rail-import{display:block;margin-top:16px;color:#afc0d0;font-size:10px;line-height:1.7}
+.rail-import input{display:block;width:100%;margin-top:8px;font-size:9px}
+.rail-import input::file-selector-button{border:1px solid #40546d;border-radius:6px;background:#162439;color:#d4e1ed;padding:8px}
+.workspace :disabled{opacity:.7;cursor:not-allowed}.workspace input:disabled,.workspace select:disabled{border-style:dashed}
+@media(max-width:760px){.onboarding ol{grid-template-columns:1fr}.onboarding li{padding:9px}}
 </style>
 </head>
 <body>
@@ -45,43 +61,55 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}.mono{font-
  <div class="brand"><div class="mark"><span>RF</span></div><div><strong>RANKER FACTORY</strong><small>CONFIGURATION STUDIO / v1</small></div></div>
  <a class="crumb" href="./">DEV EDITOR /</a><span class="crumb">FACTORY</span>
  <div class="status"><span class="dot"></span><span id="status">CANONICAL 読込中</span></div>
- <button class="topbtn" id="validateTop">検証</button><button class="topbtn primary" id="exportTop">JSONを書き出す</button>
+ <button class="topbtn" id="validateTop">検証</button><button class="topbtn primary" id="exportTop">設定JSONを保存</button>
 </header>
 <div class="shell">
  <aside class="rail">
-  <h2>RANKER INDEX</h2><div id="rankers" class="rank-list"></div>
-  <div class="rail-divider"></div><h2>DRAFT QUEUE</h2><div id="drafts" class="rank-list"></div>
-  <div class="rail-divider"></div><button id="clone" class="rail-action">＋ 次のRANKへ複製</button>
-  <p class="rail-note">legacy-mappedは既存本編を変更しません。複製したdraftを調整し、検証後にJSONへ書き出します。</p>
+  <h2>参考にするランカー（編集不可）</h2><div id="rankers" class="rank-list"></div>
+  <div class="rail-divider"></div><h2>作成中のランカー（下書き）</h2><div id="drafts" class="rank-list"></div>
+  <div class="rail-divider"></div><button id="clone" class="rail-action">＋ このランカーを元に新規作成</button>
+  <p class="rail-note">既存のRank 9・10は保護されています。新しいランカーは「下書き」を作ってから編集します。保存したJSONだけではゲーム本編に追加されません。</p>
+  <label class="rail-import">以前保存した設定を再開 <input type="file" id="importFactory" accept=".json,application/json"></label>
+  <button id="retryLoad" class="rail-action" hidden>設定の読み込みを再試行</button>
  </aside>
  <main class="workspace">
-  <div class="section-title"><div><span class="eyebrow">AUTHORING WORKSPACE</span><h1 id="workspaceTitle">ランカーを設計</h1></div><p>数値を変えるたびに検証結果と5戦モデルを更新。ゲーム本体へ触れず、設定データから次の対戦を組み立てます。</p></div>
+  <div class="onboarding" id="onboarding">
+   <strong>はじめてのランカー制作 / 3ステップ</strong>
+   <ol><li><b>① 元になる敵を選ぶ</b><span>左のヘクトランかリゼルを選択します。</span></li><li><b>② 「新規作成」を押す</b><span>既存の敵を壊さず、新しい下書きを作れます。</span></li><li><b>③ 調整 → 検証 → 保存</b><span>数値を変えて右側のチェックを確認し、JSONを保存します。</span></li></ol>
+   <p>ここは敵の<strong>設計ツール</strong>です。右側の「5戦」は予測モデルで、実際の戦闘テストではありません。</p>
+   <button type="button" id="hideOnboarding" class="topbtn">説明を閉じる</button>
+  </div><button type="button" id="showOnboarding" class="topbtn" hidden>？ 作り方を表示</button>
+  <div id="loadError" class="load-error" role="alert" hidden><strong>設定を読み込めませんでした</strong><p id="loadErrorDetail"></p><button type="button" id="retryLoadMain" class="topbtn">再試行する</button></div>
+  <div id="editNotice" class="edit-notice" role="status">既存ランカーの設定を閲覧中です。新しく作るには左の「新規作成」を押してください。</div>
+  <div class="section-title"><div><span class="eyebrow">ランカー設計</span><h1 id="workspaceTitle">ランカーを設計</h1></div><p>設定の意味がわからない場合は各項目の説明を参照してください。実戦AIはまだ変更されません。</p></div>
   <section class="hero"><div class="hero-grid">
    <div class="rank-display"><div><span id="rankVisual">09</span><small>RANK</small></div></div>
-   <div class="field"><label>DISPLAY NAME</label><input id="name" autocomplete="off"></div>
-   <div class="field"><label>BEHAVIOR PROFILE</label><select id="behavior"><option>heavy-punish</option><option>orbit-chain</option><option>distance-control</option><option>feint</option><option>counter</option><option>adaptive</option></select></div>
+   <div class="field"><label>ランカーの名前</label><input id="name" autocomplete="off"></div>
+   <div class="field"><label>行動タイプ（動き方）</label><select id="behavior"><option value="heavy-punish">一撃重視：大振りの攻撃</option><option value="orbit-chain">連撃重視：周囲を回り込む</option><option value="distance-control">間合い重視：距離を保つ</option><option value="feint">フェイント：攻撃を誘う</option><option value="counter">反撃重視：待って反撃</option><option value="adaptive">変化型：状況で動きを変える</option></select></div>
   </div></section>
-  <section class="panel-card"><div class="card-head"><h2>CORE PARAMETERS</h2><span>戦闘の骨格</span></div><div class="form-grid">
+  <details class="explain"><summary>？ 数値の意味を確認する</summary><p><b>HP</b>：敵の体力。<b>距離帯</b>：近づく／離れる判断の目安。<b>連撃数</b>：前半・中盤・終盤で続ける攻撃の回数。<b>反撃チャンス</b>：攻撃後にプレイヤーが反撃できる時間。<b>S/A/B</b>：短いクリア時間ほど高評価。数値を変更しても、既存9位・10位の本編には反映されません。</p></details>
+  <section class="panel-card"><div class="card-head"><h2>基本設定</h2><span>強さ・距離・連撃</span></div><div class="form-grid">
    <div class="field"><label>RANK</label><input id="rank" type="number" min="1" max="10"></div>
    <div class="field"><label>HP</label><input id="hp" type="number" min="1"></div>
-   <div class="field"><label>NEAR DISTANCE</label><input id="near" type="number" min="0"></div>
-   <div class="field"><label>FAR DISTANCE</label><input id="far" type="number" min="1"></div>
-   <div class="field"><label>CHAIN / PHASE 1</label><input id="c1" type="number" min="1"></div>
-   <div class="field"><label>CHAIN / PHASE 2</label><input id="c2" type="number" min="1"></div>
-   <div class="field"><label>CHAIN / PHASE 3</label><input id="c3" type="number" min="1"></div>
-   <div class="field"><label>CHANCE WINDOW / sec</label><input id="chance" type="number" min=".05" step=".01"></div>
+   <div class="field"><label title="近距離と判断する距離。小さいほど近づきます">近距離の目安</label><input id="near" type="number" min="0"></div>
+   <div class="field"><label title="遠距離と判断する距離。近距離より大きくします">遠距離の目安</label><input id="far" type="number" min="1"></div>
+   <div class="field"><label>前半の連撃数</label><input id="c1" type="number" min="1"></div>
+   <div class="field"><label>中盤の連撃数</label><input id="c2" type="number" min="1"></div>
+   <div class="field"><label>終盤の連撃数</label><input id="c3" type="number" min="1"></div>
+   <div class="field"><label title="敵の攻撃後に反撃できる時間">反撃チャンス（秒）</label><input id="chance" type="number" min=".05" step=".01"></div>
   </div></section>
-  <section class="panel-card"><div class="card-head"><h2>CLEAR TARGETS</h2><span>S &lt; A &lt; B</span></div><div class="thresholds">
-   <div class="field threshold s"><label>S TARGET</label><input id="s" type="number" min="1"></div>
-   <div class="field threshold a"><label>A TARGET</label><input id="a" type="number" min="1"></div>
-   <div class="field threshold b"><label>B TARGET</label><input id="b" type="number" min="1"></div>
+  <section class="panel-card"><div class="card-head"><h2>クリア評価の目標時間</h2><span>短いほど高評価 / S &lt; A &lt; B</span></div><div class="thresholds">
+   <div class="field threshold s"><label>S評価（秒以内）</label><input id="s" type="number" min="1"></div>
+   <div class="field threshold a"><label>A評価（秒以内）</label><input id="a" type="number" min="1"></div>
+   <div class="field threshold b"><label>B評価（秒以内）</label><input id="b" type="number" min="1"></div>
   </div></section>
-  <section class="panel-card"><div class="card-head"><h2>ACTION BLOCKS</h2><span id="techCount">0 TECHNIQUES</span></div><div id="techs" class="tech-list"></div><button id="addTech" class="add-tech">＋ 共通Actionブロックを追加</button></section>
-  <div class="footer-hint">RANKER FACTORY — CANONICAL SAFE AUTHORING / ⌘S or Ctrl+S でJSON書き出し</div>
+  <details class="explain"><summary>？ 技の予告・攻撃時間とは？</summary><p><b>予告（秒）</b>：プレイヤーに攻撃を知らせる時間。長いほど避けやすくなります。<b>攻撃（秒）</b>：技の動作にかかる時間。<b>ダメージ</b>：当たったときの威力。最初は元の敵の値を参考にし、1つずつ変えてください。</p></details>
+  <section class="panel-card"><div class="card-head"><h2>技の設定</h2><span id="techCount">0 TECHNIQUES</span></div><div id="techs" class="tech-list"></div><button id="addTech" class="add-tech">＋ 新しい技を追加</button></section>
+  <div class="footer-hint">下書きはこのブラウザに自動保存します。別の端末へ移すには「設定JSONを保存」。保存したJSONの本編反映には別途実装が必要です。</div>
  </main>
  <aside class="inspector">
-  <div><h2>QUALITY GATE</h2><div class="score"><div class="score-ring" id="scoreRing"><strong id="scoreValue">—</strong></div><div><h3 id="scoreLabel">検証待ち</h3><p>設定の完全性・時間閾値・距離帯・技ブロックを常時チェックします。</p></div></div><div id="checks" class="checklist"></div></div>
-  <div style="margin-top:20px"><h2>5-BATTLE MODEL</h2><div id="simBars" class="sim-bars"></div><div id="simSummary" class="sim-summary">設定読込後に自動計算します。</div></div>
+  <div><h2>設定のチェック</h2><div class="score"><div class="score-ring" id="scoreRing"><strong id="scoreValue">—</strong></div><div><h3 id="scoreLabel">検証待ち</h3><p>設定の完全性・時間閾値・距離帯・技ブロックを常時チェックします。</p></div></div><div id="checks" class="checklist"></div></div>
+  <div style="margin-top:20px"><h2>5戦の予測（実プレイではありません）</h2><div id="simBars" class="sim-bars"></div><div id="simSummary" class="sim-summary">設定読込後に自動計算します。</div></div>
  </aside>
 </div><div class="toast" id="toast"></div>
 <script>
@@ -89,27 +117,141 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}.mono{font-
 const $=id=>document.getElementById(id);let data,currentKey,dirty=false;
 const clone=x=>JSON.parse(JSON.stringify(x));
 function toast(msg){$("toast").textContent=msg;$("toast").classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").classList.remove("show"),2200)}
-async function boot(){try{let r=await fetch("../config/lancers-tuning.json",{cache:"no-store"}),c=await r.json();if(!c.rankerFactory)throw Error("canonicalにrankerFactoryがありません");data=clone(c.rankerFactory);$("status").textContent="CANONICAL / "+(c.updatedAt||"READY");currentKey="9";renderList();load(data.rankers[currentKey]);toast("canonical rankerFactory を読込ました")}catch(e){try{let r=await fetch("../config/ranker-factory.json",{cache:"no-store"});data=await r.json();$("status").textContent="LEGACY FALLBACK";currentKey="9";renderList();load(data.rankers[currentKey]);toast("旧Factory設定へフォールバック")}catch(_){$("status").textContent="LOAD ERROR";toast("設定を読み込めませんでした")}}}
-function renderList(){const make=(k,r,isDraft)=>{let b=document.createElement("button");b.className="rank-card"+(currentKey===(isDraft?"d":"")+k?" active":"");b.innerHTML='<span class="rank-num">'+String(k).padStart(2,"0")+'</span><span><span class="rank-name">'+escapeHtml(r.displayName)+'</span><span class="rank-meta">'+r.behavior+'</span></span><span class="pill '+(isDraft?"draft":"legacy")+'">'+(isDraft?"DRAFT":"LEGACY")+'</span>';b.onclick=()=>select((isDraft?"d":"")+k,r);return b};
+const STORAGE_KEY="lancers-ranker-factory-drafts-v1";
+let loadSource="canonical";
+function persist(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data.drafts||{}));return true}
+  catch(e){$("status").textContent="自動保存できません — JSONを書き出してください";return false}
+}
+function draftIsValid(r,k){
+  return r&&typeof r==="object"&&Number.isInteger(r.rank)&&r.rank>=1&&r.rank<=8&&String(r.rank)===String(k)
+    &&typeof r.displayName==="string"&&typeof r.behavior==="string"&&Number.isFinite(r.hp)&&r.hp>0
+    &&r.distance&&Number.isFinite(r.distance.near)&&Number.isFinite(r.distance.far)
+    &&Array.isArray(r.chain)&&r.chain.length===3&&r.chain.every(n=>Number.isInteger(n)&&n>=1)&&r.clearRank&&["s","a","b"].every(k=>Number.isFinite(r.clearRank[k]))
+    &&Number.isFinite(r.chance)&&r.chance>0&&Array.isArray(r.techniques)&&r.techniques.length>0
+    &&r.techniques.every(t=>Array.isArray(t)&&t.length===5&&typeof t[0]==="string"&&typeof t[1]==="string"&&t.slice(2).every(n=>Number.isFinite(n)));
+}
+function restoreDrafts(){
+  try{let saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");if(saved&&typeof saved==="object")
+    for(const [k,r] of Object.entries(saved))if(draftIsValid(r,k)&&!data.rankers[k])data.drafts[k]=clone(r)}
+  catch(e){toast("ブラウザ保存の復元に失敗。JSONファイルから復元できます")}
+}
+function setError(message){
+  $("loadError").hidden=false;$("loadErrorDetail").textContent=message;
+  $("retryLoad").hidden=false;$("status").textContent="設定を読込めません";
+  $("exportTop").disabled=true;$("clone").disabled=true;
+}
+async function boot(){
+  $("loadError").hidden=true;$("retryLoad").hidden=true;$("status").textContent="設定を読込中…";
+  try{
+    let r=await fetch("../config/lancers-tuning.json",{cache:"no-store"});
+    if(!r.ok)throw Error("canonical HTTP "+r.status);
+    let c=await r.json();if(!c.rankerFactory?.rankers?.["9"]||!c.rankerFactory?.rankers?.["10"])throw Error("canonicalのFactory設定が不完全");
+    data=clone(c.rankerFactory);loadSource="canonical";
+  }catch(e){
+    try{
+      let r=await fetch("../config/ranker-factory.json",{cache:"no-store"});if(!r.ok)throw Error("backup HTTP "+r.status);
+      let f=await r.json();if(!f.rankers?.["9"]||!f.rankers?.["10"])throw Error("バックアップの設定が不完全");
+      data=clone(f);loadSource="backup";
+    }catch(second){setError("通信・JSON形式を確認してください。"+String(second.message||second));return}
+  }
+  data.drafts=data.drafts||{};restoreDrafts();currentKey="9";dirty=false;
+  $("status").textContent=loadSource==="canonical"?"正規設定を読込済み":"予備設定を使用中（正規設定を確認してください）";
+  $("exportTop").disabled=false;$("clone").disabled=false;
+  renderList();load(data.rankers[currentKey]);
+}
+function renderList(){const make=(k,r,isDraft)=>{let b=document.createElement("button");b.className="rank-card"+(currentKey===(isDraft?"d":"")+k?" active":"");b.innerHTML='<span class="rank-num">'+String(k).padStart(2,"0")+'</span><span><span class="rank-name">'+escapeHtml(r.displayName)+'</span><span class="rank-meta">'+escapeHtml(r.behavior)+'</span></span><span class="pill '+(isDraft?"draft":"legacy")+'">'+(isDraft?"DRAFT":"LEGACY")+'</span>';b.onclick=()=>select((isDraft?"d":"")+k,r);return b};
  $("rankers").innerHTML="";Object.entries(data.rankers).sort((a,b)=>+b[0]-+a[0]).forEach(([k,r])=>$("rankers").append(make(k,r,false)));
  $("drafts").innerHTML="";let ds=Object.entries(data.drafts||{}).sort((a,b)=>+b[0]-+a[0]);if(!ds.length)$("drafts").innerHTML='<div class="empty">まだdraftはありません</div>';else ds.forEach(([k,r])=>$("drafts").append(make(k,r,true)))}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function select(key,r){saveDraft();currentKey=key;renderList();load(r)}
-function load(r){$("rank").value=r.rank;$("name").value=r.displayName;$("hp").value=r.hp;$("behavior").value=r.behavior;$("near").value=r.distance.near;$("far").value=r.distance.far;[$("c1").value,$("c2").value,$("c3").value]=r.chain;$("chance").value=r.chance;$("s").value=r.clearRank.s;$("a").value=r.clearRank.a;$("b").value=r.clearRank.b;$("techs").innerHTML="";r.techniques.forEach(addTech);dirty=false;refresh()}
-function addTech(t=["thrust","新技",.7,.25,20]){let d=document.createElement("div");d.className="tech";d.innerHTML='<div class="drag">⋮⋮</div><div class="field"><label>BLOCK</label><select>'+Object.entries(data.actionBlocks).map(([k,v])=>'<option value="'+k+'">'+escapeHtml(v.label)+'</option>').join("")+'</select></div><div class="field"><label>TECHNIQUE</label><input autocomplete="off"></div><div class="field"><label>予告 sec</label><input type="number" min=".01" step=".01"></div><div class="field"><label>攻撃 sec</label><input type="number" min=".01" step=".01"></div><div class="field"><label>DAMAGE</label><input type="number" min="1"></div><button class="iconbtn" title="技を削除" aria-label="技を削除">×</button>';[...d.querySelectorAll("select,input")].forEach((x,i)=>x.value=t[i]);d.querySelector(".iconbtn").onclick=()=>{d.remove();markDirty()};$("techs").append(d)}
+function select(key,r){
+  if(currentKey?.startsWith("d"))saveDraft();
+  currentKey=key;renderList();load(r);
+}
+function load(r){
+  $("rank").value=r.rank;$("name").value=r.displayName;$("hp").value=r.hp;$("behavior").value=r.behavior;
+  $("near").value=r.distance.near;$("far").value=r.distance.far;
+  [$("c1").value,$("c2").value,$("c3").value]=r.chain;
+  $("chance").value=r.chance;$("s").value=r.clearRank.s;$("a").value=r.clearRank.a;$("b").value=r.clearRank.b;
+  $("techs").innerHTML="";r.techniques.forEach(addTech);
+  const editable=currentKey?.startsWith("d");
+  document.querySelectorAll(".workspace input,.workspace select,#addTech").forEach(el=>el.disabled=!editable);
+  document.querySelectorAll(".tech .iconbtn").forEach(el=>el.disabled=!editable);
+  $("editNotice").classList.toggle("draft",editable);
+  $("editNotice").textContent=editable
+    ?"下書きを編集中。変更はこのブラウザに自動保存されます。JSONを保存するまでゲーム本体には反映されません。"
+    :"既存ランカーの設定を閲覧中（変更不可）。新しい敵を作るには左の「このランカーを元に新規作成」を押してください。";
+  dirty=false;refresh();
+}
+function addTech(t=["thrust","新技",.7,.25,20]){let d=document.createElement("div");d.className="tech";d.innerHTML='<div class="drag">⋮⋮</div><div class="field"><label>技の種類</label><select>'+Object.entries(data.actionBlocks).map(([k,v])=>'<option value="'+k+'">'+escapeHtml(v.label)+'</option>').join("")+'</select></div><div class="field"><label>技の名前</label><input autocomplete="off"></div><div class="field"><label>予告 sec</label><input type="number" min=".01" step=".01"></div><div class="field"><label>攻撃 sec</label><input type="number" min=".01" step=".01"></div><div class="field"><label>ダメージ</label><input type="number" min="1"></div><button class="iconbtn" title="技を削除" aria-label="技を削除">×</button>';[...d.querySelectorAll("select,input")].forEach((x,i)=>x.value=t[i]);d.querySelector(".iconbtn").onclick=()=>{d.remove();markDirty()};$("techs").append(d)}
 function read(){return{rank:+$("rank").value,id:(currentKey&&currentKey[0]!=="d"&&data.rankers[currentKey]?.id)||"rank"+$("rank").value,displayName:$("name").value.trim(),runtime:currentKey&&currentKey[0]==="d"?"draft":"legacy",hp:+$("hp").value,behavior:$("behavior").value,distance:{near:+$("near").value,far:+$("far").value},chain:[+$("c1").value,+$("c2").value,+$("c3").value],chance:+$("chance").value,clearRank:{s:+$("s").value,a:+$("a").value,b:+$("b").value},techniques:[...$("techs").children].map(d=>[...d.querySelectorAll("select,input")].map((x,i)=>i<2?x.value:+x.value))}}
-function saveDraft(){if(!data||!currentKey||currentKey[0]!=="d")return;let r=read();data.drafts[String(r.rank)]=r}
+function saveDraft(){
+  if(!data||!currentKey?.startsWith("d"))return false;
+  const oldKey=currentKey.slice(1),r=read(),newKey=String(r.rank);
+  if(!Number.isInteger(r.rank)||r.rank<1||r.rank>8||data.rankers[newKey]||(newKey!==oldKey&&data.drafts[newKey])){
+    $("status").textContent="RANKが重複または範囲外です。1〜8の未使用RANKを指定してください";return false;
+  }
+  r.runtime="draft";r.id="rank"+r.rank;
+  if(newKey!==oldKey){delete data.drafts[oldKey];currentKey="d"+newKey}
+  data.drafts[newKey]=r;persist();renderList();return true;
+}
 function validate(r=read()){let checks=[];const add=(ok,msg)=>checks.push({ok,msg});add(r.rank>=1&&r.rank<=10,"RANKが1〜10の範囲");add(r.displayName.length>=2,"表示名が設定済み");add(Number.isFinite(r.hp)&&r.hp>0,"HPが1以上");add(r.distance.near>=0&&r.distance.near<r.distance.far,"距離帯が near < far");add(r.chain.length===3&&r.chain.every(n=>Number.isInteger(n)&&n>=1),"3フェーズの連撃数が1以上");add(r.chance>0,"CHANCE時間が正数");add(r.clearRank.s>0&&r.clearRank.s<r.clearRank.a&&r.clearRank.a<r.clearRank.b,"クリア時間が S < A < B");add(r.techniques.length>0,"技ブロックが1つ以上");add(r.techniques.every(t=>data.actionBlocks[t[0]]&&t[1].trim()&&t.slice(2).every(n=>Number.isFinite(n)&&n>0)),"全技のブロック・名前・数値が有効");return checks}
 function simulate(r=read()){if(!r.techniques.length)return[];let base=r.techniques.reduce((n,t)=>n+t[2]+t[3],0)/r.techniques.length;let damage=r.techniques.reduce((n,t)=>n+t[4],0)/r.techniques.length;const variance=[.96,1.04,1,.92,1.08];return variance.map((v,i)=>{let chain=r.chain[i%3]||1,cycle=(base*chain+r.chance+.34)*v,pressure=Math.max(1,damage*2.15-i*.65),time=(r.hp/pressure)*cycle;return Math.max(.1,time)})}
 function grade(t,r){return t<=r.clearRank.s?"S":t<=r.clearRank.a?"A":t<=r.clearRank.b?"B":"C"}
 function refresh(){if(!data)return;let r=read();$("rankVisual").textContent=String(Math.max(0,r.rank||0)).padStart(2,"0");$("workspaceTitle").textContent=r.displayName||"ランカーを設計";$("techCount").textContent=r.techniques.length+" TECHNIQUES";let c=validate(r),ok=c.filter(x=>x.ok).length,score=Math.round(ok/c.length*100);$("scoreRing").style.setProperty("--p",score);$("scoreValue").textContent=score;$("scoreLabel").textContent=score===100?"READY TO EXPORT":score>=75?"要調整":"BLOCKED";$("checks").innerHTML=c.map(x=>'<div class="check '+(x.ok?"":"bad")+'"><i>'+(x.ok?"✓":"!")+'</i><span>'+escapeHtml(x.msg)+'</span></div>').join("");
  let s=simulate(r),max=Math.max(r.clearRank.b,...s,1);$("simBars").innerHTML=s.map((v,i)=>'<div class="sim-row"><span>#0'+(i+1)+'</span><div class="bar"><i style="width:'+Math.min(100,v/max*100).toFixed(1)+'%"></i></div><span>'+v.toFixed(1)+'s '+grade(v,r)+'</span></div>').join("");if(s.length){let avg=s.reduce((a,b)=>a+b,0)/s.length,gs=s.map(v=>grade(v,r));$("simSummary").innerHTML='平均 <b>'+avg.toFixed(1)+'秒</b> / '+grade(avg,r)+'相当<br>S '+gs.filter(x=>x==="S").length+'・A '+gs.filter(x=>x==="A").length+'・B '+gs.filter(x=>x==="B").length+'・C '+gs.filter(x=>x==="C").length+'<br><span style="color:#60758b">※設定比較用の決定論モデル。実機AIプレイではありません。</span>'}}
-function markDirty(){dirty=true;refresh();$("status").textContent=(currentKey&&currentKey[0]==="d"?"DRAFT EDITING":"LEGACY PREVIEW")+" • UNSAVED"}
-function exportJson(){saveDraft();let checks=validate(),bad=checks.filter(x=>!x.ok);if(bad.length){toast("検証NG: "+bad[0].msg);return}let blob=new Blob([JSON.stringify(data,null,2)+"\n"],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ranker-factory.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);dirty=false;toast("検証OK — JSONを書き出しました")}
-$("clone").onclick=()=>{saveDraft();let r=clone(read()),nr=Math.max(1,r.rank-1);r.rank=nr;r.id="rank"+nr;r.displayName="RANK "+nr+" DRAFT";r.runtime="draft";data.drafts[String(nr)]=r;currentKey="d"+nr;renderList();load(r);dirty=true;$("status").textContent="RANK "+nr+" DRAFT CREATED";toast("RANK "+nr+" draftを作成しました")};
+function markDirty(){
+  if(!currentKey?.startsWith("d"))return;
+  dirty=true;saveDraft();refresh();
+  if(!data.drafts[String(read().rank)])return;
+  $("status").textContent="下書きをブラウザに自動保存済み • JSONは未出力";
+}
+function exportJson(){
+  if(!data)return;
+  if(currentKey?.startsWith("d")&&!saveDraft()){toast("RANKの重複を直してください");return}
+  const problems=[];
+  for(const [k,r] of Object.entries(data.drafts||{})){
+    if(!draftIsValid(r,k))problems.push("RANK "+k+" の形式");
+    else {const errors=validate(r).filter(x=>!x.ok);if(errors.length)problems.push("RANK "+k+": "+errors[0].msg)}
+  }
+  if(problems.length){toast("保存前に修正: "+problems[0]);return}
+  let blob=new Blob([JSON.stringify(data,null,2)+"\n"],{type:"application/json"}),a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="ranker-factory.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  dirty=false;toast("JSONを保存しました。ゲームへの反映は別途必要です");
+}
+function createDraft(){
+  if(!data)return;
+  if(currentKey?.startsWith("d")&&!saveDraft()){toast("RANKの重複を直してください");return}
+  const source=read(),available=Array.from({length:8},(_,i)=>8-i).filter(n=>!data.drafts[n]&&!data.rankers[n]);
+  const nr=available.find(n=>n<source.rank);
+  if(!nr){toast("下位RANKの空きがありません。既存の下書きを選んでください");return}
+  const r=clone(source);r.rank=nr;r.id="rank"+nr;r.displayName="新ランカー "+nr;r.runtime="draft";
+  data.drafts[String(nr)]=r;persist();currentKey="d"+nr;renderList();load(r);dirty=true;
+  $("status").textContent="RANK "+nr+" 下書きを作成しました";toast("作成しました。まず名前を変えてみましょう");$("name").focus();
+}
+function importDrafts(file){
+  if(!file)return;
+  file.text().then(text=>{
+    const imported=JSON.parse(text),f=imported.rankerFactory||imported;
+    if(f.schema!=="ranker-factory/v1"||!f.drafts||typeof f.drafts!=="object")throw Error("Factory形式のJSONではありません");
+    const drafts=Object.entries(f.drafts);
+    if(drafts.some(([k,r])=>!draftIsValid(r,k)||data.rankers[k]))throw Error("下書きのRANKまたは形式が不正です");
+    if(drafts.some(([k])=>data.drafts[k])&&!confirm("同じRANKの下書きを上書きします。続けますか？"))return;
+    if(currentKey?.startsWith("d")&&!saveDraft())throw Error("現在のRANKを修正してから読み込んでください");
+    for(const [k,r] of drafts)data.drafts[k]=clone(r);
+    persist();if(drafts.length){currentKey="d"+drafts[0][0];renderList();load(data.drafts[drafts[0][0]])}else renderList();
+    toast(drafts.length+"件の下書きを読み込みました");
+  }).catch(e=>toast("読み込み失敗: "+String(e.message||e)));
+}
+
+$("clone").onclick=createDraft;
 $("addTech").onclick=()=>{addTech();markDirty()};$("validateTop").onclick=()=>{refresh();let bad=validate().filter(x=>!x.ok);toast(bad.length?"検証NG — "+bad.length+"項目を確認":"QUALITY GATE 100 — 設定上の矛盾なし")};$("exportTop").onclick=exportJson;
-document.addEventListener("input",e=>{if(e.target.closest(".workspace"))markDirty()});document.addEventListener("change",e=>{if(e.target.closest(".workspace"))markDirty()});document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="s"){e.preventDefault();exportJson()}});
-window.addEventListener("beforeunload",e=>{if(dirty&&currentKey&&currentKey[0]==="d"){e.preventDefault();e.returnValue=""}});boot();
+document.addEventListener("input",e=>{if(e.target.closest(".workspace")&&!e.target.disabled)markDirty()});document.addEventListener("change",e=>{if(e.target.closest(".workspace")&&!e.target.disabled)markDirty()});document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="s"){e.preventDefault();exportJson()}});
+$("retryLoad").onclick=boot;$("retryLoadMain").onclick=boot;
+$("importFactory").onchange=e=>{importDrafts(e.target.files[0]);e.target.value=""};
+$("hideOnboarding").onclick=()=>{$("onboarding").hidden=true;$("showOnboarding").hidden=false};
+$("showOnboarding").onclick=()=>{$("onboarding").hidden=false;$("showOnboarding").hidden=true};
+window.addEventListener("beforeunload",e=>{if(dirty&&currentKey?.startsWith("d")){e.preventDefault();e.returnValue=""}});boot();
 })();
 </script>
 </body></html>
