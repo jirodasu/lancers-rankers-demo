@@ -1,0 +1,9 @@
+{
+  "schema": "ranker-factory/v1",
+  "runtimeMode": "legacy-mapped",
+  "rankers": {
+    "10": {"rank": 10, "id": "hectoran", "displayName": "城壁のヘクトラン", "runtime": "legacy"},
+    "9": {"rank": 9, "id": "lizel", "displayName": "旋槍のリゼル", "runtime": "legacy"}
+  },
+  "drafts": {}
+}
