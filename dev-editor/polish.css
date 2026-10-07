@@ -149,4 +149,20 @@ button:focus:not(:focus-visible){outline:none}
 }
 @media(prefers-contrast:more){
   :root{--muted:#a8bacb;--line:#4e6680}.note,.status,.row label{color:#bdcbd8}.panel,.device{border-color:#647d97}
-}\n.factory-tab{display:grid;place-items:center;text-decoration:none}.factory-tab:hover{color:var(--gold-hi);background:linear-gradient(180deg,rgba(217,186,121,.045),transparent)}\n
+} 
+.factory-tab{display:grid;place-items:center;text-decoration:none}.factory-tab:hover{color:var(--gold-hi);background:linear-gradient(180deg,rgba(217,186,121,.045),transparent)}
+
+/* First-run guidance: clear actions, plain language, and recoverable errors */
+.factory-tab{font-size:9px;white-space:nowrap}
+.beginner-card{border:1px solid #4e684f;border-radius:11px;padding:16px;margin:0 0 20px;background:linear-gradient(145deg,#14271e,#0b1821)}
+.beginner-kicker{font:800 10px ui-monospace,monospace;letter-spacing:.1em;color:#a9dbbd}
+.beginner-card h2{margin:9px 0 13px;color:#e9f3eb;font-size:16px}
+.beginner-card ol{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.beginner-card li{display:grid;gap:3px;padding:9px;border:1px solid #34503e;border-radius:7px;background:#0c1b18}
+.beginner-card li b{font-size:12px;color:#d4e6d8}
+.beginner-card li span,.beginner-card p{font-size:11px;line-height:1.65;color:#afc3b7}
+.beginner-card p{margin:12px 0}
+.guide-toggle{min-height:40px;width:100%;margin:0 0 14px;border:1px solid #4e684f;background:#11241b;border-radius:7px;color:#c7e1cd}
+.preview-help{position:absolute;z-index:9;bottom:20px;left:50%;transform:translateX(-50%);width:min(440px,92%);padding:17px;border:1px solid #a96b57;border-radius:12px;background:#1e1517;color:#f4d5c5;box-shadow:0 20px 55px #0009}
+.preview-help strong{font-size:13px}.preview-help p{font-size:11px;line-height:1.6}
+.preview-help button,.preview-help a{display:inline-block;min-height:40px;padding:10px;margin:3px;border:1px solid #a96b57;border-radius:6px;background:#362326;color:#f4d5c5;font-size:11px;text-decoration:none}
