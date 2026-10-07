@@ -54,7 +54,8 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
 <main>
 <section class="stage">
   <div class="device"><iframe id="game" src="../?dev-editor=1"></iframe></div>
-  <div class="tip">UIを直接ドラッグして調整できます。採用値はDATAの「採用確定」から正規設定として固定します。</div>
+  <div class="tip">画面内のUIをドラッグして位置を調整できます。保存は右側の「DATA」から行います。</div>
+  <div id="previewHelp" class="preview-help" role="status" hidden><strong>ゲームの起動を確認できません</strong><p>通信環境またはゲームの起動状態を確認してください。画面が止まった場合は再読込できます。</p><button type="button" id="retryPreview">プレビューを再読込</button><a href="../" target="_blank" rel="noopener">ゲーム単体で開く ↗</a></div>
 </section>
 <aside class="panel">
   <nav class="tabs">
@@ -62,10 +63,21 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
     <button class="tab" data-tab="fx">MONSTER</button>
     <button class="tab" data-tab="sound">SOUND</button>
     <button class="tab" data-tab="history">履歴</button>
-    <button class="tab" data-tab="data">DATA</button>\n    <a class="tab factory-tab" href="./factory.html" style="text-decoration:none;text-align:center">FACTORY</a>
+    <button class="tab" data-tab="data">DATA</button>
+    <a class="tab factory-tab" href="./factory.html" aria-label="ランカー作成ツールを開く">ランカー作成</a>
   </nav>
 
   <section class="pane active" id="pane-ui">
+    <div class="beginner-card" id="beginnerGuide">
+      <div class="beginner-kicker">はじめての方へ / 3 STEPS</div>
+      <h2>ゲームを見ながら、少しずつ調整</h2>
+      <ol><li><b>① ゲームを起動</b><span>左のプレビューが準備できたら、上の「本編を起動」を押します。</span></li>
+      <li><b>② 変えたい場所を選ぶ</b><span>下の一覧から「移動スティック」などを選び、位置や大きさを変更します。</span></li>
+      <li><b>③ 保存する</b><span>「DATA」→「採用確定」で設定を固定。新しい敵を作る場合は「ランカー作成」を開きます。</span></li></ol>
+      <p>ここでの調整はプレビュー用です。ゲーム本体の戦闘AIや既存ランカーの強さは変更しません。</p>
+      <button type="button" id="dismissGuide" class="btn">説明を閉じる</button>
+    </div>
+    <button type="button" id="showGuide" class="guide-toggle" hidden>？ はじめての方へ</button>
     <h2>UI レイアウト</h2>
     <div id="selectedReadout" class="selected-readout">移動スティックを編集中</div>
     <select id="target">
@@ -213,13 +225,17 @@ function installDrag(){
 function connect(){
  root=gameRoot();
  if(!root){setStatus("本編の「ゲームを起動」を押してください",false);return false}
- setStatus("DEV EDITOR 接続済み",true);publishTuning();installSoundOverride();applyAll();installDrag();return true
+ setStatus("DEV EDITOR 接続済み",true);q("previewHelp").hidden=true;clearTimeout(previewWatch);publishTuning();installSoundOverride();applyAll();installDrag();return true
 }
-frame.addEventListener("load",function(){root=null;setStatus("本編を読込中…",false);setTimeout(connect,1200)});
+frame.addEventListener("load",function(){root=null;setStatus("本編を読込中…",false);q("previewHelp").hidden=true;setTimeout(connect,1200)});
+var previewWatch=setTimeout(function(){if(!root)q("previewHelp").hidden=false},20000);
+q("retryPreview").onclick=function(){q("previewHelp").hidden=true;root=null;frame.src="../?dev-editor=1&t="+Date.now();clearTimeout(previewWatch);previewWatch=setTimeout(function(){if(!root)q("previewHelp").hidden=false},20000)};
+q("dismissGuide").onclick=function(){q("beginnerGuide").hidden=true;q("showGuide").hidden=false};
+q("showGuide").onclick=function(){q("beginnerGuide").hidden=false;q("showGuide").hidden=true};
 setInterval(function(){if(!root)connect()},700);
 q("bootGame").onclick=function(){try{var b=frame.contentDocument.getElementById("boot");if(b&&!b.disabled)b.click();else frame.contentWindow.pyxelContext?.resolveInput?.()}catch(e){}setTimeout(connect,700)};
 q("reloadGame").onclick=function(){root=null;frame.src="../?dev-editor=1&t="+Date.now()};
-document.querySelectorAll(".tab").forEach(function(b){b.onclick=function(){document.querySelectorAll(".tab,.pane").forEach(function(x){x.classList.remove("active")});b.classList.add("active");q("pane-"+b.dataset.tab).classList.add("active")}});
+document.querySelectorAll("button.tab[data-tab]").forEach(function(b){b.onclick=function(){document.querySelectorAll(".tab,.pane").forEach(function(x){x.classList.remove("active")});b.classList.add("active");q("pane-"+b.dataset.tab).classList.add("active")}});
 q("target").onchange=syncControls;
 ["x","y","w","h"].forEach(function(id){q(id).oninput=function(){updateUi(id,this.value)}});
 q("resetTarget").onclick=function(){delete state.ui[q("target").value];var el=targetEl(q("target").value);if(el){el.style.removeProperty("translate");el.style.removeProperty("width");el.style.removeProperty("height")}ensureUi(q("target").value);syncControls();dump()};
