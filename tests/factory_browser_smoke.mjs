@@ -30,6 +30,21 @@ try {
   await page.locator('a.factory-tab').click();
   await page.waitForURL('**/dev-editor/factory.html');
   console.log('PASS DEV EDITOR → FACTORY navigation');
+  await page.route('**/config/lancers-tuning.json', route => route.fulfill({status:503,body:'offline'}));
+  await page.route('**/config/ranker-factory.json', route => route.fulfill({status:503,body:'offline'}));
+  await page.reload();
+  await page.locator('#loadError').waitFor({state:'visible'});
+  assert.equal(await page.locator('#retryLoadMain').isVisible(),true);
+  await page.unroute('**/config/lancers-tuning.json');
+  await page.unroute('**/config/ranker-factory.json');
+  await page.locator('#retryLoadMain').click();
+  await page.waitForFunction(() => document.getElementById('status')?.textContent.includes('正規設定'));
+  console.log('PASS Factory offline error → retry recovery');
+  await page.route('**/cdn.jsdelivr.net/**', route => route.abort());
+  await page.goto(base+'/');
+  await page.locator('#reload').waitFor({state:'visible',timeout:10000});
+  assert.match(await page.locator('#boot-status').innerText(),/起動に失敗/);
+  console.log('PASS game CDN error → visible retry');
 } finally {
   await browser.close();
 }
