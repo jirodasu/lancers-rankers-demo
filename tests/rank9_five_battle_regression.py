@@ -23,7 +23,9 @@ assert "威力20 / 溜め40 · バランス型" in g1
 assert "威力38 / 溜め70 · 体勢を崩す" in g1
 assert "威力15 / 連突10×3 · 手数型" in g1
 assert "出血を蓄積" not in g1
-assert "s.seconds<=40?'S':s.seconds<=50?'A':s.seconds<=65?'B':'C'" in g3
+assert "s.rank===9?(s.seconds<=72?'S':s.seconds<=82?'A':s.seconds<=97?'B':'C')" in g3
+assert "Number(s.rank) === 9" in read("src/rank-timer-fix.txt")
+assert "seconds <= 72 ? 'S' : seconds <= 82 ? 'A' : seconds <= 97 ? 'B' : 'C'" in read("src/rank-timer-fix.txt")
 
 # Five battle-path regressions. These are deterministic flow/invariant checks,
 # not a replacement for real-device touch playtesting.
