@@ -1,0 +1,36 @@
+name: Factory browser smoke
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev-editor/**'
+      - 'config/**'
+      - 'index.html'
+      - 'tests/factory_browser_smoke.mjs'
+      - '.github/workflows/factory-browser-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dev-editor/**'
+      - 'config/**'
+      - 'index.html'
+      - 'tests/factory_browser_smoke.mjs'
+      - '.github/workflows/factory-browser-smoke.yml'
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright browser
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Start local preview
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/factory-http.log 2>&1 &
+      - name: Exercise real-browser authoring flow
+        run: node tests/factory_browser_smoke.mjs
