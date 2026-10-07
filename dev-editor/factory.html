@@ -114,27 +114,139 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}.mono{font-
 const $=id=>document.getElementById(id);let data,currentKey,dirty=false;
 const clone=x=>JSON.parse(JSON.stringify(x));
 function toast(msg){$("toast").textContent=msg;$("toast").classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").classList.remove("show"),2200)}
-async function boot(){try{let r=await fetch("../config/lancers-tuning.json",{cache:"no-store"}),c=await r.json();if(!c.rankerFactory)throw Error("canonicalにrankerFactoryがありません");data=clone(c.rankerFactory);$("status").textContent="CANONICAL / "+(c.updatedAt||"READY");currentKey="9";renderList();load(data.rankers[currentKey]);toast("canonical rankerFactory を読込ました")}catch(e){try{let r=await fetch("../config/ranker-factory.json",{cache:"no-store"});data=await r.json();$("status").textContent="LEGACY FALLBACK";currentKey="9";renderList();load(data.rankers[currentKey]);toast("旧Factory設定へフォールバック")}catch(_){$("status").textContent="LOAD ERROR";toast("設定を読み込めませんでした")}}}
+const STORAGE_KEY="lancers-ranker-factory-drafts-v1";
+let loadSource="canonical";
+function persist(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data.drafts||{}));return true}
+  catch(e){$("status").textContent="自動保存できません — JSONを書き出してください";return false}
+}
+function draftIsValid(r,k){
+  return r&&typeof r==="object"&&Number.isInteger(r.rank)&&r.rank>=1&&r.rank<=8&&String(r.rank)===String(k)
+    &&typeof r.displayName==="string"&&Number.isFinite(r.hp)&&r.hp>0
+    &&r.distance&&Number.isFinite(r.distance.near)&&Number.isFinite(r.distance.far)
+    &&Array.isArray(r.chain)&&r.chain.length===3&&r.clearRank
+    &&Array.isArray(r.techniques)&&r.techniques.every(t=>Array.isArray(t)&&t.length===5);
+}
+function restoreDrafts(){
+  try{let saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");if(saved&&typeof saved==="object")
+    for(const [k,r] of Object.entries(saved))if(draftIsValid(r,k)&&!data.rankers[k])data.drafts[k]=clone(r)}
+  catch(e){toast("ブラウザ保存の復元に失敗。JSONファイルから復元できます")}
+}
+function setError(message){
+  $("loadError").hidden=false;$("loadErrorDetail").textContent=message;
+  $("retryLoad").hidden=false;$("status").textContent="設定を読込めません";
+  $("exportTop").disabled=true;$("clone").disabled=true;
+}
+async function boot(){
+  $("loadError").hidden=true;$("retryLoad").hidden=true;$("status").textContent="設定を読込中…";
+  try{
+    let r=await fetch("../config/lancers-tuning.json",{cache:"no-store"});
+    if(!r.ok)throw Error("canonical HTTP "+r.status);
+    let c=await r.json();if(!c.rankerFactory?.rankers?.["9"]||!c.rankerFactory?.rankers?.["10"])throw Error("canonicalのFactory設定が不完全");
+    data=clone(c.rankerFactory);loadSource="canonical";
+  }catch(e){
+    try{
+      let r=await fetch("../config/ranker-factory.json",{cache:"no-store"});if(!r.ok)throw Error("backup HTTP "+r.status);
+      let f=await r.json();if(!f.rankers?.["9"]||!f.rankers?.["10"])throw Error("バックアップの設定が不完全");
+      data=clone(f);loadSource="backup";
+    }catch(second){setError("通信・JSON形式を確認してください。"+String(second.message||second));return}
+  }
+  data.drafts=data.drafts||{};restoreDrafts();currentKey="9";dirty=false;
+  $("status").textContent=loadSource==="canonical"?"正規設定を読込済み":"予備設定を使用中（正規設定を確認してください）";
+  $("exportTop").disabled=false;$("clone").disabled=false;
+  renderList();load(data.rankers[currentKey]);
+}
 function renderList(){const make=(k,r,isDraft)=>{let b=document.createElement("button");b.className="rank-card"+(currentKey===(isDraft?"d":"")+k?" active":"");b.innerHTML='<span class="rank-num">'+String(k).padStart(2,"0")+'</span><span><span class="rank-name">'+escapeHtml(r.displayName)+'</span><span class="rank-meta">'+r.behavior+'</span></span><span class="pill '+(isDraft?"draft":"legacy")+'">'+(isDraft?"DRAFT":"LEGACY")+'</span>';b.onclick=()=>select((isDraft?"d":"")+k,r);return b};
  $("rankers").innerHTML="";Object.entries(data.rankers).sort((a,b)=>+b[0]-+a[0]).forEach(([k,r])=>$("rankers").append(make(k,r,false)));
  $("drafts").innerHTML="";let ds=Object.entries(data.drafts||{}).sort((a,b)=>+b[0]-+a[0]);if(!ds.length)$("drafts").innerHTML='<div class="empty">まだdraftはありません</div>';else ds.forEach(([k,r])=>$("drafts").append(make(k,r,true)))}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function select(key,r){saveDraft();currentKey=key;renderList();load(r)}
-function load(r){$("rank").value=r.rank;$("name").value=r.displayName;$("hp").value=r.hp;$("behavior").value=r.behavior;$("near").value=r.distance.near;$("far").value=r.distance.far;[$("c1").value,$("c2").value,$("c3").value]=r.chain;$("chance").value=r.chance;$("s").value=r.clearRank.s;$("a").value=r.clearRank.a;$("b").value=r.clearRank.b;$("techs").innerHTML="";r.techniques.forEach(addTech);dirty=false;refresh()}
+function select(key,r){
+  if(currentKey?.startsWith("d"))saveDraft();
+  currentKey=key;renderList();load(r);
+}
+function load(r){
+  $("rank").value=r.rank;$("name").value=r.displayName;$("hp").value=r.hp;$("behavior").value=r.behavior;
+  $("near").value=r.distance.near;$("far").value=r.distance.far;
+  [$("c1").value,$("c2").value,$("c3").value]=r.chain;
+  $("chance").value=r.chance;$("s").value=r.clearRank.s;$("a").value=r.clearRank.a;$("b").value=r.clearRank.b;
+  $("techs").innerHTML="";r.techniques.forEach(addTech);
+  const editable=currentKey?.startsWith("d");
+  document.querySelectorAll(".workspace input,.workspace select,#addTech").forEach(el=>el.disabled=!editable);
+  document.querySelectorAll(".tech .iconbtn").forEach(el=>el.disabled=!editable);
+  $("editNotice").classList.toggle("draft",editable);
+  $("editNotice").textContent=editable
+    ?"下書きを編集中。変更はこのブラウザに自動保存されます。JSONを保存するまでゲーム本体には反映されません。"
+    :"既存ランカーの設定を閲覧中（変更不可）。新しい敵を作るには左の「このランカーを元に新規作成」を押してください。";
+  dirty=false;refresh();
+}
 function addTech(t=["thrust","新技",.7,.25,20]){let d=document.createElement("div");d.className="tech";d.innerHTML='<div class="drag">⋮⋮</div><div class="field"><label>BLOCK</label><select>'+Object.entries(data.actionBlocks).map(([k,v])=>'<option value="'+k+'">'+escapeHtml(v.label)+'</option>').join("")+'</select></div><div class="field"><label>TECHNIQUE</label><input autocomplete="off"></div><div class="field"><label>予告 sec</label><input type="number" min=".01" step=".01"></div><div class="field"><label>攻撃 sec</label><input type="number" min=".01" step=".01"></div><div class="field"><label>DAMAGE</label><input type="number" min="1"></div><button class="iconbtn" title="技を削除" aria-label="技を削除">×</button>';[...d.querySelectorAll("select,input")].forEach((x,i)=>x.value=t[i]);d.querySelector(".iconbtn").onclick=()=>{d.remove();markDirty()};$("techs").append(d)}
 function read(){return{rank:+$("rank").value,id:(currentKey&&currentKey[0]!=="d"&&data.rankers[currentKey]?.id)||"rank"+$("rank").value,displayName:$("name").value.trim(),runtime:currentKey&&currentKey[0]==="d"?"draft":"legacy",hp:+$("hp").value,behavior:$("behavior").value,distance:{near:+$("near").value,far:+$("far").value},chain:[+$("c1").value,+$("c2").value,+$("c3").value],chance:+$("chance").value,clearRank:{s:+$("s").value,a:+$("a").value,b:+$("b").value},techniques:[...$("techs").children].map(d=>[...d.querySelectorAll("select,input")].map((x,i)=>i<2?x.value:+x.value))}}
-function saveDraft(){if(!data||!currentKey||currentKey[0]!=="d")return;let r=read();data.drafts[String(r.rank)]=r}
+function saveDraft(){
+  if(!data||!currentKey?.startsWith("d"))return false;
+  const oldKey=currentKey.slice(1),r=read(),newKey=String(r.rank);
+  if(!Number.isInteger(r.rank)||r.rank<1||r.rank>8||data.rankers[newKey]||(newKey!==oldKey&&data.drafts[newKey])){
+    $("status").textContent="RANKが重複または範囲外です。1〜8の未使用RANKを指定してください";return false;
+  }
+  r.runtime="draft";r.id="rank"+r.rank;
+  if(newKey!==oldKey){delete data.drafts[oldKey];currentKey="d"+newKey}
+  data.drafts[newKey]=r;persist();renderList();return true;
+}
 function validate(r=read()){let checks=[];const add=(ok,msg)=>checks.push({ok,msg});add(r.rank>=1&&r.rank<=10,"RANKが1〜10の範囲");add(r.displayName.length>=2,"表示名が設定済み");add(Number.isFinite(r.hp)&&r.hp>0,"HPが1以上");add(r.distance.near>=0&&r.distance.near<r.distance.far,"距離帯が near < far");add(r.chain.length===3&&r.chain.every(n=>Number.isInteger(n)&&n>=1),"3フェーズの連撃数が1以上");add(r.chance>0,"CHANCE時間が正数");add(r.clearRank.s>0&&r.clearRank.s<r.clearRank.a&&r.clearRank.a<r.clearRank.b,"クリア時間が S < A < B");add(r.techniques.length>0,"技ブロックが1つ以上");add(r.techniques.every(t=>data.actionBlocks[t[0]]&&t[1].trim()&&t.slice(2).every(n=>Number.isFinite(n)&&n>0)),"全技のブロック・名前・数値が有効");return checks}
 function simulate(r=read()){if(!r.techniques.length)return[];let base=r.techniques.reduce((n,t)=>n+t[2]+t[3],0)/r.techniques.length;let damage=r.techniques.reduce((n,t)=>n+t[4],0)/r.techniques.length;const variance=[.96,1.04,1,.92,1.08];return variance.map((v,i)=>{let chain=r.chain[i%3]||1,cycle=(base*chain+r.chance+.34)*v,pressure=Math.max(1,damage*2.15-i*.65),time=(r.hp/pressure)*cycle;return Math.max(.1,time)})}
 function grade(t,r){return t<=r.clearRank.s?"S":t<=r.clearRank.a?"A":t<=r.clearRank.b?"B":"C"}
 function refresh(){if(!data)return;let r=read();$("rankVisual").textContent=String(Math.max(0,r.rank||0)).padStart(2,"0");$("workspaceTitle").textContent=r.displayName||"ランカーを設計";$("techCount").textContent=r.techniques.length+" TECHNIQUES";let c=validate(r),ok=c.filter(x=>x.ok).length,score=Math.round(ok/c.length*100);$("scoreRing").style.setProperty("--p",score);$("scoreValue").textContent=score;$("scoreLabel").textContent=score===100?"READY TO EXPORT":score>=75?"要調整":"BLOCKED";$("checks").innerHTML=c.map(x=>'<div class="check '+(x.ok?"":"bad")+'"><i>'+(x.ok?"✓":"!")+'</i><span>'+escapeHtml(x.msg)+'</span></div>').join("");
  let s=simulate(r),max=Math.max(r.clearRank.b,...s,1);$("simBars").innerHTML=s.map((v,i)=>'<div class="sim-row"><span>#0'+(i+1)+'</span><div class="bar"><i style="width:'+Math.min(100,v/max*100).toFixed(1)+'%"></i></div><span>'+v.toFixed(1)+'s '+grade(v,r)+'</span></div>').join("");if(s.length){let avg=s.reduce((a,b)=>a+b,0)/s.length,gs=s.map(v=>grade(v,r));$("simSummary").innerHTML='平均 <b>'+avg.toFixed(1)+'秒</b> / '+grade(avg,r)+'相当<br>S '+gs.filter(x=>x==="S").length+'・A '+gs.filter(x=>x==="A").length+'・B '+gs.filter(x=>x==="B").length+'・C '+gs.filter(x=>x==="C").length+'<br><span style="color:#60758b">※設定比較用の決定論モデル。実機AIプレイではありません。</span>'}}
-function markDirty(){dirty=true;refresh();$("status").textContent=(currentKey&&currentKey[0]==="d"?"DRAFT EDITING":"LEGACY PREVIEW")+" • UNSAVED"}
-function exportJson(){saveDraft();let checks=validate(),bad=checks.filter(x=>!x.ok);if(bad.length){toast("検証NG: "+bad[0].msg);return}let blob=new Blob([JSON.stringify(data,null,2)+"\n"],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ranker-factory.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);dirty=false;toast("検証OK — JSONを書き出しました")}
-$("clone").onclick=()=>{saveDraft();let r=clone(read()),nr=Math.max(1,r.rank-1);r.rank=nr;r.id="rank"+nr;r.displayName="RANK "+nr+" DRAFT";r.runtime="draft";data.drafts[String(nr)]=r;currentKey="d"+nr;renderList();load(r);dirty=true;$("status").textContent="RANK "+nr+" DRAFT CREATED";toast("RANK "+nr+" draftを作成しました")};
+function markDirty(){
+  if(!currentKey?.startsWith("d"))return;
+  dirty=true;saveDraft();refresh();
+  if(!data.drafts[String(read().rank)])return;
+  $("status").textContent="下書きをブラウザに自動保存済み • JSONは未出力";
+}
+function exportJson(){
+  if(!data)return;
+  if(currentKey?.startsWith("d")&&!saveDraft()){toast("RANKの重複を直してください");return}
+  const problems=[];
+  for(const [k,r] of Object.entries(data.drafts||{})){
+    if(!draftIsValid(r,k))problems.push("RANK "+k+" の形式");
+    else {const errors=validate(r).filter(x=>!x.ok);if(errors.length)problems.push("RANK "+k+": "+errors[0].msg)}
+  }
+  if(problems.length){toast("保存前に修正: "+problems[0]);return}
+  let blob=new Blob([JSON.stringify(data,null,2)+"\n"],{type:"application/json"}),a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download="ranker-factory.json";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  dirty=false;toast("JSONを保存しました。ゲームへの反映は別途必要です");
+}
+function createDraft(){
+  if(!data)return;
+  if(currentKey?.startsWith("d")&&!saveDraft()){toast("RANKの重複を直してください");return}
+  const source=read(),available=Array.from({length:8},(_,i)=>8-i).filter(n=>!data.drafts[n]&&!data.rankers[n]);
+  const nr=available.find(n=>n<source.rank);
+  if(!nr){toast("下位RANKの空きがありません。既存の下書きを選んでください");return}
+  const r=clone(source);r.rank=nr;r.id="rank"+nr;r.displayName="新ランカー "+nr;r.runtime="draft";
+  data.drafts[String(nr)]=r;persist();currentKey="d"+nr;renderList();load(r);dirty=true;
+  $("status").textContent="RANK "+nr+" 下書きを作成しました";toast("作成しました。まず名前を変えてみましょう");$("name").focus();
+}
+function importDrafts(file){
+  if(!file)return;
+  file.text().then(text=>{
+    const imported=JSON.parse(text),f=imported.rankerFactory||imported;
+    if(f.schema!=="ranker-factory/v1"||!f.drafts||typeof f.drafts!=="object")throw Error("Factory形式のJSONではありません");
+    const drafts=Object.entries(f.drafts);
+    if(drafts.some(([k,r])=>!draftIsValid(r,k)||data.rankers[k]))throw Error("下書きのRANKまたは形式が不正です");
+    if(drafts.some(([k])=>data.drafts[k])&&!confirm("同じRANKの下書きを上書きします。続けますか？"))return;
+    if(currentKey?.startsWith("d")&&!saveDraft())throw Error("現在のRANKを修正してから読み込んでください");
+    for(const [k,r] of drafts)data.drafts[k]=clone(r);
+    persist();renderList();toast(drafts.length+"件の下書きを読み込みました");
+  }).catch(e=>toast("読み込み失敗: "+String(e.message||e)));
+}
+
+$("clone").onclick=createDraft;
 $("addTech").onclick=()=>{addTech();markDirty()};$("validateTop").onclick=()=>{refresh();let bad=validate().filter(x=>!x.ok);toast(bad.length?"検証NG — "+bad.length+"項目を確認":"QUALITY GATE 100 — 設定上の矛盾なし")};$("exportTop").onclick=exportJson;
-document.addEventListener("input",e=>{if(e.target.closest(".workspace"))markDirty()});document.addEventListener("change",e=>{if(e.target.closest(".workspace"))markDirty()});document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="s"){e.preventDefault();exportJson()}});
-window.addEventListener("beforeunload",e=>{if(dirty&&currentKey&&currentKey[0]==="d"){e.preventDefault();e.returnValue=""}});boot();
+document.addEventListener("input",e=>{if(e.target.closest(".workspace")&&!e.target.disabled)markDirty()});document.addEventListener("change",e=>{if(e.target.closest(".workspace")&&!e.target.disabled)markDirty()});document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="s"){e.preventDefault();exportJson()}});
+$("retryLoad").onclick=boot;$("retryLoadMain").onclick=boot;
+$("importFactory").onchange=e=>{importDrafts(e.target.files[0]);e.target.value=""};
+$("hideOnboarding").onclick=()=>{$("onboarding").hidden=true;$("showOnboarding").hidden=false};
+$("showOnboarding").onclick=()=>{$("onboarding").hidden=false;$("showOnboarding").hidden=true};
+window.addEventListener("beforeunload",e=>{if(dirty&&currentKey?.startsWith("d")){e.preventDefault();e.returnValue=""}});boot();
 })();
 </script>
 </body></html>
