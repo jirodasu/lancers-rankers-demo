@@ -122,10 +122,11 @@ function persist(){
 }
 function draftIsValid(r,k){
   return r&&typeof r==="object"&&Number.isInteger(r.rank)&&r.rank>=1&&r.rank<=8&&String(r.rank)===String(k)
-    &&typeof r.displayName==="string"&&Number.isFinite(r.hp)&&r.hp>0
+    &&typeof r.displayName==="string"&&typeof r.behavior==="string"&&Number.isFinite(r.hp)&&r.hp>0
     &&r.distance&&Number.isFinite(r.distance.near)&&Number.isFinite(r.distance.far)
-    &&Array.isArray(r.chain)&&r.chain.length===3&&r.clearRank
-    &&Array.isArray(r.techniques)&&r.techniques.every(t=>Array.isArray(t)&&t.length===5);
+    &&Array.isArray(r.chain)&&r.chain.length===3&&r.chain.every(n=>Number.isInteger(n)&&n>=1)&&r.clearRank&&["s","a","b"].every(k=>Number.isFinite(r.clearRank[k]))
+    &&Number.isFinite(r.chance)&&r.chance>0&&Array.isArray(r.techniques)&&r.techniques.length>0
+    &&r.techniques.every(t=>Array.isArray(t)&&t.length===5&&typeof t[0]==="string"&&typeof t[1]==="string"&&t.slice(2).every(n=>Number.isFinite(n)));
 }
 function restoreDrafts(){
   try{let saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");if(saved&&typeof saved==="object")
@@ -156,7 +157,7 @@ async function boot(){
   $("exportTop").disabled=false;$("clone").disabled=false;
   renderList();load(data.rankers[currentKey]);
 }
-function renderList(){const make=(k,r,isDraft)=>{let b=document.createElement("button");b.className="rank-card"+(currentKey===(isDraft?"d":"")+k?" active":"");b.innerHTML='<span class="rank-num">'+String(k).padStart(2,"0")+'</span><span><span class="rank-name">'+escapeHtml(r.displayName)+'</span><span class="rank-meta">'+r.behavior+'</span></span><span class="pill '+(isDraft?"draft":"legacy")+'">'+(isDraft?"DRAFT":"LEGACY")+'</span>';b.onclick=()=>select((isDraft?"d":"")+k,r);return b};
+function renderList(){const make=(k,r,isDraft)=>{let b=document.createElement("button");b.className="rank-card"+(currentKey===(isDraft?"d":"")+k?" active":"");b.innerHTML='<span class="rank-num">'+String(k).padStart(2,"0")+'</span><span><span class="rank-name">'+escapeHtml(r.displayName)+'</span><span class="rank-meta">'+escapeHtml(r.behavior)+'</span></span><span class="pill '+(isDraft?"draft":"legacy")+'">'+(isDraft?"DRAFT":"LEGACY")+'</span>';b.onclick=()=>select((isDraft?"d":"")+k,r);return b};
  $("rankers").innerHTML="";Object.entries(data.rankers).sort((a,b)=>+b[0]-+a[0]).forEach(([k,r])=>$("rankers").append(make(k,r,false)));
  $("drafts").innerHTML="";let ds=Object.entries(data.drafts||{}).sort((a,b)=>+b[0]-+a[0]);if(!ds.length)$("drafts").innerHTML='<div class="empty">まだdraftはありません</div>';else ds.forEach(([k,r])=>$("drafts").append(make(k,r,true)))}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
@@ -235,7 +236,8 @@ function importDrafts(file){
     if(drafts.some(([k])=>data.drafts[k])&&!confirm("同じRANKの下書きを上書きします。続けますか？"))return;
     if(currentKey?.startsWith("d")&&!saveDraft())throw Error("現在のRANKを修正してから読み込んでください");
     for(const [k,r] of drafts)data.drafts[k]=clone(r);
-    persist();renderList();toast(drafts.length+"件の下書きを読み込みました");
+    persist();if(drafts.length){currentKey="d"+drafts[0][0];renderList();load(data.drafts[drafts[0][0]])}else renderList();
+    toast(drafts.length+"件の下書きを読み込みました");
   }).catch(e=>toast("読み込み失敗: "+String(e.message||e)));
 }
 
