@@ -26,7 +26,8 @@ try {
   assert.equal(errors.length,0,'Factory JS errors: '+errors.join('; '));
   console.log('PASS Factory browser: legacy lock, draft creation, autosave, export');
   await page.goto(base+'/dev-editor/');
-  await page.getByRole('link',{name:/ランカー作成/}).click();
+  console.log('EDITOR URL',page.url(),'TITLE',await page.title(),'FACTORY LINK COUNT',await page.locator('a.factory-tab').count());
+  await page.locator('a.factory-tab').click();
   await page.waitForURL('**/dev-editor/factory.html');
   console.log('PASS DEV EDITOR → FACTORY navigation');
 } finally {
