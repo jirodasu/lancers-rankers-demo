@@ -6,6 +6,16 @@ on:
     paths:
       - 'src/**'
       - 'tests/**'
+      - 'config/**'
+      - 'dev-editor/**'
+      - '.github/workflows/validate-source.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'config/**'
+      - 'dev-editor/**'
       - '.github/workflows/validate-source.yml'
   workflow_dispatch:
 
@@ -35,3 +45,5 @@ jobs:
         run: python -m py_compile /tmp/lancers_runtime.py
       - name: Run Rank 9 five-battle regression
         run: python tests/rank9_five_battle_regression.py
+      - name: Validate Ranker Factory contract
+        run: python tests/ranker_factory_contract.py
