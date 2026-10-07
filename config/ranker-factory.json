@@ -1,9 +1,153 @@
 {
   "schema": "ranker-factory/v1",
   "runtimeMode": "legacy-mapped",
+  "actionBlocks": {
+    "thrust": {
+      "label": "突き",
+      "kind": "melee"
+    },
+    "rush": {
+      "label": "突進",
+      "kind": "movement_attack"
+    },
+    "sweep": {
+      "label": "薙ぎ払い",
+      "kind": "melee_arc"
+    },
+    "projectile": {
+      "label": "飛び道具",
+      "kind": "ranged"
+    },
+    "orbit": {
+      "label": "旋回",
+      "kind": "movement"
+    },
+    "combo": {
+      "label": "連撃",
+      "kind": "sequence"
+    }
+  },
   "rankers": {
-    "10": {"rank": 10, "id": "hectoran", "displayName": "城壁のヘクトラン", "runtime": "legacy"},
-    "9": {"rank": 9, "id": "lizel", "displayName": "旋槍のリゼル", "runtime": "legacy"}
+    "9": {
+      "rank": 9,
+      "id": "lizel",
+      "displayName": "旋槍のリゼル",
+      "runtime": "legacy",
+      "hp": 520,
+      "behavior": "orbit-chain",
+      "distance": {
+        "near": 34,
+        "far": 72
+      },
+      "chain": [
+        2,
+        2,
+        3
+      ],
+      "chance": 1.15,
+      "clearRank": {
+        "s": 72,
+        "a": 82,
+        "b": 97
+      },
+      "techniques": [
+        [
+          "thrust",
+          "瞬穿",
+          0.62,
+          0.16,
+          24
+        ],
+        [
+          "rush",
+          "交差疾走",
+          0.78,
+          0.38,
+          28
+        ],
+        [
+          "projectile",
+          "三叉投槍",
+          0.72,
+          0.72,
+          16
+        ],
+        [
+          "sweep",
+          "旋輪薙ぎ",
+          0.66,
+          0.32,
+          22
+        ]
+      ]
+    },
+    "10": {
+      "rank": 10,
+      "id": "hectoran",
+      "displayName": "城壁のヘクトラン",
+      "runtime": "legacy",
+      "hp": 600,
+      "behavior": "heavy-punish",
+      "distance": {
+        "near": 34,
+        "far": 72
+      },
+      "chain": [
+        1,
+        1,
+        1
+      ],
+      "chance": 0.82,
+      "clearRank": {
+        "s": 40,
+        "a": 50,
+        "b": 65
+      },
+      "techniques": [
+        [
+          "thrust",
+          "城門穿ち",
+          0.72,
+          0.2,
+          26
+        ],
+        [
+          "sweep",
+          "城壁払い",
+          0.8,
+          0.3,
+          22
+        ],
+        [
+          "rush",
+          "守将突進",
+          0.95,
+          0.45,
+          28
+        ],
+        [
+          "projectile",
+          "石突震",
+          0.9,
+          0.5,
+          30
+        ],
+        [
+          "projectile",
+          "イリオス投槍",
+          0.85,
+          0.8,
+          15
+        ],
+        [
+          "combo",
+          "三連守槍",
+          0.72,
+          0.18,
+          16
+        ]
+      ]
+    }
   },
   "drafts": {}
 }
