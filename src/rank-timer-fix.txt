@@ -1,7 +1,7 @@
 // RANK_TIMER_FIX v4.6a32
 // Freeze the clear time on the exact state update where Hectoran reaches 0 HP.
 // Result presentation can continue for several seconds without changing the recorded time.
-// Clear-rank thresholds: S <= 40.0s, A <= 50.0s, B <= 65.0s, C > 65.0s.
+// Clear-rank thresholds: Rank 10 = S<=40 / A<=50 / B<=65; Rank 9 = S<=72 / A<=82 / B<=97.
 queueMicrotask(()=>{
   const previousReceiveLancerState = window.receiveLancerState;
   if(typeof previousReceiveLancerState !== 'function') return;
@@ -36,7 +36,9 @@ queueMicrotask(()=>{
     const seconds = Number(s.seconds);
     if(!Number.isFinite(seconds)) return;
 
-    const clearRank = seconds <= 40 ? 'S' : seconds <= 50 ? 'A' : seconds <= 65 ? 'B' : 'C';
+    const clearRank = Number(s.rank) === 9
+      ? (seconds <= 72 ? 'S' : seconds <= 82 ? 'A' : seconds <= 97 ? 'B' : 'C')
+      : (seconds <= 40 ? 'S' : seconds <= 50 ? 'A' : seconds <= 65 ? 'B' : 'C');
     const rankLadder = $('clear-ranks');
     if(!rankLadder) return;
     rankLadder.hidden = false;
