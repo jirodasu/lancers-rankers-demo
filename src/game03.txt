@@ -117,7 +117,7 @@ window.receiveLancerState = raw => {
   else if(s.mode==='training_complete'){$('panel-kicker').textContent='PRACTICE COMPLETE → RANK 10';$('panel-title').textContent='基本動作、習得。';$('panel-tip').textContent='予告を見る。避ける。隙を突く。ここから本番。';$('start').textContent='RANK 10へ';}
   else if(s.mode==='paused'||s.mode==='training_paused'){$('panel-kicker').textContent='PAUSED';$('panel-title').textContent=s.mode==='training_paused'?'練習を一時停止':'一時停止';$('panel-tip').textContent='準備ができたら、闘技場へ。';$('start').textContent='戦闘に戻る';}
   else if(s.mode==='victory'||s.mode==='defeat'){
-    const win=s.mode==='victory';const clearRank=s.seconds<=40?'S':s.seconds<=50?'A':s.seconds<=65?'B':'C';
+    const win=s.mode==='victory';const clearRank=s.rank===9?(s.seconds<=72?'S':s.seconds<=82?'A':s.seconds<=97?'B':'C'):(s.seconds<=40?'S':s.seconds<=50?'A':s.seconds<=65?'B':'C');
     if(win){rankLadder.hidden=false;rankLadder.querySelector(`[data-clear-rank="${clearRank}"]`)?.classList.add('earned');}
     if(s.rank===10&&win){$('panel-kicker').textContent='RANK UP';$('panel-title').textContent='城門、突破。';$('panel-tip').textContent=`討伐 ${s.seconds}秒。RANK 9「旋槍のリゼル」が解禁された。`;$('start').textContent='武器を選んでRANK 9へ';}
     else if(s.rank===9){$('panel-kicker').textContent=win?'RANK 9 CLEAR':'TRY AGAIN · RANK 9';$('panel-title').textContent=win?'旋槍、撃破。':'連撃は、まだ見切れる。';$('panel-tip').textContent=win?`討伐 ${s.seconds}秒 / 残りHP ${s.hp} / 回復薬 ${s.potions}`:`リゼル 残りHP ${s.bossHp}。最初の一撃で欲張らず、連撃の最後を待とう。`;$('start').textContent='武器を選んでもう一度';}
