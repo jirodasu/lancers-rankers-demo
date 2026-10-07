@@ -8,6 +8,7 @@ on:
       - 'tests/**'
       - 'config/**'
       - 'dev-editor/**'
+      - 'index.html'
       - '.github/workflows/validate-source.yml'
   pull_request:
     branches: [main]
@@ -16,6 +17,7 @@ on:
       - 'tests/**'
       - 'config/**'
       - 'dev-editor/**'
+      - 'index.html'
       - '.github/workflows/validate-source.yml'
   workflow_dispatch:
 
@@ -47,3 +49,5 @@ jobs:
         run: python tests/rank9_five_battle_regression.py
       - name: Validate Ranker Factory contract
         run: python tests/ranker_factory_contract.py
+      - name: Validate beginner UX and JavaScript syntax
+        run: python tests/beginner_ux_contract.py
