@@ -56,7 +56,7 @@ main{grid-template-columns:minmax(440px,1fr) 410px;height:calc(100vh - 66px)}
 .device:before{content:"LIVE PREVIEW";position:absolute;z-index:3;left:15px;top:12px;padding:5px 8px;border:1px solid rgba(117,148,180,.28);border-radius:99px;background:rgba(5,10,17,.72);backdrop-filter:blur(8px);font:700 8px/1 ui-monospace,monospace;letter-spacing:.15em;color:#8ca1b7;pointer-events:none}
 .tip{left:30px;bottom:25px;max-width:355px;padding:10px 12px;border-color:rgba(71,95,123,.52);border-radius:7px;background:rgba(7,14,23,.82);backdrop-filter:blur(12px);color:#8297ad;box-shadow:0 10px 30px rgba(0,0,0,.22)}
 .panel{background:rgba(8,14,22,.96);border-left-color:#223248;box-shadow:-18px 0 50px rgba(0,0,0,.16)}
-.tabs{top:0;grid-template-columns:repeat(5,1fr);background:rgba(8,14,22,.92);backdrop-filter:blur(16px);border-bottom-color:#223248;padding:0 7px}
+.tabs{top:0;grid-template-columns:repeat(6,1fr);background:rgba(8,14,22,.92);backdrop-filter:blur(16px);border-bottom-color:#223248;padding:0 7px}
 .tab{
   position:relative;min-height:49px;padding:14px 4px 12px;border-bottom:0;color:#70849a;font-size:10px;letter-spacing:.08em;
   transition:color .18s,background .18s
@@ -149,4 +149,4 @@ button:focus:not(:focus-visible){outline:none}
 }
 @media(prefers-contrast:more){
   :root{--muted:#a8bacb;--line:#4e6680}.note,.status,.row label{color:#bdcbd8}.panel,.device{border-color:#647d97}
-}
+}\n.factory-tab{display:grid;place-items:center;text-decoration:none}.factory-tab:hover{color:var(--gold-hi);background:linear-gradient(180deg,rgba(217,186,121,.045),transparent)}\n
