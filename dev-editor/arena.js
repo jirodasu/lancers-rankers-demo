@@ -13,7 +13,7 @@ function showOverlay(title,description,button){$('overlayTitle').textContent=tit
 function hideOverlay(){$('overlay').hidden=true}
 function loadRank(n){
  rank=roster[n]?n:ranks()[0];const r=roster[rank];if(!r)return;
- boss={x:240,y:210,hp:r.hp,max:r.hp,angle:0,step:0,orbit:1};
+ boss={x:240,y:210,hp:r.hp,max:r.hp,angle:0,step:0,orbit:1,guard:0,counter:0};
  player={x:240,y:435,hp:MAX_HP,max:MAX_HP,inv:0,atk:0,dash:0,dashCD:0,dir:{x:0,y:-1}};
  mode='ready';clearInputs();$('pause').disabled=true;clock=0;phase='idle';phaseTime=.8;tech=null;aim=null;hit=false;attacks=0;feedback='';feedbackTime=0;trail=[];result='';
  $('rankSelect').value=String(rank);$('bossName').textContent=r.displayName;
@@ -50,7 +50,7 @@ function chooseAttack(){
  const r=roster[rank],list=r.techniques;
  const offset=boss.hp<boss.max*.45?2:0;
  tech=list[(attacks+offset)%list.length];attacks++;
- phase='tell';phaseTime=clamp(tech[2],.3,2.5);hit=false;
+ phase='tell';boss.guard=0;boss.counter=0;phaseTime=clamp(tech[2],.3,2.5);hit=false;
  const dx=player.x-boss.x,dy=player.y-boss.y,d=norm(dx,dy);
  aim={x:boss.x,y:boss.y,dx:d.x,dy:d.y,tx:player.x,ty:player.y};
  $('phase').textContent='予告：'+tech[1]+'（赤い範囲から離れる）';
@@ -92,7 +92,7 @@ function damagePlayer(n){
 function strike(){
  if(mode!=='playing'||player.atk>0)return;
  player.atk=.29;const d=dist(player,boss);
- if(d<110){const damage=26;boss.hp=Math.max(0,boss.hp-damage);feedback='HIT '+damage;feedbackTime=.3;trail.push({x:boss.x,y:boss.y,t:.28});if(boss.hp<=0)finish(true)}
+ if(d<110){if(rank===8&&boss.guard>0){feedback='盾で防がれた！';feedbackTime=.4;boss.counter=1;return}const damage=26;boss.hp=Math.max(0,boss.hp-damage);feedback='HIT '+damage;feedbackTime=.3;trail.push({x:boss.x,y:boss.y,t:.28});if(boss.hp<=0)finish(true)}
  else{feedback='届かない — 近づこう';feedbackTime=.4}
 }
 function dodge(){
@@ -119,6 +119,7 @@ function tick(dt){
  if(attackHeld||keys.has('j')||keys.has(' '))strike();
  if(keys.has('k')&&player.dashCD<=0)dodge();
  if(phase==='idle')moveBoss(dt);
+ if(rank===8){boss.guard=phase==='idle'||phase==='tell'?1:0;if(boss.counter&&phase==='idle'){boss.counter=0;phaseTime=0;}}
  phaseTime-=dt;
  if(phaseTime<=0){
   if(phase==='idle')chooseAttack();
@@ -156,6 +157,7 @@ function draw(){
  for(let y=94;y<565;y+=32){ctx.beginPath();ctx.moveTo(16,y);ctx.lineTo(464,y);ctx.stroke()}
  ctx.textAlign='center';ctx.font='800 12px sans-serif';ctx.fillStyle='#66839f';ctx.fillText('THE RANKER ARENA / PROTOTYPE',240,65);
  if(!boss||!player)return;
+ if(rank===8&&boss.guard){ctx.save();ctx.translate(boss.x,boss.y);ctx.strokeStyle='#91d7f3';ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,0,37,Math.PI*.15,Math.PI*1.85);ctx.stroke();ctx.restore()}
  if(phase==='tell')shapeDraw(tech,aim,.23+Math.sin(performance.now()/95)*.06,'#ff5e66');
  if(phase==='active')shapeDraw(tech,aim,.42,'#ffca6a');
  ctx.save();ctx.translate(boss.x,boss.y);
