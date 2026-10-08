@@ -209,6 +209,349 @@
           46
         ]
       ]
+    },
+    "2": {
+      "rank": 2,
+      "id": "rank2",
+      "displayName": "神槍のオルディン",
+      "runtime": "draft",
+      "hp": 570,
+      "behavior": "foresight",
+      "distance": {
+        "near": 35,
+        "far": 90
+      },
+      "chain": [
+        3,
+        4,
+        4
+      ],
+      "chance": 0.66,
+      "clearRank": {
+        "s": 100,
+        "a": 125,
+        "b": 155
+      },
+      "techniques": [
+        [
+          "projectile",
+          "予言の槍",
+          1.05,
+          0.42,
+          25
+        ],
+        [
+          "sweep",
+          "神眼の円陣",
+          0.95,
+          0.38,
+          22
+        ],
+        [
+          "rush",
+          "風を裂く駆け",
+          0.78,
+          0.32,
+          24
+        ],
+        [
+          "combo",
+          "ルーン三連",
+          0.96,
+          0.45,
+          16
+        ]
+      ]
+    },
+    "3": {
+      "rank": 3,
+      "id": "rank3",
+      "displayName": "光槍のルーグレイ",
+      "runtime": "draft",
+      "hp": 490,
+      "behavior": "range-control",
+      "distance": {
+        "near": 35,
+        "far": 90
+      },
+      "chain": [
+        3,
+        3,
+        4
+      ],
+      "chance": 0.7,
+      "clearRank": {
+        "s": 90,
+        "a": 112,
+        "b": 140
+      },
+      "techniques": [
+        [
+          "projectile",
+          "光矢の雨",
+          0.72,
+          0.45,
+          19
+        ],
+        [
+          "rush",
+          "閃光転位",
+          0.75,
+          0.3,
+          20
+        ],
+        [
+          "thrust",
+          "日輪穿ち",
+          0.84,
+          0.2,
+          23
+        ],
+        [
+          "sweep",
+          "暁の輪",
+          0.9,
+          0.32,
+          19
+        ]
+      ]
+    },
+    "4": {
+      "rank": 4,
+      "id": "rank4",
+      "displayName": "聖槍のムルガル",
+      "runtime": "draft",
+      "hp": 440,
+      "behavior": "pierce",
+      "distance": {
+        "near": 35,
+        "far": 90
+      },
+      "chain": [
+        2,
+        3,
+        4
+      ],
+      "chance": 0.72,
+      "clearRank": {
+        "s": 82,
+        "a": 105,
+        "b": 130
+      },
+      "techniques": [
+        [
+          "thrust",
+          "聖孔",
+          0.68,
+          0.3,
+          22
+        ],
+        [
+          "projectile",
+          "光の羽槍",
+          0.88,
+          0.45,
+          19
+        ],
+        [
+          "sweep",
+          "浄火輪",
+          1.02,
+          0.36,
+          20
+        ]
+      ]
+    },
+    "5": {
+      "rank": 5,
+      "id": "rank5",
+      "displayName": "三尖のジラン",
+      "runtime": "draft",
+      "hp": 390,
+      "behavior": "feint",
+      "distance": {
+        "near": 35,
+        "far": 90
+      },
+      "chain": [
+        2,
+        3,
+        3
+      ],
+      "chance": 0.75,
+      "clearRank": {
+        "s": 78,
+        "a": 98,
+        "b": 122
+      },
+      "techniques": [
+        [
+          "thrust",
+          "虚実の尖",
+          0.76,
+          0.22,
+          19
+        ],
+        [
+          "sweep",
+          "三尖の輪",
+          0.84,
+          0.32,
+          17
+        ],
+        [
+          "projectile",
+          "幻影槍",
+          0.9,
+          0.35,
+          15
+        ],
+        [
+          "rush",
+          "裏回り",
+          0.75,
+          0.26,
+          16
+        ]
+      ]
+    },
+    "6": {
+      "rank": 6,
+      "id": "rank6",
+      "displayName": "疾槍のアキレオン",
+      "runtime": "draft",
+      "hp": 340,
+      "behavior": "speed-rush",
+      "distance": {
+        "near": 35,
+        "far": 90
+      },
+      "chain": [
+        2,
+        3,
+        3
+      ],
+      "chance": 0.8,
+      "clearRank": {
+        "s": 72,
+        "a": 90,
+        "b": 112
+      },
+      "techniques": [
+        [
+          "rush",
+          "彗星駆け",
+          0.58,
+          0.3,
+          18
+        ],
+        [
+          "thrust",
+          "疾風二閃",
+          0.55,
+          0.19,
+          14
+        ],
+        [
+          "combo",
+          "英雄三段",
+          0.8,
+          0.44,
+          12
+        ]
+      ]
+    },
+    "7": {
+      "rank": 7,
+      "id": "rank7",
+      "displayName": "炎輪のナタリス",
+      "runtime": "draft",
+      "hp": 300,
+      "behavior": "fire-dance",
+      "distance": {
+        "near": 35,
+        "far": 90
+      },
+      "chain": [
+        2,
+        2,
+        3
+      ],
+      "chance": 0.9,
+      "clearRank": {
+        "s": 65,
+        "a": 82,
+        "b": 105
+      },
+      "techniques": [
+        [
+          "rush",
+          "火輪突進",
+          0.68,
+          0.3,
+          16
+        ],
+        [
+          "projectile",
+          "焔槍",
+          0.86,
+          0.35,
+          13
+        ],
+        [
+          "sweep",
+          "炎天円舞",
+          0.82,
+          0.4,
+          15
+        ]
+      ]
+    },
+    "8": {
+      "rank": 8,
+      "id": "rank8",
+      "displayName": "盾槍のアテリア",
+      "runtime": "draft",
+      "hp": 270,
+      "behavior": "guard-counter",
+      "distance": {
+        "near": 35,
+        "far": 90
+      },
+      "chain": [
+        1,
+        2,
+        2
+      ],
+      "chance": 1.05,
+      "clearRank": {
+        "s": 60,
+        "a": 78,
+        "b": 98
+      },
+      "techniques": [
+        [
+          "thrust",
+          "盾の突き返し",
+          0.8,
+          0.24,
+          12
+        ],
+        [
+          "sweep",
+          "半月防陣",
+          1.05,
+          0.38,
+          14
+        ],
+        [
+          "rush",
+          "守護の踏み込み",
+          0.9,
+          0.32,
+          16
+        ]
+      ]
     }
   }
 }

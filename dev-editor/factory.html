@@ -118,22 +118,22 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}.mono{font-
  <a class="crumb" href="./#game">GAME EDITOR /</a><span class="crumb">敵を作る</span>
  <span class="embedded-title" style="display:none">敵を作る <span style="color:#8297ad;font-size:10px">— 下書き編集・検証・保存</span></span>
  <div class="status"><span class="dot"></span><span id="status">CANONICAL 読込中</span></div>
- <button class="topbtn" id="validateTop">検証</button><button class="topbtn primary" id="exportTop">設定JSONを保存</button>
+ <a class="topbtn primary" id="playDraft" href="./arena.html?rank=8" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">▶ 実戦プレビュー</a><button class="topbtn" id="validateTop">検証</button><button class="topbtn primary" id="exportTop">設定JSONを保存</button>
 </header>
 <div class="shell">
  <aside class="rail">
   <h2>参考にするランカー（編集不可）</h2><div id="rankers" class="rank-list"></div>
   <div class="rail-divider"></div><h2>作成中のランカー（下書き）</h2><div id="drafts" class="rank-list"></div>
   <div class="rail-divider"></div><button id="clone" class="rail-action">＋ このランカーを元に新規作成</button>
-  <p class="rail-note">既存のRank 9・10は保護されています。新しいランカーは「下書き」を作ってから編集します。保存したJSONだけではゲーム本編に追加されません。</p>
+  <p class="rail-note">既存のRank 9・10は保護されています。Rank 8〜1の8体を下書き登録済みです。選択して「実戦プレビュー」で試せます。これは本編とは別の試作戦闘です。</p>
   <label class="rail-import">以前保存した設定を再開 <input type="file" id="importFactory" accept=".json,application/json"></label>
   <button id="retryLoad" class="rail-action" hidden>設定の読み込みを再試行</button>
  </aside>
  <main class="workspace">
   <div class="onboarding" id="onboarding">
-   <strong>はじめてのランカー制作 / 3ステップ</strong>
-   <ol><li><b>① 元になる敵を選ぶ</b><span>左のヘクトランかリゼルを選択します。</span></li><li><b>② 「新規作成」を押す</b><span>既存の敵を壊さず、新しい下書きを作れます。</span></li><li><b>③ 調整 → 検証 → 保存</b><span>数値を変えて右側のチェックを確認し、JSONを保存します。</span></li></ol>
-   <p>ここは敵の<strong>設計ツール</strong>です。右側の「5条件の参考予測」は数式による比較で、実際の戦闘テストではありません。</p>
+   <strong>8人のランカーを試す / 3ステップ</strong>
+   <ol><li><b>① 元になる敵を選ぶ</b><span>左の「作成中のランカー」から8〜1位を選びます。</span></li><li><b>② 「新規作成」を押す</b><span>上の「実戦プレビュー」を押すと、選択した敵と戦えます。</span></li><li><b>③ 調整 → 検証 → 保存</b><span>下書きの数値を変更して、実戦プレビューを再読み込みすると反映されます。</span></li></ol>
+   <p>右側の「5条件の参考予測」は数式の比較です。「実戦プレビュー」は別画面のCanvas戦闘試作であり、Pyxel本編への接続は未完了です。</p>
    <button type="button" id="hideOnboarding" class="topbtn">説明を閉じる</button>
   </div><button type="button" id="showOnboarding" class="topbtn" hidden>？ 作り方を表示</button>
   <div id="loadError" class="load-error" role="alert" hidden><strong>設定を読み込めませんでした</strong><p id="loadErrorDetail"></p><button type="button" id="retryLoadMain" class="topbtn">再試行する</button></div>
@@ -212,10 +212,10 @@ async function boot(){
       data=clone(f);loadSource="backup";
     }catch(second){setError("通信・JSON形式を確認してください。"+String(second.message||second));return}
   }
-  data.drafts=data.drafts||{};restoreDrafts();currentKey="9";dirty=false;
+  data.drafts=data.drafts||{};restoreDrafts();currentKey=data.drafts["8"]?"d8":"9";dirty=false;
   $("status").textContent=loadSource==="canonical"?"正規設定を読込済み":"予備設定を使用中（正規設定を確認してください）";
   $("exportTop").disabled=false;$("clone").disabled=false;
-  renderList();load(data.rankers[currentKey]);
+  renderList();load(currentKey.startsWith("d")?data.drafts[currentKey.slice(1)]:data.rankers[currentKey]);
 }
 function renderList(){const make=(k,r,isDraft)=>{let b=document.createElement("button");b.className="rank-card"+(currentKey===(isDraft?"d":"")+k?" active":"");b.innerHTML='<span class="rank-num">'+String(k).padStart(2,"0")+'</span><span><span class="rank-name">'+escapeHtml(r.displayName)+'</span><span class="rank-meta">'+escapeHtml(r.behavior)+'</span></span><span class="pill '+(isDraft?"draft":"legacy")+'">'+(isDraft?"DRAFT":"LEGACY")+'</span>';b.onclick=()=>select((isDraft?"d":"")+k,r);return b};
  $("rankers").innerHTML="";Object.entries(data.rankers).sort((a,b)=>+b[0]-+a[0]).forEach(([k,r])=>$("rankers").append(make(k,r,false)));
@@ -226,6 +226,8 @@ function select(key,r){
   currentKey=key;renderList();load(r);
 }
 function load(r){
+  $("playDraft").href="./arena.html?rank="+encodeURIComponent(r.rank);
+  $("playDraft").textContent=r.runtime==="draft"?"▶ この敵と戦う":"▶ 試作ランカーと戦う";
   $("rank").value=r.rank;$("name").value=r.displayName;$("hp").value=r.hp;$("behavior").value=r.behavior;
   $("near").value=r.distance.near;$("far").value=r.distance.far;
   [$("c1").value,$("c2").value,$("c3").value]=r.chain;
