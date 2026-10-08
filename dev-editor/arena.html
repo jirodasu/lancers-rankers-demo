@@ -19,7 +19,7 @@
  <section class="stage" aria-label="実戦プレビュー">
   <div class="hud">
    <div><span class="micro">TARGET RANK</span><strong id="bossName">読み込み中…</strong></div>
-   <div class="clock"><span class="micro">BATTLE TIME</span><strong id="time">0.0s</strong></div>
+   <div class="clock"><span class="micro">BATTLE TIME</span><strong id="time">0.0s</strong><button id="pause" type="button" aria-label="戦闘を一時停止" disabled>一時停止</button></div>
   </div>
   <div class="hp"><span>ENEMY</span><div class="track"><i id="bossBar"></i></div><output id="bossHp">—</output></div>
   <div class="hp playerhp"><span>YOU</span><div class="track"><i id="playerBar"></i></div><output id="playerHp">150</output></div>
@@ -53,6 +53,7 @@
    <p><b>移動</b>：PCはWASD／矢印。スマホはフィールド左側をドラッグ。</p>
    <p><b>攻撃</b>：Jキー／「攻撃」ボタン。敵に近づいて攻撃。</p>
    <p><b>回避</b>：Kキー／「回避」ボタン。短い無敵時間があります。</p>
+   <p><b>一時停止</b>：「一時停止」ボタン／Escキー。画面から離れたときも自動停止します。</p>
    <p>敵の攻撃予告は赤色、攻撃中は金色で表示。攻撃の直後が反撃のチャンスです。</p>
   </div>
   <div class="panel subtle">
