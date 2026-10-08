@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 const base = 'http://127.0.0.1:8765';
 const browser = await chromium.launch({headless:true});
@@ -73,6 +74,35 @@ try {
     }
   }
   console.log('PASS responsive 390/768/1440 viewport and mode interaction');
+  // Regression: a narrow, short iframe in a portrait phone is not a rotated phone.
+  const runtimeSource=readFileSync('src/game03.txt','utf8');
+  const orientationCode=runtimeSource.slice(runtimeSource.indexOf('function landscape(){'),runtimeSource.indexOf('function orientation(){'));
+  assert.ok(orientationCode.startsWith('function landscape(){')&&orientationCode.includes('window.parent'));
+  const orientationPage=await browser.newPage({viewport:{width:390,height:844}});
+  try {
+    await orientationPage.goto(base+'/dev-editor/');
+    await orientationPage.locator('.device').evaluate(el=>{
+      el.style.setProperty('width','360px','important');
+      el.style.setProperty('height','220px','important');
+      el.style.setProperty('min-height','0','important');
+    });
+    const preview=orientationPage.frameLocator('#game').locator('body');
+    await preview.waitFor();
+    const iframeGeometry=await preview.evaluate(()=>({w:innerWidth,h:innerHeight}));
+    assert.ok(iframeGeometry.w>iframeGeometry.h,'Fixture must reproduce landscape-shaped iframe');
+    const isRotated=()=>preview.evaluate((el,source)=>new Function(source+'; return landscape();')(),orientationCode);
+    assert.equal(await isRotated(),false,'Portrait phone must not be blocked by landscape-shaped preview');
+    await orientationPage.setViewportSize({width:844,height:390});
+    assert.equal(await isRotated(),true,'Landscape phone must still pause');
+    await orientationPage.goto(base+'/');
+    assert.equal(await orientationPage.evaluate(source=>new Function(source+'; return landscape();')(),orientationCode),true,'Standalone landscape game must still pause');
+    await orientationPage.setViewportSize({width:390,height:844});
+    assert.equal(await orientationPage.evaluate(source=>new Function(source+'; return landscape();')(),orientationCode),false,'Standalone portrait game must remain playable');
+    console.log('PASS orientation: portrait parent with landscape-shaped iframe, landscape parent and standalone');
+  } finally {
+    await orientationPage.close();
+  }
+
   await page.route('**/config/lancers-tuning.json', route => route.fulfill({status:503,body:'offline'}));
   await page.route('**/config/ranker-factory.json', route => route.fulfill({status:503,body:'offline'}));
   await page.reload();
