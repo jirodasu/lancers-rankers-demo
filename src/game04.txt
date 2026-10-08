@@ -177,7 +177,7 @@ class App:
     def reset(self):
         self.px, self.py = CX, CY+39
         self.bx, self.by = CX, CY-26
-        self.boss_max = 600 if self.rank == 10 else 520
+        self.boss_max = 600 if self.rank == 10 else 520 if self.rank == 9 else 270
         self.hp, self.stamina, self.potions, self.bhp = 100, 100., 3, self.boss_max
         self.pa, self.ba = -math.pi/2, math.pi/2
         self.phase, self.poise, self.bleed = 1, 0., 0
@@ -209,6 +209,10 @@ class App:
         self.rank9_opening = False
         self.rank9_orbit = 1
         self.rank9_dash_origin = (self.bx, self.by)
+        self.rank8_attack_index = 0
+        self.rank8_counter = False
+        self.rank8_aim = 0.
+        self.rank8_origin = (self.bx, self.by)
         self.notice = 'まずは赤い予告から外れてみよう' if self.rank == 10 else '旋回を追わず、最初の予告を見ろ'
         self.previous_attack = self.previous_dodge = self.previous_heal = self.previous_pause = False
 
@@ -259,6 +263,13 @@ class App:
         if command == 'select':
             self.stop_bgm()
             self.mode = 'select'
+        if command == 'rank8_select':
+            self.stop_bgm()
+            self.rank = 8
+            self.reset()
+            self.tutorial_done = True
+            self.mode = 'select'
+            self.notice = 'RANK 8 — 盾槍のアテリア'
         if command == 'rank9_select':
             self.stop_bgm()
             self.rank = 9
