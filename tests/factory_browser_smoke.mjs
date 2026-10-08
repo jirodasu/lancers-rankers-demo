@@ -168,6 +168,8 @@ try {
   assert.equal(selectKey,false,'Game movement keys must not hijack rank selection');
   await page.locator('#start').click();
   console.log('PASS arena pause/resume, frozen timer, Escape and accessible select keys');
+  await page.goto(base+'/dev-editor/#rankers');
+  await embedded.locator('#name').waitFor();
 
   await page.route('**/config/lancers-tuning.json', route => route.fulfill({status:503,body:'offline'}));
   await page.route('**/config/ranker-factory.json', route => route.fulfill({status:503,body:'offline'}));
