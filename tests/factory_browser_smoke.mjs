@@ -90,7 +90,7 @@ try {
     await preview.waitFor();
     const iframeGeometry=await preview.evaluate(()=>({w:innerWidth,h:innerHeight}));
     assert.ok(iframeGeometry.w>iframeGeometry.h,'Fixture must reproduce landscape-shaped iframe');
-    const isRotated=()=>preview.evaluate(source=>new Function(source+'; return landscape();')(),orientationCode);
+    const isRotated=()=>preview.evaluate((el,source)=>new Function(source+'; return landscape();')(),orientationCode);
     assert.equal(await isRotated(),false,'Portrait phone must not be blocked by landscape-shaped preview');
     await orientationPage.setViewportSize({width:844,height:390});
     assert.equal(await isRotated(),true,'Landscape phone must still pause');
