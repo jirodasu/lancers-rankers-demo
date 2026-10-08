@@ -7,7 +7,10 @@ root = Path(__file__).resolve().parents[1]
 editor = (root / "dev-editor/index.html").read_text(encoding="utf-8")
 factory = (root / "dev-editor/factory.html").read_text(encoding="utf-8")
 game = (root / "index.html").read_text(encoding="utf-8")
-assert 'href="./factory.html"' in editor
+assert 'id="modeFactory"' in editor
+assert 'id="factoryFrame"' in editor
+assert 'factory.html?embedded=1' in editor
+assert 'id="modeGame"' in editor
 assert 'button.tab[data-tab]' in editor
 assert 'id="beginnerGuide"' in editor
 assert 'id="retryPreview"' in editor

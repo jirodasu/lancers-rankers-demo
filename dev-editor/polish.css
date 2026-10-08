@@ -166,3 +166,19 @@ button:focus:not(:focus-visible){outline:none}
 .preview-help{position:absolute;z-index:9;bottom:20px;left:50%;transform:translateX(-50%);width:min(440px,92%);padding:17px;border:1px solid #a96b57;border-radius:12px;background:#1e1517;color:#f4d5c5;box-shadow:0 20px 55px #0009}
 .preview-help strong{font-size:13px}.preview-help p{font-size:11px;line-height:1.6}
 .preview-help button,.preview-help a{display:inline-block;min-height:40px;padding:10px;margin:3px;border:1px solid #a96b57;border-radius:6px;background:#362326;color:#f4d5c5;font-size:11px;text-decoration:none}
+
+/* Unified game editor: task navigation overrides legacy six-tab layout */
+.tabs{grid-template-columns:repeat(5,minmax(0,1fr))}
+.editor-modes{display:flex;align-items:center;gap:5px;padding:4px;border:1px solid #354b64;border-radius:10px;background:#080f1b}
+.editor-mode{min-height:42px;padding:8px 16px;border:0;border-radius:7px;background:transparent;color:#9aafc4;font-size:12px;font-weight:850;white-space:nowrap;cursor:pointer}
+.editor-mode[aria-pressed="true"]{background:linear-gradient(135deg,#e6c986,#d0ad69);color:#111923;box-shadow:0 3px 16px #0005}
+.editor-mode:focus-visible{outline:2px solid #7fc7d9;outline-offset:2px}
+.mode-help{font-size:10px;color:#8299ae}
+main.factory-mode{display:block;overflow:hidden}
+main.factory-mode>.stage,main.factory-mode>.panel{display:none!important}
+.factory-view{display:none;height:calc(100dvh - 66px);background:#060b12}
+main.factory-mode>.factory-view{display:block}
+.factory-view iframe{width:100%;height:100%;border:0}
+body.factory-mode #bootGame,body.factory-mode #reloadGame,body.factory-mode #status{display:none!important}
+@media(max-width:850px){main.factory-mode{display:block;height:auto}.factory-view{height:calc(100dvh - 110px)}.mode-help{display:none}.editor-modes{margin-left:auto}}
+@media(max-width:560px){header{min-height:105px}.brand{width:100%;font-size:12px}.brand small{display:inline;margin-left:8px}.editor-modes{flex:1;margin-left:0}.editor-mode{flex:1;font-size:11px;padding:8px 6px}.factory-view{height:calc(100dvh - 116px)}}
