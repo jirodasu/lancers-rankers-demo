@@ -119,6 +119,11 @@
                     break
                 self.px, self.py = x, y
         if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
+            if self.rank == 8 and self.state in ('idle', 'prep'):
+                self.rank8_counter = True
+                self.say('GUARD! 盾に弾かれた')
+                self.text(self.bx-10, self.by-20, 'GUARD', 12)
+                return
             # v4.6a31: explicit per-weapon hit values.
             # [normal, charged, punish charged] =
             # 白銀 [20,40,52], 岩穿 [38,70,84], 紅牙 [11,19,25].
