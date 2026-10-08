@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070b12">
-<meta name="description" content="Lancers RankersのUI・HIT・サウンドをライブ調整する開発インスペクター">
+<meta name="description" content="ランサーズ・ランカーズの画面・演出・サウンド・敵の技をひとつの画面で制作できるエディター">
 <title>LANCERS GAME EDITOR — ゲーム制作</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#070b12;color:#dbe5ef}
@@ -66,7 +66,7 @@ body.factory-mode header{justify-content:flex-start}
     <button type="button" class="editor-mode" id="modeGame" aria-pressed="true" aria-controls="gameStage">画面・演出</button>
     <button type="button" class="editor-mode" id="modeFactory" aria-pressed="false" aria-controls="factoryView">敵を作る</button>
   </nav>
-  <span class="mode-help" id="modeHelp">ゲーム画面を見ながら位置・音・演出を調整</span>
+  <span class="mode-help" id="modeHelp" role="status" aria-live="polite">ゲーム画面を見ながら位置・音・演出を調整</span>
   <button class="topbtn" id="bootGame">本編を起動</button>
   <button class="topbtn" id="reloadGame">再読込</button>
   <span id="status" class="status warn">本編を読込中…</span>
@@ -79,7 +79,7 @@ body.factory-mode header{justify-content:flex-start}
 </section>
 <aside class="panel">
   <nav class="tabs">
-    <button class="tab active" data-tab="ui">UI</button>
+    <button class="tab active" data-tab="ui">画面配置</button>
     <button class="tab" data-tab="fx">HIT演出</button>
     <button class="tab" data-tab="sound">サウンド</button>
     <button class="tab" data-tab="history">履歴</button>
@@ -93,7 +93,7 @@ body.factory-mode header{justify-content:flex-start}
       <h2>ゲームを見ながら、少しずつ調整</h2>
       <ol><li><b>① ゲームを起動</b><span>左のプレビューが準備できたら、上の「本編を起動」を押します。</span></li>
       <li><b>② 変えたい場所を選ぶ</b><span>下の一覧から「移動スティック」などを選び、位置や大きさを変更します。</span></li>
-      <li><b>③ 保存する</b><span>「保存」→「採用確定」で設定を固定。敵の能力・技は上の「敵を作る」で調整します。</span></li></ol>
+      <li><b>③ 保存する</b><span>「保存」から設定を確認して本編への反映を依頼します。敵の能力・技は上の「敵を作る」で調整します。</span></li></ol>
       <p>ここでの調整はプレビュー用です。ゲーム本体の戦闘AIや既存ランカーの強さは変更しません。</p>
       <button type="button" id="dismissGuide" class="btn">説明を閉じる</button>
     </div>
@@ -118,7 +118,7 @@ body.factory-mode header{justify-content:flex-start}
     <div class="row"><label>幅</label><input id="w" type="range" min="32" max="240" step="1"><output id="wo">--</output></div>
     <div class="row"><label>高さ</label><input id="h" type="range" min="32" max="180" step="1"><output id="ho">--</output></div>
     <div class="grid2"><button class="btn" id="resetTarget">この項目を戻す</button><button class="btn" id="resetUI">UI全部戻す</button></div>
-    <p class="note">ドラッグ移動とスライダーは同じ設定を編集します。確定値はDATAからCSS/JSONとして書き出せます。</p>
+    <p class="note">ドラッグ移動とスライダーは同じ設定を編集します。設定は「保存」からCSS/JSONとして書き出せます。ゲーム本編への反映には別途確認が必要です。</p>
   </section>
 
   <section class="pane" id="pane-fx">
@@ -217,6 +217,8 @@ function setEditorMode(mode){
   q("modeFactory").setAttribute("aria-pressed",String(isFactory));
   q("modeHelp").textContent=isFactory?"敵の強さ・技・行動を設計（既存ランカーは保護）":"ゲーム画面を見ながら位置・音・演出を調整";
   q("factoryView").setAttribute("aria-hidden",String(!isFactory));
+  q("gameStage").setAttribute("aria-hidden",String(isFactory));
+  document.querySelector(".panel").setAttribute("aria-hidden",String(isFactory));
   if(isFactory&&!factoryFrame.getAttribute("src"))factoryFrame.src="./factory.html?embedded=1";
 }
 function modeFromHash(){setEditorMode(location.hash==="#rankers"?"factory":"game")}
