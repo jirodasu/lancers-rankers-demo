@@ -69,6 +69,10 @@
                 self.rank8_counter = False
                 self.notice = ('盾槍の突き', '半月払い', '盾の突進')[(self.rank8_attack_index-1)%3]
         elif self.state == 'prep':
+            if self.rank8_counter:
+                self.timer = min(self.timer, .20)
+                self.rank8_counter = False
+                self.notice = 'COUNTER! すぐに回避！'
             if self.timer <= 0:
                 self.state, self.timer = 'attack', (.24, .38, .32)[(self.rank8_attack_index-1)%3]
         elif self.state == 'attack':
