@@ -752,7 +752,12 @@
             pyxel.line(s[0]-ux*7,s[1]-uy*7,s[0]+ux*3,s[1]+uy*3,10)
             pyxel.pset(s[0]+ux*3,s[1]+uy*3,7)
         bosscol = 7 if self.flash else 10 if self.state=='break' else 9
-        if self.rank == 9:
+        if self.rank == 8:
+            self.draw_boss_idle_v40()
+            if self.state in ('idle', 'prep'):
+                pyxel.circb(self.bx, self.by, 18, 12)
+                pyxel.circb(self.bx, self.by, 20, 6)
+        elif self.rank == 9:
             self.draw_rank9_boss()
         elif self.state in ('prep','attack'):
             self.draw_boss_attack_v41()
