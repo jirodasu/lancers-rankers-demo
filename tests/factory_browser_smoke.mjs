@@ -10,7 +10,14 @@ page.on('pageerror', error => errors.push(error.message));
 try {
   await page.goto(base+'/dev-editor/factory.html');
   await page.waitForFunction(() => document.getElementById('status')?.textContent.includes('正規設定'));
+  await page.getByRole('button',{name:/魔槍のクーフェリン/}).click();
+  assert.equal(await page.locator('#rank').inputValue(),'1');
+  assert.equal(await page.locator('#name').inputValue(),'魔槍のクーフェリン');
+  assert.equal(await page.locator('#name').isEnabled(),true,'Rank 1 should be an editable draft');
+  assert.equal(await page.locator('#techs .tech').count(),5);
+  await page.getByRole('button',{name:/旋槍のリゼル/}).click();
   assert.equal(await page.locator('#rank').inputValue(),'9');
+  console.log('PASS Rank 1 draft is visible, editable and keeps five planned techniques');
   assert.equal(await page.locator('#name').isDisabled(),true,'legacy Rank 9 must be read-only');
   await page.locator('#clone').click();
   assert.equal(await page.locator('#rank').inputValue(),'8');
