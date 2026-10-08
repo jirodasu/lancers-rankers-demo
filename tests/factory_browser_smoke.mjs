@@ -145,6 +145,32 @@ try {
     await orientationPage.close();
   }
 
+  // Real battle regression: pausing must freeze the timer and release held inputs.
+  await page.goto(base+'/dev-editor/arena.html?rank=8');
+  await page.waitForFunction(() => document.getElementById('rankSelect')?.options.length===8);
+  assert.equal(await page.locator('#pause').isDisabled(),true);
+  await page.locator('#start').click();
+  await page.waitForTimeout(250);
+  await page.locator('#pause').click();
+  assert.equal(await page.locator('#overlayTitle').innerText(),'一時停止中');
+  const frozen=await page.locator('#time').innerText();
+  await page.waitForTimeout(350);
+  assert.equal(await page.locator('#time').innerText(),frozen,'Paused battle timer must not advance');
+  await page.locator('#start').click();
+  assert.equal(await page.locator('#overlay').isHidden(),true);
+  assert.equal(await page.locator('#pause').isEnabled(),true);
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#overlayTitle').innerText(),'一時停止中','Escape must pause');
+  const selectKey=await page.locator('#rankSelect').evaluate(el=>{
+    const event=new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true,cancelable:true});
+    el.dispatchEvent(event);return event.defaultPrevented;
+  });
+  assert.equal(selectKey,false,'Game movement keys must not hijack rank selection');
+  await page.locator('#start').click();
+  console.log('PASS arena pause/resume, frozen timer, Escape and accessible select keys');
+  await page.goto(base+'/dev-editor/#rankers');
+  await embedded.locator('#name').waitFor();
+
   await page.route('**/config/lancers-tuning.json', route => route.fulfill({status:503,body:'offline'}));
   await page.route('**/config/ranker-factory.json', route => route.fulfill({status:503,body:'offline'}));
   await page.reload();

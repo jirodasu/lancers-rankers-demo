@@ -15,15 +15,25 @@ function loadRank(n){
  rank=roster[n]?n:ranks()[0];const r=roster[rank];if(!r)return;
  boss={x:240,y:210,hp:r.hp,max:r.hp,angle:0,step:0,orbit:1};
  player={x:240,y:435,hp:MAX_HP,max:MAX_HP,inv:0,atk:0,dash:0,dashCD:0,dir:{x:0,y:-1}};
- mode='ready';clock=0;phase='idle';phaseTime=.8;tech=null;aim=null;hit=false;attacks=0;feedback='';feedbackTime=0;trail=[];result='';
+ mode='ready';clearInputs();$('pause').disabled=true;clock=0;phase='idle';phaseTime=.8;tech=null;aim=null;hit=false;attacks=0;feedback='';feedbackTime=0;trail=[];result='';
  $('rankSelect').value=String(rank);$('bossName').textContent=r.displayName;
  $('bossInfo').textContent='戦闘型: '+r.behavior+' / 技 '+r.techniques.length+'種。赤い予告を避け、敵の硬直中に反撃してください。';
  $('phase').textContent='攻撃予告を見て回避';$('grade').textContent='—';updateHud();
  showOverlay(r.displayName,'赤い攻撃予告を避けて、敵に近づき「攻撃」。移動はWASD／矢印、スマホは左側ドラッグ。','戦闘開始');
 }
-function start(){if(!roster[rank])return;if(mode==='won'||mode==='lost')loadRank(rank);mode='playing';hideOverlay();last=performance.now()}
+function clearInputs(){keys.clear();attackHeld=false;stick.id=null;stick.x=stick.y=0;$('stickKnob').style.transform='translate(0,0)'}
+function pause(){
+ if(mode!=='playing')return;
+ mode='paused';clearInputs();$('pause').disabled=true;
+ showOverlay('一時停止中','戦闘タイマーと敵の行動を停止しました。準備ができたら再開してください。','戦闘を再開');
+}
+function start(){
+ if(!roster[rank])return;
+ if(mode==='won'||mode==='lost')loadRank(rank);
+ mode='playing';$('pause').disabled=false;hideOverlay();last=performance.now();
+}
 function finish(won){
- mode=won?'won':'lost';const r=roster[rank];const g=clock<=r.clearRank.s?'S':clock<=r.clearRank.a?'A':clock<=r.clearRank.b?'B':'C';
+ mode=won?'won':'lost';clearInputs();$('pause').disabled=true;const r=roster[rank];const g=clock<=r.clearRank.s?'S':clock<=r.clearRank.a?'A':clock<=r.clearRank.b?'B':'C';
  result=won?g:'—';if(won)saveBest(rank,g);$('grade').textContent=won?'評価 '+g:'敗北';
  showOverlay(won?'RANK '+String(rank).padStart(2,'0')+' CLEAR':'敗北',won?'撃破 '+clock.toFixed(1)+'秒 / 評価 '+g+'。次のランカーに挑戦できます。':'予告の外側へ移動し、回避ボタンの無敵時間を活用してください。',won?'もう一度戦う':'再挑戦');
 }
@@ -176,14 +186,24 @@ function stickUpdate(e){
 canvas.addEventListener('pointerdown',e=>{if(mode!=='playing'||stick.id!==null)return;const rect=canvas.getBoundingClientRect();if(e.clientX-rect.left>rect.width*.55)return;stick.id=e.pointerId;stick.ox=(e.clientX-rect.left)*W/rect.width;stick.oy=(e.clientY-rect.top)*H/rect.height;canvas.setPointerCapture(e.pointerId);stickUpdate(e)});
 canvas.addEventListener('pointermove',e=>{if(stick.id===e.pointerId)stickUpdate(e)});
 function stickRelease(e){if(stick.id!==e.pointerId)return;stick.id=null;stick.x=0;stick.y=0;$('stickKnob').style.transform='translate(0,0)'}
-canvas.addEventListener('pointerup',stickRelease);canvas.addEventListener('pointercancel',stickRelease);window.addEventListener('blur',()=>{keys.clear();attackHeld=false;stick.id=null;stick.x=stick.y=0});
+canvas.addEventListener('pointerup',stickRelease);canvas.addEventListener('pointercancel',stickRelease);window.addEventListener('blur',pause);document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 $('attack').addEventListener('pointerdown',e=>{e.preventDefault();attackHeld=true;strike()});
 for(const name of ['pointerup','pointercancel','pointerleave'])$('attack').addEventListener(name,()=>attackHeld=false);
 $('attack').addEventListener('click',()=>strike());
 $('dodge').addEventListener('pointerdown',e=>{e.preventDefault();dodge()});
-window.addEventListener('keydown',e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','j','k','w','a','s','d'].includes(k))e.preventDefault();keys.add(k);if(k==='j'||k===' ')strike();if(k==='k')dodge();if(k==='Enter'&&mode!=='playing')start()});
+window.addEventListener('keydown',e=>{
+ const k=e.key.length===1?e.key.toLowerCase():e.key;
+ if(e.target.closest('input,select,textarea,[contenteditable="true"]'))return;
+ if(k==='Escape'&&mode==='playing'){e.preventDefault();pause();return}
+ if(mode==='playing'&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','j','k','w','a','s','d'].includes(k)){
+  e.preventDefault();keys.add(k);
+  if(k==='j'||k===' ')strike();
+  if(k==='k')dodge();
+ }
+ if(k==='Enter'&&mode==='paused'){e.preventDefault();start()}
+});
 window.addEventListener('keyup',e=>keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
-$('start').onclick=start;$('restart').onclick=()=>loadRank(rank);$('next').onclick=next;$('rankSelect').onchange=e=>loadRank(Number(e.target.value));
+$('start').onclick=start;$('pause').onclick=pause;$('restart').onclick=()=>loadRank(rank);$('next').onclick=next;$('rankSelect').onchange=e=>loadRank(Number(e.target.value));
 async function boot(){
  try{
   let f;
