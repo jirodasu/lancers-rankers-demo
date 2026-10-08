@@ -69,5 +69,8 @@ for token in (
 ):
     assert token in html, token
 
-assert 'href="./factory.html"' in editor
+assert 'id="modeFactory"' in editor
+assert 'id="factoryFrame"' in editor
+assert 'factory.html?embedded=1' in editor
+assert 'id="modeGame"' in editor
 print("PASS Ranker Factory canonical + authoring contract")
