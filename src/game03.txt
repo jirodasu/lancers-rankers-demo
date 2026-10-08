@@ -62,7 +62,16 @@ on(window,'keydown',e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Spac
 on(window,'keyup',e=>{keys.delete(e.code);mergeInput();});
 function suspend(){clearInput();if(current?.mode==='battle'||input.command==='resume'||input.command==='start'||input.command==='retry')input.command='pause';}
 on(window,'blur',suspend);on(document,'visibilitychange',()=>{if(document.hidden)suspend();});
-function landscape(){return innerWidth>innerHeight&&innerHeight<600;}
+function landscape(){
+  // An editor preview is an iframe: its aspect ratio is NOT the device orientation.
+  // Only the preview hosted by our own editor reads the parent's viewport.
+  let width=innerWidth,height=innerHeight;
+  if(window.parent!==window&&new URLSearchParams(location.search).has('dev-editor')){
+    try{width=window.parent.innerWidth;height=window.parent.innerHeight;}
+    catch(_){/* Cross-origin embedding: keep the local viewport fallback. */}
+  }
+  return width>height&&height<600;
+}
 function orientation(){const rotated=landscape();$('rotate').hidden=!rotated;if(rotated)suspend();}
 on(window,'resize',orientation);on(window.visualViewport,'resize',orientation);orientation();
 function resumeAudio(){const audio=window.pyxelContext?.pyodide?._module?.SDL2?.audioContext;if(audio?.state==='suspended')audio.resume().catch(()=>{});}
