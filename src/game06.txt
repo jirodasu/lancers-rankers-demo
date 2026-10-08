@@ -45,6 +45,57 @@
             self.step = 1
         self.sound(3)
 
+    def rank8_boss_update(self):
+        # Ateria guards while idle/telegraphing. Her aim is locked at tell start.
+        self.timer -= DT
+        if self.state == 'idle':
+            dx, dy = self.px-self.bx, self.py-self.by
+            ux, uy = unit(dx, dy)
+            dist = math.hypot(dx, dy)
+            self.ba = math.atan2(dy, dx)
+            direction = 1 if dist > 53 else -1 if dist < 39 else 0
+            self.bx += ux*17.5*direction*DT
+            self.by += uy*17.5*direction*DT
+            self.clamp('b', 10)
+            if self.timer <= 0:
+                self.tech = ('thrust', 'sweep', 'rush')[self.rank8_attack_index%3]
+                self.rank8_attack_index += 1
+                self.ba = math.atan2(self.py-self.by, self.px-self.bx)
+                self.rank8_aim = self.ba
+                self.rank8_origin = (self.bx, self.by)
+                self.state, self.timer = 'prep', (.80, 1.05, .90)[(self.rank8_attack_index-1)%3]
+                self.prep_total = self.timer
+                self.hit = False
+                self.rank8_counter = False
+                self.notice = ('盾槍の突き', '半月払い', '盾の突進')[(self.rank8_attack_index-1)%3]
+        elif self.state == 'prep':
+            if self.rank8_counter:
+                self.timer = min(self.timer, .20)
+                self.rank8_counter = False
+                self.notice = 'COUNTER! すぐに回避！'
+            if self.timer <= 0:
+                self.state, self.timer = 'attack', (.24, .38, .32)[(self.rank8_attack_index-1)%3]
+        elif self.state == 'attack':
+            dx, dy = math.cos(self.rank8_aim), math.sin(self.rank8_aim)
+            ox, oy = self.rank8_origin
+            if self.tech == 'rush':
+                self.bx += dx*67.5*DT/.32
+                self.by += dy*67.5*DT/.32
+                self.clamp('b', 10)
+            if self.tech == 'sweep':
+                hit = abs(math.hypot(self.px-ox, self.py-oy)-54)<18
+            else:
+                reach = 145 if self.tech == 'thrust' else 170
+                hit = segment_hit(self.px,self.py,ox,oy,ox+dx*reach,oy+dy*reach,13 if self.tech=='thrust' else 19)
+            if hit and not self.hit:
+                self.hit = self.hurt((12,14,16)[(self.rank8_attack_index-1)%3])
+            if self.timer <= 0:
+                self.state, self.timer = 'recover', 1.05
+                self.notice = 'CHANCE — 盾が開いた！'
+        elif self.timer <= 0:
+            self.state, self.timer = 'idle', .18
+            self.notice = '盾を構えた — 攻撃後の隙を狙え'
+
     def boss_update(self):
         if self.mode not in ('battle', 'training'):
             return
@@ -74,6 +125,9 @@
                 self.victory_pending = False
                 self.mode = 'victory'
                 self.sound(2)
+            return
+        if self.rank == 8:
+            self.rank8_boss_update()
             return
         if self.rank == 9:
             self.rank9_boss_update()
@@ -189,6 +243,20 @@
         pyxel.dither(alpha)
 
     def telegraph(self):
+        if self.rank == 8:
+            if self.state not in ('prep', 'attack'):
+                return
+            ox, oy = self.rank8_origin
+            dx, dy = math.cos(self.rank8_aim), math.sin(self.rank8_aim)
+            col = 8 if self.state == 'prep' else 10
+            if self.tech == 'sweep':
+                for radius in (36, 54, 72):
+                    pyxel.circb(ox, oy, radius, col)
+            else:
+                reach = 145 if self.tech == 'thrust' else 170
+                half = 13 if self.tech == 'thrust' else 19
+                self.draw_capsule(ox, oy, ox+dx*reach, oy+dy*reach, half, col)
+            return
         if self.rank == 9:
             self.rank9_telegraph()
             return
