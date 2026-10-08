@@ -39,6 +39,26 @@ for rank, e in expected.items():
         assert tech[1]
         assert all(x > 0 for x in tech[2:])
 
+# Eight rankers are authored as drafts and have no effect on the existing Pyxel runtime.
+assert set(factory["drafts"]) == {str(i) for i in range(1, 9)}
+assert set(factory["rankers"]) == {"9", "10"}
+for rank in range(1, 9):
+    draft = factory["drafts"][str(rank)]
+    assert draft["rank"] == rank
+    assert draft["runtime"] == "draft"
+    assert draft["displayName"]
+    assert draft["hp"] > 0
+    assert draft["clearRank"]["s"] < draft["clearRank"]["a"] < draft["clearRank"]["b"]
+    assert len(draft["techniques"]) >= 3
+    assert all(t[0] in factory["actionBlocks"] for t in draft["techniques"])
+
+arena = (ROOT / "dev-editor/arena.html").read_text(encoding="utf-8")
+arena_js = (ROOT / "dev-editor/arena.js").read_text(encoding="utf-8")
+assert 'id="arena"' in arena and 'id="rankSelect"' in arena
+for token in ("function chooseAttack(", "function isHitShape(", "function strike(", "function dodge(", "function finish(", "function loadRank(", "requestAnimationFrame(loop)"):
+    assert token in arena_js, token
+assert 'id="playDraft"' in html
+
 # Rank 1 is a design draft only: the name and mythological source are approved,
 # while tuning numbers remain provisional and do not enter the live game runtime.
 rank1 = factory["drafts"]["1"]
