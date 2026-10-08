@@ -54,12 +54,23 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}.mono{font-
 .rail-import input::file-selector-button{border:1px solid #40546d;border-radius:6px;background:#162439;color:#d4e1ed;padding:8px}
 .workspace :disabled{opacity:.7;cursor:not-allowed}.workspace input:disabled,.workspace select:disabled{border-style:dashed}
 @media(max-width:760px){.onboarding ol{grid-template-columns:1fr}.onboarding li{padding:9px}}
+
+/* When used as a mode in GAME EDITOR, avoid a duplicate app header. */
+.embedded .topbar{height:56px;padding:0 18px;gap:10px;background:#0b1522}
+.embedded .topbar .brand,.embedded .topbar .crumb{display:none}
+.embedded .embedded-title{display:block!important;font-weight:850;font-size:12px;color:#e6cf9c;white-space:nowrap}
+.embedded .topbar .status{margin-left:auto}
+.embedded .shell{min-height:calc(100dvh - 56px)}
+.embedded .rail,.embedded .inspector{top:56px;height:calc(100dvh - 56px)}
+@media(max-width:760px){.embedded .topbar{height:auto;min-height:60px;padding:8px 10px;gap:7px}.embedded .embedded-title{font-size:11px}.embedded .topbar .status{order:3;margin:0;width:100%}.embedded .rail,.embedded .inspector{position:relative;top:auto;height:auto}}
 </style>
 </head>
 <body>
+<script>if(new URLSearchParams(location.search).has("embedded"))document.body.classList.add("embedded");</script>
 <header class="topbar">
  <div class="brand"><div class="mark"><span>RF</span></div><div><strong>RANKER FACTORY</strong><small>CONFIGURATION STUDIO / v1</small></div></div>
- <a class="crumb" href="./">DEV EDITOR /</a><span class="crumb">FACTORY</span>
+ <a class="crumb" href="./#game">GAME EDITOR /</a><span class="crumb">敵を作る</span>
+ <span class="embedded-title" style="display:none">敵を作る <span style="color:#8297ad;font-size:10px">— 下書き編集・検証・保存</span></span>
  <div class="status"><span class="dot"></span><span id="status">CANONICAL 読込中</span></div>
  <button class="topbtn" id="validateTop">検証</button><button class="topbtn primary" id="exportTop">設定JSONを保存</button>
 </header>
