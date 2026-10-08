@@ -53,7 +53,16 @@ try {
     await arena.waitForTimeout(700);
     await arena.keyboard.up('ArrowLeft');
     assert.ok(parseFloat(await arena.locator('#time').innerText())>0,'battle clock must advance');
+    await arena.keyboard.down('ArrowRight');
+    await arena.waitForTimeout(700);
+    await arena.keyboard.up('ArrowRight');
+    await arena.keyboard.down('ArrowUp');
+    await arena.waitForTimeout(900);
+    await arena.keyboard.up('ArrowUp');
+    const hpBefore=Number((await arena.locator('#bossHp').innerText()).split('/')[0]);
     await arena.locator('#attack').click();
+    const hpAfter=Number((await arena.locator('#bossHp').innerText()).split('/')[0]);
+    assert.ok(hpAfter<hpBefore,'melee attack should damage the boss when in range');
     await arena.locator('#dodge').click();
     assert.equal(await arena.locator('#overlay').isVisible(),false,'fight must be active');
     assert.equal(arenaErrors.length,0,'Arena runtime JS errors: '+arenaErrors.join('; '));
