@@ -19,9 +19,10 @@ try {
   assert.equal(await page.locator('#rank').inputValue(),'9');
   console.log('PASS Rank 1 draft is visible, editable and keeps five planned techniques');
   assert.equal(await page.locator('#name').isDisabled(),true,'legacy Rank 9 must be read-only');
-  await page.locator('#clone').click();
+  await page.getByRole('button',{name:/盾槍のアテリア/}).click();
   assert.equal(await page.locator('#rank').inputValue(),'8');
-  assert.equal(await page.locator('#name').isEnabled(),true,'draft must be editable');
+  assert.equal(await page.locator('#name').isEnabled(),true,'Rank 8 draft must be editable');
+  assert.match(await page.locator('#playDraft').getAttribute('href'),/arena.html\?rank=8/);
   await page.locator('#name').fill('初心者の新ランカー');
   await page.reload();
   await page.waitForFunction(() => document.getElementById('status')?.textContent.includes('正規設定'));
@@ -32,6 +33,32 @@ try {
   const download = await downloadPromise;
   assert.equal(download.suggestedFilename(),'ranker-factory.json');
   assert.equal(errors.length,0,'Factory JS errors: '+errors.join('; '));
+  console.log('PASS Factory browser: legacy lock, eight drafts, autosave, export');
+  const arena = await browser.newPage({viewport:{width:390,height:844}});
+  const arenaErrors=[];
+  arena.on('pageerror',e=>arenaErrors.push(e.message));
+  try {
+    await arena.goto(base+'/dev-editor/arena.html?rank=8');
+    await arena.locator('#rankSelect option').first().waitFor();
+    assert.equal(await arena.locator('#rankSelect option').count(),8,'all eight bosses must be selectable');
+    for (const n of [8,7,6,5,4,3,2,1]) {
+      await arena.locator('#rankSelect').selectOption(String(n));
+      assert.equal(await arena.locator('#rankSelect').inputValue(),String(n));
+      assert.ok((await arena.locator('#bossName').innerText()).length>=3);
+      assert.ok(Number((await arena.locator('#bossHp').innerText()).split('/')[0])>0);
+    }
+    await arena.locator('#rankSelect').selectOption('8');
+    await arena.locator('#start').click();
+    await arena.keyboard.down('ArrowLeft');
+    await arena.waitForTimeout(700);
+    await arena.keyboard.up('ArrowLeft');
+    assert.ok(parseFloat(await arena.locator('#time').innerText())>0,'battle clock must advance');
+    await arena.locator('#attack').click();
+    await arena.locator('#dodge').click();
+    assert.equal(await arena.locator('#overlay').isVisible(),false,'fight must be active');
+    assert.equal(arenaErrors.length,0,'Arena runtime JS errors: '+arenaErrors.join('; '));
+    console.log('PASS Arena: eight bosses selectable, active battle, movement and attack/dodge controls');
+  } finally { await arena.close(); }
   console.log('PASS Factory browser: legacy lock, draft creation, autosave, export');
   await page.goto(base+'/dev-editor/');
   assert.match(await page.title(),/GAME EDITOR/);
