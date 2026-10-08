@@ -243,6 +243,20 @@
         pyxel.dither(alpha)
 
     def telegraph(self):
+        if self.rank == 8:
+            if self.state not in ('prep', 'attack'):
+                return
+            ox, oy = self.rank8_origin
+            dx, dy = math.cos(self.rank8_aim), math.sin(self.rank8_aim)
+            col = 8 if self.state == 'prep' else 10
+            if self.tech == 'sweep':
+                for radius in (36, 54, 72):
+                    pyxel.circb(ox, oy, radius, col)
+            else:
+                reach = 145 if self.tech == 'thrust' else 170
+                half = 13 if self.tech == 'thrust' else 19
+                self.draw_capsule(ox, oy, ox+dx*reach, oy+dy*reach, half, col)
+            return
         if self.rank == 9:
             self.rank9_telegraph()
             return
