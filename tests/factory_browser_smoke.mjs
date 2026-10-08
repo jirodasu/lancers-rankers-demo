@@ -27,6 +27,7 @@ try {
   console.log('PASS Factory browser: legacy lock, draft creation, autosave, export');
   await page.goto(base+'/dev-editor/');
   assert.match(await page.title(),/GAME EDITOR/);
+  assert.equal(await page.locator('link[rel="stylesheet"][href="./polish.css"]').count(),1,'Editor design system must actually load');
   assert.equal(await page.locator('#modeGame').getAttribute('aria-pressed'),'true');
   await page.locator('#modeFactory').click();
   await page.waitForURL('**/dev-editor/#rankers');
