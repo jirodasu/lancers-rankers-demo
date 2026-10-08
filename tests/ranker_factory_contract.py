@@ -39,6 +39,20 @@ for rank, e in expected.items():
         assert tech[1]
         assert all(x > 0 for x in tech[2:])
 
+# Rank 1 is a design draft only: the name and mythological source are approved,
+# while tuning numbers remain provisional and do not enter the live game runtime.
+rank1 = factory["drafts"]["1"]
+assert rank1["rank"] == 1
+assert rank1["id"] == "rank1"
+assert rank1["displayName"] == "魔槍のクーフェリン"
+assert rank1["runtime"] == "draft"
+assert rank1["behavior"] == "adaptive"
+assert rank1["hp"] > 0
+assert rank1["clearRank"]["s"] < rank1["clearRank"]["a"] < rank1["clearRank"]["b"]
+assert len(rank1["techniques"]) == 5
+assert all(t[0] in factory["actionBlocks"] for t in rank1["techniques"])
+assert "1" not in factory["rankers"], "Draft must never masquerade as live runtime boss"
+
 for block in ("thrust", "rush", "sweep", "projectile", "orbit", "combo"):
     assert block in factory["actionBlocks"]
 
