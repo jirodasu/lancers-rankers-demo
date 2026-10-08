@@ -39,7 +39,7 @@ try {
   arena.on('pageerror',e=>arenaErrors.push(e.message));
   try {
     await arena.goto(base+'/dev-editor/arena.html?rank=8');
-    await arena.locator('#rankSelect option').first().waitFor();
+    await arena.waitForFunction(() => document.querySelectorAll('#rankSelect option').length===8);
     assert.equal(await arena.locator('#rankSelect option').count(),8,'all eight bosses must be selectable');
     for (const n of [8,7,6,5,4,3,2,1]) {
       await arena.locator('#rankSelect').selectOption(String(n));
