@@ -63,6 +63,52 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}.mono{font-
 .embedded .shell{min-height:calc(100dvh - 56px)}
 .embedded .rail,.embedded .inspector{top:56px;height:calc(100dvh - 56px)}
 @media(max-width:760px){.embedded .topbar{height:auto;min-height:60px;padding:8px 10px;gap:7px}.embedded .embedded-title{font-size:11px}.embedded .topbar .status{order:3;margin:0;width:100%}.embedded .rail,.embedded .inspector{position:relative;top:auto;height:auto}}
+
+/* Quality pass: clear information density without 8px controls. */
+.rail h2,.inspector h2{font-size:12px;line-height:1.5;letter-spacing:.035em}
+.rail-note,.section-title p,.score p,.check,.sim-summary,.onboarding p,.onboarding li span{font-size:12px;line-height:1.7}
+.rank-name{font-size:13px}.rank-meta{font-size:11px}
+.rank-num{font-size:18px}.pill{font-size:10px}
+.rank-card{min-height:59px;gap:10px}
+.rail-action,.rail-import{font-size:12px}
+.field label,.tech .field label{font-size:11px;letter-spacing:.02em}
+.field input,.field select{font-size:13px;min-height:44px}
+.tech input,.tech select{font-size:12px;min-height:44px}
+.topbtn,.add-tech,.iconbtn{font-size:12px;min-height:44px}
+.card-head h2{font-size:13px}
+.card-head span,.eyebrow{font-size:11px}
+.score h3{font-size:12px}
+.score-ring strong{font-size:20px}
+.sim-row{font-size:11px;grid-template-columns:32px 1fr 67px}
+.onboarding>strong{font-size:15px}
+.onboarding li b{font-size:12px}
+.rail-import input{font-size:12px}
+.toast{font-size:12px;line-height:1.5}
+.section-title h1{font-size:clamp(22px,2.2vw,28px);line-height:1.3}
+.explain{font-size:12px}
+.embedded .embedded-title{font-size:13px}
+.embedded .topbar .status{font-size:11px;letter-spacing:0}
+@media(max-width:760px){
+ .onboarding ol{grid-template-columns:1fr}
+ .topbar{gap:8px}
+ .topbar .status{font-size:11px}
+ .rail{padding:16px 12px}
+ .rank-card{min-width:200px}
+ .workspace{padding:20px 14px 48px}
+ .hero-grid{gap:12px}
+ .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .tech{grid-template-columns:28px repeat(2,minmax(0,1fr));gap:8px}
+ .tech .field{min-width:0}
+ .tech .field:nth-of-type(2){grid-column:span 2}
+ .inspector{padding:18px 14px}
+}
+@media(max-width:390px){
+ .topbar{padding:8px}
+ .topbar .topbtn{font-size:11px;padding:0 9px}
+ .hero-grid{grid-template-columns:64px 1fr}
+ .rank-display{height:72px}
+ .field input,.field select{font-size:12px;padding:0 8px}
+}
 </style>
 </head>
 <body>
@@ -87,7 +133,7 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}.mono{font-
   <div class="onboarding" id="onboarding">
    <strong>はじめてのランカー制作 / 3ステップ</strong>
    <ol><li><b>① 元になる敵を選ぶ</b><span>左のヘクトランかリゼルを選択します。</span></li><li><b>② 「新規作成」を押す</b><span>既存の敵を壊さず、新しい下書きを作れます。</span></li><li><b>③ 調整 → 検証 → 保存</b><span>数値を変えて右側のチェックを確認し、JSONを保存します。</span></li></ol>
-   <p>ここは敵の<strong>設計ツール</strong>です。右側の「5戦」は予測モデルで、実際の戦闘テストではありません。</p>
+   <p>ここは敵の<strong>設計ツール</strong>です。右側の「5条件の参考予測」は数式による比較で、実際の戦闘テストではありません。</p>
    <button type="button" id="hideOnboarding" class="topbtn">説明を閉じる</button>
   </div><button type="button" id="showOnboarding" class="topbtn" hidden>？ 作り方を表示</button>
   <div id="loadError" class="load-error" role="alert" hidden><strong>設定を読み込めませんでした</strong><p id="loadErrorDetail"></p><button type="button" id="retryLoadMain" class="topbtn">再試行する</button></div>
@@ -120,7 +166,7 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}.mono{font-
  </main>
  <aside class="inspector">
   <div><h2>設定のチェック</h2><div class="score"><div class="score-ring" id="scoreRing"><strong id="scoreValue">—</strong></div><div><h3 id="scoreLabel">検証待ち</h3><p>設定の完全性・時間閾値・距離帯・技ブロックを常時チェックします。</p></div></div><div id="checks" class="checklist"></div></div>
-  <div style="margin-top:20px"><h2>5戦の予測（実プレイではありません）</h2><div id="simBars" class="sim-bars"></div><div id="simSummary" class="sim-summary">設定読込後に自動計算します。</div></div>
+  <div style="margin-top:20px"><h2>5条件の参考予測（実プレイではありません）</h2><div id="simBars" class="sim-bars"></div><div id="simSummary" class="sim-summary">設定読込後に自動計算します。</div></div>
  </aside>
 </div><div class="toast" id="toast"></div>
 <script>
@@ -209,8 +255,8 @@ function saveDraft(){
 function validate(r=read()){let checks=[];const add=(ok,msg)=>checks.push({ok,msg});add(r.rank>=1&&r.rank<=10,"RANKが1〜10の範囲");add(r.displayName.length>=2,"表示名が設定済み");add(Number.isFinite(r.hp)&&r.hp>0,"HPが1以上");add(r.distance.near>=0&&r.distance.near<r.distance.far,"距離帯が near < far");add(r.chain.length===3&&r.chain.every(n=>Number.isInteger(n)&&n>=1),"3フェーズの連撃数が1以上");add(r.chance>0,"CHANCE時間が正数");add(r.clearRank.s>0&&r.clearRank.s<r.clearRank.a&&r.clearRank.a<r.clearRank.b,"クリア時間が S < A < B");add(r.techniques.length>0,"技ブロックが1つ以上");add(r.techniques.every(t=>data.actionBlocks[t[0]]&&t[1].trim()&&t.slice(2).every(n=>Number.isFinite(n)&&n>0)),"全技のブロック・名前・数値が有効");return checks}
 function simulate(r=read()){if(!r.techniques.length)return[];let base=r.techniques.reduce((n,t)=>n+t[2]+t[3],0)/r.techniques.length;let damage=r.techniques.reduce((n,t)=>n+t[4],0)/r.techniques.length;const variance=[.96,1.04,1,.92,1.08];return variance.map((v,i)=>{let chain=r.chain[i%3]||1,cycle=(base*chain+r.chance+.34)*v,pressure=Math.max(1,damage*2.15-i*.65),time=(r.hp/pressure)*cycle;return Math.max(.1,time)})}
 function grade(t,r){return t<=r.clearRank.s?"S":t<=r.clearRank.a?"A":t<=r.clearRank.b?"B":"C"}
-function refresh(){if(!data)return;let r=read();$("rankVisual").textContent=String(Math.max(0,r.rank||0)).padStart(2,"0");$("workspaceTitle").textContent=r.displayName||"ランカーを設計";$("techCount").textContent=r.techniques.length+" TECHNIQUES";let c=validate(r),ok=c.filter(x=>x.ok).length,score=Math.round(ok/c.length*100);$("scoreRing").style.setProperty("--p",score);$("scoreValue").textContent=score;$("scoreLabel").textContent=score===100?"READY TO EXPORT":score>=75?"要調整":"BLOCKED";$("checks").innerHTML=c.map(x=>'<div class="check '+(x.ok?"":"bad")+'"><i>'+(x.ok?"✓":"!")+'</i><span>'+escapeHtml(x.msg)+'</span></div>').join("");
- let s=simulate(r),max=Math.max(r.clearRank.b,...s,1);$("simBars").innerHTML=s.map((v,i)=>'<div class="sim-row"><span>#0'+(i+1)+'</span><div class="bar"><i style="width:'+Math.min(100,v/max*100).toFixed(1)+'%"></i></div><span>'+v.toFixed(1)+'s '+grade(v,r)+'</span></div>').join("");if(s.length){let avg=s.reduce((a,b)=>a+b,0)/s.length,gs=s.map(v=>grade(v,r));$("simSummary").innerHTML='平均 <b>'+avg.toFixed(1)+'秒</b> / '+grade(avg,r)+'相当<br>S '+gs.filter(x=>x==="S").length+'・A '+gs.filter(x=>x==="A").length+'・B '+gs.filter(x=>x==="B").length+'・C '+gs.filter(x=>x==="C").length+'<br><span style="color:#60758b">※設定比較用の決定論モデル。実機AIプレイではありません。</span>'}}
+function refresh(){if(!data)return;let r=read();$("rankVisual").textContent=String(Math.max(0,r.rank||0)).padStart(2,"0");$("workspaceTitle").textContent=r.displayName||"ランカーを設計";$("techCount").textContent=r.techniques.length+" TECHNIQUES";let c=validate(r),ok=c.filter(x=>x.ok).length,score=Math.round(ok/c.length*100);$("scoreRing").style.setProperty("--p",score);$("scoreValue").textContent=score;$("scoreLabel").textContent=score===100?"設定チェック完了":score>=75?"要調整":"未完了";$("checks").innerHTML=c.map(x=>'<div class="check '+(x.ok?"":"bad")+'"><i>'+(x.ok?"✓":"!")+'</i><span>'+escapeHtml(x.msg)+'</span></div>').join("");
+ let s=simulate(r),max=Math.max(r.clearRank.b,...s,1);$("simBars").innerHTML=s.map((v,i)=>'<div class="sim-row"><span>#0'+(i+1)+'</span><div class="bar"><i style="width:'+Math.min(100,v/max*100).toFixed(1)+'%"></i></div><span>'+v.toFixed(1)+'s '+grade(v,r)+'</span></div>').join("");if(s.length){let avg=s.reduce((a,b)=>a+b,0)/s.length,gs=s.map(v=>grade(v,r));$("simSummary").innerHTML='平均 <b>'+avg.toFixed(1)+'秒</b> / '+grade(avg,r)+'相当<br>S '+gs.filter(x=>x==="S").length+'・A '+gs.filter(x=>x==="A").length+'・B '+gs.filter(x=>x==="B").length+'・C '+gs.filter(x=>x==="C").length+'<br><span style="color:#60758b">※5種類の条件で計算した参考値です。実機AIプレイではありません。</span>'}}
 function markDirty(){
   if(!currentKey?.startsWith("d"))return;
   dirty=true;saveDraft();refresh();
@@ -256,7 +302,7 @@ function importDrafts(file){
 }
 
 $("clone").onclick=createDraft;
-$("addTech").onclick=()=>{addTech();markDirty()};$("validateTop").onclick=()=>{refresh();let bad=validate().filter(x=>!x.ok);toast(bad.length?"検証NG — "+bad.length+"項目を確認":"QUALITY GATE 100 — 設定上の矛盾なし")};$("exportTop").onclick=exportJson;
+$("addTech").onclick=()=>{addTech();markDirty()};$("validateTop").onclick=()=>{refresh();let bad=validate().filter(x=>!x.ok);toast(bad.length?"設定に問題あり — "+bad.length+"項目を確認":"設定上の問題は見つかりませんでした（実戦テストではありません）")};$("exportTop").onclick=exportJson;
 document.addEventListener("input",e=>{if(e.target.closest(".workspace")&&!e.target.disabled)markDirty()});document.addEventListener("change",e=>{if(e.target.closest(".workspace")&&!e.target.disabled)markDirty()});document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="s"){e.preventDefault();exportJson()}});
 $("retryLoad").onclick=boot;$("retryLoadMain").onclick=boot;
 $("importFactory").onchange=e=>{importDrafts(e.target.files[0]);e.target.value=""};
