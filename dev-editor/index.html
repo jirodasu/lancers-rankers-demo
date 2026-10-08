@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070b12">
 <meta name="description" content="Lancers RankersのUI・HIT・サウンドをライブ調整する開発インスペクター">
-<title>LANCERS DEV EDITOR</title>
+<title>LANCERS GAME EDITOR — ゲーム制作</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;background:#070b12;color:#dbe5ef}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#070b12}
@@ -42,29 +42,49 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
 .history-empty{padding:16px;border:1px dashed #304158;text-align:center;color:#6f8298;font-size:11px}
 .snapshot-form{display:grid;gap:7px}.snapshot{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid #304158;background:#0e1826;padding:9px;border-radius:5px;margin-top:6px}.snapshot b,.snapshot span,.snapshot small{display:block}.snapshot b{font-size:12px;color:#e5cc99}.snapshot span{font-size:10px;color:#8094aa;margin-top:2px}.snapshot small{font-size:10px;color:#a3b2c2;margin-top:4px}.snapshot button{border:1px solid #465b75;background:#162438;border-radius:4px;padding:6px 9px}
 @media(max-width:850px){main{grid-template-columns:1fr;height:auto}.stage{height:72vh;padding:10px}.device{height:68vh;min-height:540px}.panel{border-left:0;border-top:1px solid #263448}.tip{display:none}}
+
+/* One workspace: two tasks, no navigation to a separate tool. */
+.editor-modes{display:flex;gap:5px;padding:4px;border:1px solid #33485e;border-radius:9px;background:#07111d}
+.editor-mode{min-height:42px;padding:8px 15px;border:0;border-radius:6px;background:transparent;color:#a6b8c9;font-weight:800;font-size:12px;white-space:nowrap}
+.editor-mode[aria-pressed="true"]{background:#d9ba79;color:#0a1521;box-shadow:0 3px 12px #0005}
+main.factory-mode{display:block;overflow:hidden}
+main.factory-mode>.stage,main.factory-mode>.panel{display:none!important}
+.factory-view{display:none;height:calc(100vh - 58px);background:#060b12}
+main.factory-mode>.factory-view{display:block}
+.factory-view iframe{width:100%;height:100%;border:0;background:#060b12}
+body.factory-mode #bootGame,body.factory-mode #reloadGame,body.factory-mode #status{display:none}
+body.factory-mode header{justify-content:flex-start}
+.mode-help{color:#7e95a8;font-size:10px;line-height:1.5}
+@media(max-width:850px){.factory-view{height:calc(100dvh - 106px)}main.factory-mode{height:calc(100dvh - 106px)}}
+@media(max-width:660px){header{height:auto;min-height:90px;flex-wrap:wrap;gap:6px;padding:8px 10px}.brand{width:100%;font-size:12px}.brand small{display:inline;margin-left:8px}.editor-modes{flex:1}.editor-mode{flex:1;font-size:11px}.mode-help{display:none}.factory-view{height:calc(100dvh - 110px)}main.factory-mode{height:calc(100dvh - 110px)}}
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">LANCERS DEV EDITOR<small>LOCAL TUNING / v0.2</small></div>
+  <div class="brand">LANCERS GAME EDITOR<small>ひとつの画面でゲームを作る</small></div>
+  <nav class="editor-modes" aria-label="制作メニュー">
+    <button type="button" class="editor-mode" id="modeGame" aria-pressed="true" aria-controls="gameStage">画面・演出</button>
+    <button type="button" class="editor-mode" id="modeFactory" aria-pressed="false" aria-controls="factoryView">敵を作る</button>
+  </nav>
+  <span class="mode-help" id="modeHelp">ゲーム画面を見ながら位置・音・演出を調整</span>
   <button class="topbtn" id="bootGame">本編を起動</button>
   <button class="topbtn" id="reloadGame">再読込</button>
   <span id="status" class="status warn">本編を読込中…</span>
 </header>
 <main>
-<section class="stage">
+<section class="stage" id="gameStage">
   <div class="device"><iframe id="game" src="../?dev-editor=1"></iframe></div>
-  <div class="tip">画面内のUIをドラッグして位置を調整できます。保存は右側の「DATA」から行います。</div>
+  <div class="tip">画面内のUIをドラッグして位置を調整できます。保存は右側の「保存」から行います。</div>
   <div id="previewHelp" class="preview-help" role="status" hidden><strong>ゲームの起動を確認できません</strong><p>通信環境またはゲームの起動状態を確認してください。画面が止まった場合は再読込できます。</p><button type="button" id="retryPreview">プレビューを再読込</button><a href="../" target="_blank" rel="noopener">ゲーム単体で開く ↗</a></div>
 </section>
 <aside class="panel">
   <nav class="tabs">
     <button class="tab active" data-tab="ui">UI</button>
-    <button class="tab" data-tab="fx">MONSTER</button>
-    <button class="tab" data-tab="sound">SOUND</button>
+    <button class="tab" data-tab="fx">HIT演出</button>
+    <button class="tab" data-tab="sound">サウンド</button>
     <button class="tab" data-tab="history">履歴</button>
-    <button class="tab" data-tab="data">DATA</button>
-    <a class="tab factory-tab" href="./factory.html" aria-label="ランカー作成ツールを開く">ランカー作成</a>
+    <button class="tab" data-tab="data">保存</button>
+
   </nav>
 
   <section class="pane active" id="pane-ui">
@@ -73,7 +93,7 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
       <h2>ゲームを見ながら、少しずつ調整</h2>
       <ol><li><b>① ゲームを起動</b><span>左のプレビューが準備できたら、上の「本編を起動」を押します。</span></li>
       <li><b>② 変えたい場所を選ぶ</b><span>下の一覧から「移動スティック」などを選び、位置や大きさを変更します。</span></li>
-      <li><b>③ 保存する</b><span>「DATA」→「採用確定」で設定を固定。新しい敵を作る場合は「ランカー作成」を開きます。</span></li></ol>
+      <li><b>③ 保存する</b><span>「保存」→「採用確定」で設定を固定。敵の能力・技は上の「敵を作る」で調整します。</span></li></ol>
       <p>ここでの調整はプレビュー用です。ゲーム本体の戦闘AIや既存ランカーの強さは変更しません。</p>
       <button type="button" id="dismissGuide" class="btn">説明を閉じる</button>
     </div>
@@ -182,11 +202,28 @@ textarea{width:100%;height:220px;resize:vertical;background:#070c13;color:#b8c8d
     <p class="note">通常JSON/CSSは作業用バックアップです。正式採用には上の「この状態を採用確定」を使います。</p>
   </section>
 </aside>
+<section class="factory-view" id="factoryView" aria-label="敵を作る" aria-hidden="true"><iframe id="factoryFrame" title="敵の能力と技を編集する" loading="lazy"></iframe></section>
 </main>
 <script>
 (function(){
 "use strict";
 var frame=document.getElementById("game"),status=document.getElementById("status"),root=null,drag=null,bgm=null;
+var factoryFrame=document.getElementById("factoryFrame");
+function setEditorMode(mode){
+  var isFactory=mode==="factory",shell=document.querySelector("main");
+  shell.classList.toggle("factory-mode",isFactory);
+  document.body.classList.toggle("factory-mode",isFactory);
+  q("modeGame").setAttribute("aria-pressed",String(!isFactory));
+  q("modeFactory").setAttribute("aria-pressed",String(isFactory));
+  q("modeHelp").textContent=isFactory?"敵の強さ・技・行動を設計（既存ランカーは保護）":"ゲーム画面を見ながら位置・音・演出を調整";
+  q("factoryView").setAttribute("aria-hidden",String(!isFactory));
+  if(isFactory&&!factoryFrame.getAttribute("src"))factoryFrame.src="./factory.html?embedded=1";
+}
+function modeFromHash(){setEditorMode(location.hash==="#rankers"?"factory":"game")}
+q("modeGame").onclick=function(){location.hash="game";modeFromHash()};
+q("modeFactory").onclick=function(){location.hash="rankers";modeFromHash()};
+window.addEventListener("hashchange",modeFromHash);
+modeFromHash();
 var defaultMonster={flash:0.12,fxScale:1,fxLife:0.36,fxType:"spear",hitstop:{normal:2,charge:4,break:6},recoil:{normal:2,charge:3,break:5},shakeFrames:8,shakePx:1,benikiba:{flash:0.08,hitstop:{normal:1,charge:3,break:6},recoil:{normal:2,charge:3,break:3},shakeFrames:6}};
 var defaults={ui:{},monster:{hectoran:JSON.parse(JSON.stringify(defaultMonster)),lizel:JSON.parse(JSON.stringify(defaultMonster))},sound:{volume:0.1,files:{normal:"hit_normal.mp3",charge:"hit_charge.mp3",break:"hit_break.mp3",bgm:"Pyxel BGM"}}};
 var state=JSON.parse(JSON.stringify(defaults));
