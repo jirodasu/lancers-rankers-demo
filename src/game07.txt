@@ -676,6 +676,48 @@
             pyxel.rect(self.bx-10,self.by-18,20,2,1)
             pyxel.rect(self.bx-10,self.by-18,20*progress,2,8)
 
+    def draw_rank8_boss(self):
+        # Ateria: broad-shouldered gold-and-blue guardian with a forward shield.
+        # Unlike Hectoran's silhouette, the shield is a separate solid object.
+        x, y = int(round(self.bx)), int(round(self.by))
+        a = self.ba
+        ux, uy = math.cos(a), math.sin(a)
+        vx, vy = -uy, ux
+        guarding = self.state in ('idle', 'prep')
+        pyxel.elli(x-11, y+10, 22, 5, 0)
+        # Dark cape, armoured boots and broad breastplate.
+        pyxel.tri(x-8,y+1,x+8,y+1,x,y+15,1)
+        pyxel.rect(x-7,y+4,5,8,5)
+        pyxel.rect(x+3,y+4,5,8,5)
+        pyxel.rect(x-9,y-7,18,13,6)
+        pyxel.rect(x-6,y-5,12,9,7 if self.flash else 12)
+        pyxel.line(x-7,y-7,x+7,y+4,10)
+        pyxel.line(x+7,y-7,x-7,y+4,10)
+        # Helmet and crest.
+        pyxel.rect(x-5,y-14,10,7,6)
+        pyxel.rect(x-3,y-12,6,3,10)
+        pyxel.line(x,y-15,x,y-19,10)
+        pyxel.pset(x,y-20,7)
+        # Spear projects along the locked facing direction.
+        sx, sy = x+vx*8, y+vy*8
+        pyxel.line(sx-ux*10,sy-uy*10,sx+ux*19,sy+uy*19,7)
+        pyxel.line(sx+ux*19,sy+uy*19,sx+ux*25,sy+uy*25,10)
+        pyxel.pset(sx+ux*26,sy+uy*26,7)
+        if guarding:
+            # Shield on the forward arm: a filled gold rim, not a ring around boss.
+            cx, cy = x+ux*11-vx*5, y+uy*11-vy*5
+            pyxel.circ(cx,cy,9,10)
+            pyxel.circ(cx,cy,7,1)
+            pyxel.circ(cx,cy,5,6)
+            pyxel.line(cx-4,cy,cx+4,cy,7)
+            pyxel.line(cx,cy-4,cx,cy+4,7)
+            pyxel.pset(cx,cy,10)
+        elif self.state == 'recover':
+            # Open shield gives a legible punish window.
+            cx, cy = x-ux*12-vx*7, y-uy*12-vy*7
+            pyxel.circ(cx,cy,7,10)
+            pyxel.circ(cx,cy,5,6)
+
     def draw_rank9_boss(self):
         # 24px-class slim duelist silhouette: no shield, long lateral spear,
         # split coat tails and a forward-leaning stance distinguish Lizel at a glance.
@@ -721,6 +763,8 @@
             pyxel.line(x-tx*7+dx*3,y-ty*7+dy*3,x-tx*11+dx*3,y-ty*11+dy*3,4)
 
     def draw(self):
+        # Never carry partial-dither state across frames.
+        pyxel.dither(1)
         pyxel.cls(0)
         # v4.6a41: BREAK punish only. One-pixel deterministic camera impulse;
         # no shake on normal hits or ordinary charged hits.
@@ -745,7 +789,7 @@
             dx,dy=math.cos(a*math.pi/4),math.sin(a*math.pi/4)
             pyxel.line(CX+dx*80,CY+dy*80,CX+dx*85,CY+dy*85,6)
         pyxel.text(73,15,'RANK / '+str(self.rank),10)
-        pyxel.text(61 if self.rank == 10 else 66,232,'HECTORAN  ARENA' if self.rank == 10 else 'LIZEL  CIRCUIT',6)
+        pyxel.text(61 if self.rank == 10 else 66,232,'HECTORAN  ARENA' if self.rank == 10 else 'LIZEL  CIRCUIT' if self.rank == 9 else 'ATERIA  GUARD',6)
         self.telegraph()
         for s in self.shots:
             ux,uy=unit(s[2],s[3])
@@ -753,10 +797,7 @@
             pyxel.pset(s[0]+ux*3,s[1]+uy*3,7)
         bosscol = 7 if self.flash else 10 if self.state=='break' else 9
         if self.rank == 8:
-            self.draw_boss_idle_v40()
-            if self.state in ('idle', 'prep'):
-                pyxel.circb(self.bx, self.by, 18, 12)
-                pyxel.circb(self.bx, self.by, 20, 6)
+            self.draw_rank8_boss()
         elif self.rank == 9:
             self.draw_rank9_boss()
         elif self.state in ('prep','attack'):
