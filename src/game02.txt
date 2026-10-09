@@ -49,3 +49,7 @@ footer>div{
 `;
 
 style.textContent += "#mode-choice.rank9{grid-template-columns:1fr}#mode-choice.rank9 #start{grid-column:1}";
+
+
+/* Rank selector: three compact, 44px touch targets above the weapon list. */
+style.textContent += "#rank-select{margin:2px 0 12px;text-align:left}#rank-select>span{display:block;margin-bottom:5px;font-size:11px;color:#b0becd;letter-spacing:.5px}#rank-select .rank-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#rank-select button{min-height:44px;border:1px solid #43566c;border-radius:7px;background:#122034;color:#d6e0e9;font-weight:800;font-size:15px}#rank-select button.selected,#rank-select button[aria-pressed=true]{border-color:#e4bd77;background:#403522;color:#ffdda0;box-shadow:inset 0 0 0 1px #b38c50}#rank-select button:focus-visible{outline:2px solid #7bd7f4;outline-offset:2px}@media(max-height:700px){#rank-select{margin:0 0 6px}#rank-select>span{font-size:10px;margin-bottom:2px}#rank-select button{min-height:40px}#weapons{gap:4px}.weapon{padding:6px 10px}.panel h2{margin:4px 0 7px}}";
