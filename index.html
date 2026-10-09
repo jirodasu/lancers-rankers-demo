@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080e19">
 <meta name="robots" content="noindex">
-<title>ランサーズ・ランカーズ｜RANK 10 → RANK 9</title>
+<title>ランサーズ・ランカーズ｜RANK 10 → RANK 8</title>
 <meta name="description" content="Pyxelで制作中。RANK 10ヘクトランを突破し、RANK 9旋槍のリゼルへ挑む槍アクション体験版。">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap');
@@ -26,8 +26,8 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v5.2.6 — MADE WITH PYXEL</small>
-    <h1>ランサーズ・ランカーズ<br>RANK 10 → RANK 9</h1>
+    <small>LANCERS / RANKERS — v5.2.7 — MADE WITH PYXEL</small>
+    <h1>ランサーズ・ランカーズ<br>RANK 10 → RANK 8</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
     <button id="reload" hidden>再読み込み</button>
@@ -37,7 +37,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='5.2.6';
+  const VERSION='5.2.7';
 
   const sfxSources={
     normal:`./assets/sfx/hit_normal.mp3?v=${VERSION}`,
@@ -440,21 +440,30 @@ SELECT_BGM_CH4 = """${SELECT_BGM_CH4}"""
             else:
                 pyxel.musics[0].set([10], [11], [12])
             self.ready_bgm = True`;
-      const newBgmSetup=`            pyxel.sounds[10].mml(BGM_CH1)
+      const newBgmSetup=`            # Battle track must not depend on the optional select-track parser.
+            pyxel.sounds[10].mml(BGM_CH1)
             pyxel.sounds[11].mml(BGM_CH2)
             pyxel.sounds[12].mml(BGM_CH3)
             pyxel.sounds[13].mml(BGM_CH4)
-            pyxel.sounds[14].mml(SELECT_BGM_CH1)
-            pyxel.sounds[15].mml(SELECT_BGM_CH2)
-            pyxel.sounds[16].mml(SELECT_BGM_CH3)
-            pyxel.sounds[17].mml(SELECT_BGM_CH4)
             if self.extended_audio:
                 pyxel.musics[0].set([10], [11], [12], [13])
-                pyxel.musics[1].set([14], [15], [16], [17])
             else:
                 pyxel.musics[0].set([10], [11], [12])
-                pyxel.musics[1].set([14], [15], [16])
-            self.ready_bgm = True`;
+            self.ready_bgm = True
+            self.ready_select_bgm = False
+            try:
+                pyxel.sounds[14].mml(SELECT_BGM_CH1)
+                pyxel.sounds[15].mml(SELECT_BGM_CH2)
+                pyxel.sounds[16].mml(SELECT_BGM_CH3)
+                pyxel.sounds[17].mml(SELECT_BGM_CH4)
+                if self.extended_audio:
+                    pyxel.musics[1].set([14], [15], [16], [17])
+                else:
+                    pyxel.musics[1].set([14], [15], [16])
+                self.ready_select_bgm = True
+            except Exception:
+                # Invalid optional MML must never silence battle music.
+                self.ready_select_bgm = False`;
       if(!source.includes(oldBgmSetup))throw new Error('BGM初期化部分が見つかりません。ページを再読み込みしてください。');
       source=source.replace(oldBgmSetup,newBgmSetup);
 
@@ -466,13 +475,19 @@ SELECT_BGM_CH4 = """${SELECT_BGM_CH4}"""
     def stop_bgm(self):`;
       const newBgmMethods=`    def start_bgm(self):
         if self.ready_bgm and not self.muted and self.mode == 'battle' and not self.bgm_playing:
-            pyxel.playm(0, loop=True)
-            self.bgm_playing = True
+            try:
+                pyxel.playm(0, loop=True)
+                self.bgm_playing = True
+            except Exception:
+                self.bgm_playing = False
 
     def start_select_bgm(self):
         if self.ready_bgm and not self.muted and self.mode == 'select' and not self.bgm_playing:
-            pyxel.playm(1, loop=True)
-            self.bgm_playing = True
+            try:
+                pyxel.playm(1 if self.ready_select_bgm else 0, loop=True)
+                self.bgm_playing = True
+            except Exception:
+                self.bgm_playing = False
 
     def stop_bgm(self):`;
       if(!source.includes(oldBgmMethods))throw new Error('BGM再生処理が見つかりません。ページを再読み込みしてください。');
