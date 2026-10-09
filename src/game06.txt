@@ -83,9 +83,12 @@
                 self.by += dy*67.5*DT/.32
                 self.clamp('b', 10)
             if self.tech == 'sweep':
-                hit = abs(math.hypot(self.px-ox, self.py-oy)-54)<18
+                rx, ry = self.px-ox, self.py-oy
+                distance = math.hypot(rx, ry)
+                # Half-circle facing the locked direction; exactly matches preview.
+                hit = 36 <= distance <= 72 and (rx*dx+ry*dy) >= 0
             else:
-                reach = 145 if self.tech == 'thrust' else 170
+                reach = 48 if self.tech == 'thrust' else 72
                 hit = segment_hit(self.px,self.py,ox,oy,ox+dx*reach,oy+dy*reach,13 if self.tech=='thrust' else 19)
             if hit and not self.hit:
                 self.hit = self.hurt((12,14,16)[(self.rank8_attack_index-1)%3])
@@ -249,13 +252,28 @@
             ox, oy = self.rank8_origin
             dx, dy = math.cos(self.rank8_aim), math.sin(self.rank8_aim)
             col = 8 if self.state == 'prep' else 10
+            pyxel.dither(1)
             if self.tech == 'sweep':
-                for radius in (36, 54, 72):
-                    pyxel.circb(ox, oy, radius, col)
+                # Draw only the dangerous forward semicircle, not a full ring.
+                for radius in (36, 72):
+                    for n in range(24):
+                        a1 = self.rank8_aim-math.pi/2+n*math.pi/24
+                        a2 = self.rank8_aim-math.pi/2+(n+1)*math.pi/24
+                        pyxel.line(ox+math.cos(a1)*radius,oy+math.sin(a1)*radius,
+                                   ox+math.cos(a2)*radius,oy+math.sin(a2)*radius,col)
+                for sign in (-1, 1):
+                    a = self.rank8_aim+sign*math.pi/2
+                    pyxel.line(ox+math.cos(a)*36,oy+math.sin(a)*36,
+                               ox+math.cos(a)*72,oy+math.sin(a)*72,col)
             else:
-                reach = 145 if self.tech == 'thrust' else 170
+                reach = 48 if self.tech == 'thrust' else 72
                 half = 13 if self.tech == 'thrust' else 19
+                self._telegraph_alpha = .22 if self.state == 'prep' else .38
+                self._telegraph_outline = col
                 self.draw_capsule(ox, oy, ox+dx*reach, oy+dy*reach, half, col)
+            # draw_capsule intentionally leaves dither at its fill opacity.
+            # Without this reset every following sprite/frame becomes checkerboard.
+            pyxel.dither(1)
             return
         if self.rank == 9:
             self.rank9_telegraph()

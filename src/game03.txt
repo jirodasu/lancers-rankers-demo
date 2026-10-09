@@ -74,7 +74,17 @@ function landscape(){
 }
 function orientation(){const rotated=landscape();$('rotate').hidden=!rotated;if(rotated)suspend();}
 on(window,'resize',orientation);on(window.visualViewport,'resize',orientation);orientation();
-function resumeAudio(){const audio=window.pyxelContext?.pyodide?._module?.SDL2?.audioContext;if(audio?.state==='suspended')audio.resume().catch(()=>{});}
+function resumeAudio(){
+  // iOS Safari requires audio contexts to resume during a user gesture.
+  const module=window.pyxelContext?.pyodide?._module;
+  const contexts=[module?.SDL2?.audioContext,module?.AL?.context,module?.AL?.currentContext?.audioContext,window.pyxelContext?.audioContext];
+  for(const audio of contexts){
+    if(audio?.state==='suspended'&&typeof audio.resume==='function'){
+      try{audio.resume().catch?.(()=>{});}catch{}
+    }
+  }
+}
+on(window,'pointerdown',resumeAudio);
 function request(command){if(['start','battle','resume','retry','rank9_select','rank8_select'].includes(command)&&(landscape()||document.hidden))return;clearInput();input.command=command;resumeAudio();}
 root.querySelectorAll('[data-weapon]').forEach(el=>on(el,'click',()=>{input.weapon=Number(el.dataset.weapon);root.querySelectorAll('[data-weapon]').forEach(b=>b.classList.toggle('selected',b===el));}));
 on($('practice-start'),'click',()=>request('start'));
