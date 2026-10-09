@@ -11,7 +11,7 @@ practice = read("src/practice-flow-fix.txt")
 index = read("index.html")
 
 # Shared invariants every Rank 9 run must preserve.
-assert "practiceStart.hidden = s.mode !== 'select' || Number(s.rank) === 9;" in practice
+assert "practiceStart.hidden = s.mode !== 'select';" in practice
 assert "槍を選び、連撃を見切れ。" in g3
 assert "RANK 9 CLEAR" in g3 and "TRY AGAIN · RANK 9" in g3
 assert "RANK 9 撃破</b><span>旋槍のリゼル" in practice
