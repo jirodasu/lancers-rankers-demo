@@ -37,7 +37,7 @@ window.presentPyxel=pixels=>{
 const input = window.lancerInput = {x:0,y:0,attack:false,dodge:false,heal:false,pause:false,command:'',weapon:0,muted:false};
 let events = [];
 window.consumeLancerInput = () => {const value=JSON.stringify({...input,events});events=[];input.command='';return value;};
-let current = null, mode = '', ready = false, launching = false, keys = new Set(), stickVector = {x:0,y:0}, stickId = null;
+let current = null, mode = '', shownRank = null, ready = false, launching = false, keys = new Set(), stickVector = {x:0,y:0}, stickId = null;
 const pressed = {attack:new Set(),dodge:new Set(),heal:new Set()};
 const attackKeys = new Set(['KeyZ','Space']), dodgeKeys = new Set(['KeyX','ShiftLeft','ShiftRight']), healKeys = new Set(['KeyC','KeyE']);
 function mergeInput(kind='up'){
@@ -85,7 +85,13 @@ function resumeAudio(){
   }
 }
 on(window,'pointerdown',resumeAudio);
-function request(command){if(['start','battle','resume','retry','rank9_select','rank8_select'].includes(command)&&(landscape()||document.hidden))return;clearInput();input.command=command;resumeAudio();}
+function request(command){if(['start','battle','resume','retry','rank9_select','rank8_select','rank10_select'].includes(command)&&(landscape()||document.hidden))return;clearInput();input.command=command;resumeAudio();}
+root.querySelectorAll('[data-select-rank]').forEach(el=>on(el,'click',()=>{
+  if(mode!=='select'||!ready)return;
+  const selected=Number(el.dataset.selectRank);
+  if(current?.rank===selected)return;
+  request('rank'+selected+'_select');
+}));
 root.querySelectorAll('[data-weapon]').forEach(el=>on(el,'click',()=>{input.weapon=Number(el.dataset.weapon);root.querySelectorAll('[data-weapon]').forEach(b=>b.classList.toggle('selected',b===el));}));
 on($('practice-start'),'click',()=>request('start'));
 on($('start'),'click',()=>request(mode==='select'?'battle':mode==='training_complete'?'battle':mode==='paused'?'resume':mode==='victory'&&current?.rank===10?'rank9_select':mode==='victory'&&current?.rank===9?'rank8_select':['victory','defeat'].includes(mode)&&current?.rank===8?'rank8_select':mode==='defeat'&&current?.rank===9?'rank9_select':'retry'));
@@ -123,15 +129,22 @@ window.receiveLancerState = raw => {
     text('state-label',stateName);text('notice',hint);
   }
   text('charge-label',s.charge>0?(s.chargeAffordable?`溜め ${Math.round(s.charge*100)}%`:'ST不足→通常'):['正槍','重槍','双短槍'][s.weapon]);$('charge-label').classList.toggle('insufficient',s.charge>0&&!s.chargeAffordable);
-  if(mode===s.mode)return;mode=s.mode;
+  if(mode===s.mode&&shownRank===s.rank)return;mode=s.mode;shownRank=s.rank;
+  $('rank-select').hidden=s.mode!=='select';
+  root.querySelectorAll('[data-select-rank]').forEach(el=>{const active=Number(el.dataset.selectRank)===s.rank;el.classList.toggle('selected',active);el.setAttribute('aria-pressed',String(active));});
   $('overlay').hidden=s.mode==='battle'||s.mode==='training'||s.mode==='training_intro';$('weapons').hidden=s.mode!=='select';$('mode-choice').hidden=s.mode!=='select';$('mode-choice').classList.toggle('rank9',s.rank!==10);$('practice-start').hidden=s.rank!==10;$('back').hidden=s.mode==='select'||(s.rank!==10&&['victory','defeat'].includes(s.mode));$('pause').disabled=!['battle','training','paused','training_paused'].includes(s.mode);
   $('pause').textContent=s.mode==='paused'?'再開':'一時停止';
   const rankLadder=$('clear-ranks');rankLadder.hidden=true;rankLadder.querySelectorAll('[data-clear-rank]').forEach(el=>el.classList.remove('earned'));
   if(s.mode==='select'){
-    $('panel-kicker').textContent=s.rank===9?'RANK 9 CHALLENGER':'CHALLENGER';
-    $('panel-title').textContent=s.rank===9?'槍を選び、連撃を見切れ。':'槍を選び、門を越えろ。';
-    $('panel-tip').textContent=s.rank===9?'リゼルは止まらない。連撃を最後まで見切った後が、本当の攻め時。':'練習してから挑むか、すぐRANK 10本番へ進むか選べます。';
-    $('practice-start').textContent='練習モード';$('start').textContent=s.rank===9?'この槍でRANK 9へ':'本番をはじめる';
+    const rankCopy={
+      10:['RANK 10 CHALLENGER','槍を選び、門を越えろ。','ヘクトラン：予告を避け、攻撃後の隙を突こう。','この槍でRANK 10へ'],
+      9:['RANK 9 CHALLENGER','槍を選び、連撃を見切れ。','リゼル：連撃の最後を見切った後が攻め時。','この槍でRANK 9へ'],
+      8:['RANK 8 CHALLENGER','盾槍のアテリアに挑め。','アテリア：盾構え中は攻撃を防ぐ。攻撃後の隙を狙おう。','この槍でRANK 8へ']
+    }[s.rank]||[];
+    $('panel-kicker').textContent=rankCopy[0]||'CHALLENGER';
+    $('panel-title').textContent=rankCopy[1]||'槍を選べ。';
+    $('panel-tip').textContent=rankCopy[2]||'';
+    $('practice-start').textContent='練習モード';$('start').textContent=rankCopy[3]||'本番をはじめる';
   }
   else if(s.mode==='training_complete'){$('panel-kicker').textContent='PRACTICE COMPLETE → RANK 10';$('panel-title').textContent='基本動作、習得。';$('panel-tip').textContent='予告を見る。避ける。隙を突く。ここから本番。';$('start').textContent='RANK 10へ';}
   else if(s.mode==='paused'||s.mode==='training_paused'){$('panel-kicker').textContent='PAUSED';$('panel-title').textContent=s.mode==='training_paused'?'練習を一時停止':'一時停止';$('panel-tip').textContent='準備ができたら、闘技場へ。';$('start').textContent='戦闘に戻る';}
