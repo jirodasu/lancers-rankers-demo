@@ -263,6 +263,13 @@ class App:
         if command == 'select':
             self.stop_bgm()
             self.mode = 'select'
+        if command == 'rank10_select':
+            self.stop_bgm()
+            self.rank = 10
+            self.reset()
+            self.tutorial_done = False
+            self.mode = 'select'
+            self.notice = 'RANK 10 — 城門の守槍ヘクトラン'
         if command == 'rank8_select':
             self.stop_bgm()
             self.rank = 8
