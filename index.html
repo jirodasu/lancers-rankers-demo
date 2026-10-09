@@ -26,7 +26,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v5.2.5 — MADE WITH PYXEL</small>
+    <small>LANCERS / RANKERS — v5.2.6 — MADE WITH PYXEL</small>
     <h1>ランサーズ・ランカーズ<br>RANK 10 → RANK 9</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
@@ -37,7 +37,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='5.2.1';
+  const VERSION='5.2.6';
 
   const sfxSources={
     normal:`./assets/sfx/hit_normal.mp3?v=${VERSION}`,
@@ -273,10 +273,8 @@ small{display:block;color:#8999ad;margin-top:14px}
       );
 
       patchRequired(
-`        if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
-            # v4.6a31: explicit per-weapon hit values.`,
-`        if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
-            # v4.6a37: 双短槍・紅牙の溜めは0.08秒間隔の3連突き。
+`            # v4.6a31: explicit per-weapon hit values.`,
+`            # v4.6a37: 双短槍・紅牙の溜めは0.08秒間隔の3連突き。
             if full and self.weapon_index == 2:
                 if self.mode == 'training' and self.tutorial_step == 2:
                     self.tutorial_step = 3
@@ -499,10 +497,7 @@ SELECT_BGM_CH4 = """${SELECT_BGM_CH4}"""
       if(!source.includes(oldMuteResume))throw new Error('ミュート解除処理が見つかりません。ページを再読み込みしてください。');
       source=source.replace(oldMuteResume,newMuteResume);
 
-      const oldSelectCommand=`        if command == 'select':
-            self.stop_bgm()
-            self.mode = 'select'
-        if command == 'rank9_select':
+      const oldSelectCommand=`        if command == 'rank9_select':
             self.stop_bgm()
             self.rank = 9
             self.reset()
@@ -511,11 +506,7 @@ SELECT_BGM_CH4 = """${SELECT_BGM_CH4}"""
             self.notice = 'RANK 9 — 武器を選べ'
         if self.mode == 'select':
             self.weapon_index = max(0, min(2, c.get('weapon', self.weapon_index)))`;
-      const newSelectCommand=`        if command == 'select':
-            self.stop_bgm()
-            self.mode = 'select'
-            self.start_select_bgm()
-        if command == 'rank9_select':
+      const newSelectCommand=`        if command == 'rank9_select':
             self.stop_bgm()
             self.rank = 9
             self.reset()
