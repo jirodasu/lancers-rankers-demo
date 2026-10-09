@@ -53,3 +53,21 @@ style.textContent += "#mode-choice.rank9{grid-template-columns:1fr}#mode-choice.
 
 /* Rank selector: three compact, 44px touch targets above the weapon list. */
 style.textContent += "#rank-select{margin:2px 0 12px;text-align:left}#rank-select>span{display:block;margin-bottom:5px;font-size:11px;color:#b0becd;letter-spacing:.5px}#rank-select .rank-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#rank-select button{min-height:44px;border:1px solid #43566c;border-radius:7px;background:#122034;color:#d6e0e9;font-weight:800;font-size:15px}#rank-select button.selected,#rank-select button[aria-pressed=true]{border-color:#e4bd77;background:#403522;color:#ffdda0;box-shadow:inset 0 0 0 1px #b38c50}#rank-select button:focus-visible{outline:2px solid #7bd7f4;outline-offset:2px}@media(max-height:700px){#rank-select{margin:0 0 6px}#rank-select>span{font-size:10px;margin-bottom:2px}#rank-select button{min-height:40px}#weapons{gap:4px}.weapon{padding:6px 10px}.panel h2{margin:4px 0 7px}}";
+
+/* v5.2.10: shared title layout for every selectable rank. Keep actions in
+   document flow so long boss tips cannot be covered by pinned buttons. */
+style.textContent += `
+#overlay .panel{max-width:350px;padding:4px 0;margin-block:auto}
+#mode-choice,#mode-choice.rank9,#mode-choice.single{position:static;inset:auto;display:grid;grid-template-columns:minmax(0,1fr);gap:8px;width:100%;margin-top:8px}
+#mode-choice #practice-start,#mode-choice #start{grid-column:1;width:100%;min-height:52px;padding:12px;position:static;inset:auto}
+#panel-tip{overflow-wrap:anywhere}
+@media(max-height:730px){
+  #overlay{padding:10px 12px}
+  #overlay .panel{padding:0}
+  #overlay .panel h2{margin:4px 0 8px}
+  #overlay .weapon{min-height:50px;padding:6px 10px}
+  #overlay .weapon span{font-size:12px}
+  #overlay #panel-tip{font-size:12px;line-height:1.45;margin:6px 0}
+  #mode-choice #practice-start,#mode-choice #start{min-height:48px;padding:9px}
+}
+`;
