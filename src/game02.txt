@@ -71,3 +71,17 @@ style.textContent += `
   #mode-choice #practice-start,#mode-choice #start{min-height:48px;padding:9px 4px}
 }
 `;
+
+
+/* v5.2.12: all ranks share a persistent two-button footer.
+   The boss hint may wrap; it must scroll rather than push START offscreen. */
+style.textContent += `
+#overlay{overflow:hidden;align-items:stretch;justify-content:center}
+#overlay .panel{display:flex;flex-direction:column;min-height:0;max-height:100%;height:100%;overflow-y:auto;overscroll-behavior:contain;margin:0 auto;padding:8px 0 0;scrollbar-width:thin}
+#overlay .panel > :not(#mode-choice){flex-shrink:0}
+#mode-choice,#mode-choice.rank9,#mode-choice.single{position:sticky;bottom:0;left:auto;right:auto;inset-inline:auto;z-index:25;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex-shrink:0;width:100%;margin-top:auto;padding:10px 0 max(8px,env(safe-area-inset-bottom));background:#020712;box-shadow:0 -10px 18px #020712c9}
+#mode-choice #practice-start,#mode-choice #start,#mode-choice.rank9 #start,#mode-choice.single #start{position:static;grid-row:1;min-width:0;min-height:52px;max-height:none;margin:0;white-space:normal;overflow-wrap:anywhere}
+#mode-choice #practice-start{grid-column:1}
+#mode-choice #start,#mode-choice.rank9 #start,#mode-choice.single #start{grid-column:2}
+@media(max-height:730px){#overlay .panel{padding-top:2px}#mode-choice,#mode-choice.rank9,#mode-choice.single{padding-top:7px}#mode-choice #practice-start,#mode-choice #start{min-height:46px}}
+`;
