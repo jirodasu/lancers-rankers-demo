@@ -264,21 +264,18 @@ class App:
             self.stop_bgm()
             self.mode = 'select'
         if command == 'rank10_select':
-            self.stop_bgm()
             self.rank = 10
             self.reset()
             self.tutorial_done = False
             self.mode = 'select'
             self.notice = 'RANK 10 — 城門の守槍ヘクトラン'
         if command == 'rank8_select':
-            self.stop_bgm()
             self.rank = 8
             self.reset()
             self.tutorial_done = True
             self.mode = 'select'
             self.notice = 'RANK 8 — 盾槍のアテリア'
         if command == 'rank9_select':
-            self.stop_bgm()
             self.rank = 9
             self.reset()
             self.tutorial_done = True
