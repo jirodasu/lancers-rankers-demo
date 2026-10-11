@@ -26,7 +26,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 <body>
 <section id="boot-panel">
   <div>
-    <small>LANCERS / RANKERS — v5.2.12 — MADE WITH PYXEL</small>
+    <small>LANCERS / RANKERS — v5.2.13 — MADE WITH PYXEL</small>
     <h1>ランサーズ・ランカーズ<br>RANK 10 → RANK 8</h1>
     <p id="boot-status" role="status">ゲームを読み込んでいます…</p>
     <button id="boot" disabled>読み込み中…</button>
@@ -37,7 +37,7 @@ small{display:block;color:#8999ad;margin-top:14px}
 </section>
 <script>
 (() => {
-  const VERSION='5.2.12';
+  const VERSION='5.2.13';
 
   const sfxSources={
     normal:`./assets/sfx/hit_normal.mp3?v=${VERSION}`,
@@ -513,7 +513,6 @@ SELECT_BGM_CH4 = """${SELECT_BGM_CH4}"""
       source=source.replace(oldMuteResume,newMuteResume);
 
       const oldSelectCommand=`        if command == 'rank9_select':
-            self.stop_bgm()
             self.rank = 9
             self.reset()
             self.tutorial_done = True
@@ -522,7 +521,6 @@ SELECT_BGM_CH4 = """${SELECT_BGM_CH4}"""
         if self.mode == 'select':
             self.weapon_index = max(0, min(2, c.get('weapon', self.weapon_index)))`;
       const newSelectCommand=`        if command == 'rank9_select':
-            self.stop_bgm()
             self.rank = 9
             self.reset()
             self.tutorial_done = True
