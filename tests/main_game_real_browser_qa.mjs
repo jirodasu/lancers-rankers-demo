@@ -50,4 +50,13 @@ try{
   console.log('MAIN GAME QA TRACE',JSON.stringify({trace,errors}));
   await browser.close();
 }
-if(!trace.some(t=>t.data.game))process.exitCode=1;
+const byLabel=Object.fromEntries(trace.map(t=>[t.label,t.data]));
+if(!byLabel['01-initial']?.game)throw new Error('Main game never mounted');
+for(const rank of [6,5,4,3,2,1]){
+  if(byLabel['02-select-'+rank]?.rank!==String(rank))throw new Error('Rank '+rank+' was not selected through UI');
+}
+if(byLabel['03-battle-start']?.overlay!==true)throw new Error('Battle did not start from the title');
+if(!(Number(byLabel['04-after-input']?.hp)<Number(byLabel['03-battle-start']?.hp)))throw new Error('Battle did not advance to a damage event');
+if(byLabel['05-pause']?.overlay!==false)throw new Error('Pause did not open');
+console.log('PASS MAIN GAME: boot, six rank selections, battle damage and pause in Chromium');
+
