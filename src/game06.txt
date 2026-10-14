@@ -99,6 +99,91 @@
             self.state, self.timer = 'idle', .18
             self.notice = '盾を構えた — 攻撃後の隙を狙え'
 
+
+    def new_boss_hit(self):
+        # Telegraph and collision share the exact same geometric definition.
+        dx, dy = math.cos(self.new_aim), math.sin(self.new_aim)
+        ox, oy = self.new_origin
+        vx, vy = self.px-ox, self.py-oy
+        dist = math.hypot(vx,vy)
+        if self.tech == 'ring':
+            return 32 <= dist <= 65
+        if self.tech == 'orbit':
+            return 28 <= dist <= 55
+        if self.tech == 'fan':
+            return dist <= 85 and (vx*dx+vy*dy) >= 0 and abs(math.atan2(vy,vx)-self.new_aim+math.pi)%(2*math.pi)-math.pi <= .48
+        if self.tech in ('lane','feint'):
+            return segment_hit(self.px,self.py,ox,oy,ox+dx*106,oy+dy*106,9 if self.rank in (4,2) else 13)
+        if self.tech == 'dash':
+            return segment_hit(self.px,self.py,ox,oy,self.bx+dx*15,self.by+dy*15,13)
+        return False
+
+    def new_boss_update(self):
+        cfg = RANK_NEW[self.rank]
+        self.timer -= DT
+        if self.state == 'idle':
+            dx,dy=self.px-self.bx,self.py-self.by
+            dist=math.hypot(dx,dy)
+            ux,uy=unit(dx,dy)
+            self.ba=math.atan2(dy,dx)
+            desired=60 if self.rank in (3,2) else 43
+            move=1 if dist>desired+8 else -1 if dist<desired-8 else 0
+            speed=39 if self.rank in (7,6) else 24
+            self.bx+=ux*speed*move*DT
+            self.by+=uy*speed*move*DT
+            if self.rank in (7,5):
+                self.bx+=-uy*19*DT
+                self.by+=ux*19*DT
+            self.clamp('b',10)
+            if self.timer<=0:
+                attacks=cfg['attacks']
+                self.tech=attacks[self.new_attack_index%len(attacks)]
+                self.new_attack_index+=1
+                self.new_aim=math.atan2(self.py-self.by,self.px-self.bx)
+                self.new_origin=(self.bx,self.by)
+                self.ba=self.new_aim
+                self.new_prep_stage=0
+                self.new_fake=self.tech=='feint'
+                self.state='prep'
+                self.timer=(1.0 if self.tech=='feint' else .87 if self.tech in ('fan','ring') else .76)
+                self.timer=max(.60,self.timer-(self.phase-1)*.07)
+                self.prep_total=self.timer
+                self.hit=False
+                self.notice=('偽の構え — 次の予告を見ろ' if self.new_fake else
+                             {'lane':'直線貫通槍 — 横へ','dash':'疾走突撃 — 横へ',
+                              'fan':'扇状の槍撃 — 背後へ','ring':'円環衝撃 — 内か外へ',
+                              'orbit':'炎輪旋回 — 内か外へ'}.get(self.tech,'攻撃予告を見ろ'))
+                self.sound(3)
+        elif self.state == 'prep':
+            if self.new_fake and self.new_prep_stage==0 and self.timer<=.52:
+                # A clear, learnable second tell; only the final locked aim can hit.
+                self.new_prep_stage=1
+                self.new_aim=math.atan2(self.py-self.by,self.px-self.bx)
+                self.ba=self.new_aim
+                self.notice='本命の予告！ 今の方向から離れろ'
+                self.sound(3)
+            if self.timer<=0:
+                self.state='attack'
+                self.timer=.32 if self.tech=='dash' else .25
+                self.new_attack_total=self.timer
+                self.hit=False
+        elif self.state == 'attack':
+            if self.tech=='dash':
+                dx,dy=math.cos(self.new_aim),math.sin(self.new_aim)
+                self.bx+=dx*88*DT/.32
+                self.by+=dy*88*DT/.32
+                self.clamp('b',10)
+            if not self.hit and self.new_boss_hit():
+                self.hit=self.hurt(RANK_NEW_DAMAGE[self.tech]+(self.phase-1)*2)
+            if self.timer<=0:
+                self.state='recover'
+                self.timer=1.18 if self.rank in (6,4,1) else .98
+                self.notice='CHANCE — 攻撃後の隙に反撃！'
+        elif self.timer<=0:
+            self.state='idle'
+            self.timer=.20 if self.phase==3 else .34
+            self.notice=cfg['hint']
+
     def boss_update(self):
         if self.mode not in ('battle', 'training'):
             return
@@ -128,6 +213,9 @@
                 self.victory_pending = False
                 self.mode = 'victory'
                 self.sound(2)
+            return
+        if self.rank in RANK_NEW:
+            self.new_boss_update()
             return
         if self.rank == 8:
             self.rank8_boss_update()
@@ -245,7 +333,40 @@
         pyxel.circb(ex,ey,max(1,int(radius)),outline)
         pyxel.dither(alpha)
 
+
+    def new_boss_telegraph(self):
+        if self.state not in ('prep','attack'):
+            return
+        ox,oy=self.new_origin
+        a=self.new_aim
+        dx,dy=math.cos(a),math.sin(a)
+        col=8 if self.state=='prep' else 10
+        # First half of feint has a distinct dim, dotted warning.
+        fake=self.tech=='feint' and self.new_prep_stage==0
+        pyxel.dither(.24 if fake else .40 if self.state=='prep' else .70)
+        if self.tech in ('lane','feint','dash'):
+            length=106 if self.tech!='dash' else 100
+            self.draw_capsule(ox,oy,ox+dx*length,oy+dy*length,9 if self.rank in (4,2) else 13,col)
+        elif self.tech in ('ring','orbit'):
+            lo,hi=(32,65) if self.tech=='ring' else (28,55)
+            for rad in range(lo,hi+1,4):
+                pyxel.circb(ox,oy,rad,col)
+        elif self.tech=='fan':
+            for i in range(24):
+                aa=a-.48+i*.96/23
+                pyxel.line(ox,oy,ox+math.cos(aa)*85,oy+math.sin(aa)*85,col)
+        pyxel.dither(1)
+        if self.state=='prep':
+            progress=max(0.,min(1.,1-self.timer/max(.01,self.prep_total)))
+            pyxel.rect(self.bx-11,self.by-21,22,2,1)
+            pyxel.rect(self.bx-11,self.by-21,22*progress,2,8)
+            if fake:
+                pyxel.text(self.bx-11,self.by-29,'FAKE',10)
+
     def telegraph(self):
+        if self.rank in RANK_NEW:
+            self.new_boss_telegraph()
+            return
         if self.rank == 8:
             if self.state not in ('prep', 'attack'):
                 return
