@@ -52,7 +52,100 @@ for rank in range(1, 8):
     assert {"prep", "attack", "recover"}.issubset(states), (rank, states)
     assert o.new_attack_index >= 1, rank
     assert o.notice, rank
-    # Every rank is wired into the same boss AI and custom rendering path.
+    
+# Six distinct AI functions must be executed, not just declared.
+unique_methods = ("_unique_begin", "_unique_strike", "_unique_damage",
+    "_unique_follow", "rank6_wall_hunt", "rank5_mirror_trial",
+    "rank4_guard_duel", "rank3_inner_range", "rank2_oracle_lock",
+    "rank1_master_trial")
+unique_nodes = [n for n in app.body if isinstance(n, ast.FunctionDef)
+                and n.name in unique_methods]
+assert len(unique_nodes) == len(unique_methods)
+exec(compile(ast.Module(body=unique_nodes, type_ignores=[]),
+             "<distinct-bosses>", "exec"), ns)
+assert "self.rank6_wall_hunt" in source6 and "self.rank1_master_trial" in source6
+assert "if self.rank == 7:" in source6
+assert "self.rank == 4 and self.state in ('idle','prep')" in (ROOT/"src/game05.txt").read_text()
+assert "mirror_decoy" in (ROOT/"src/game05.txt").read_text()
+
+unique_names = {6:"rank6_wall_hunt", 5:"rank5_mirror_trial",
+                4:"rank4_guard_duel", 3:"rank3_inner_range",
+                2:"rank2_oracle_lock", 1:"rank1_master_trial"}
+for rank, method in unique_names.items():
+    for seed in range(5):
+        o = SimpleNamespace(rank=rank, px=120.+seed, py=139., bx=96., by=100.,
+            ba=0., new_aim=0., new_origin=(96.,100.), new_attack_index=0,
+            new_prep_stage=0, new_fake=False, new_stance="wall",
+            new_attack_total=.3, state="idle", timer=.01,
+            phase=1, hit=False, frame=0, tech="lane", prep_total=.8,
+            notice="", flash=0)
+        if rank == 6:
+            # Put the charger near the rim and the bait just beyond it.
+            o.bx,o.by,o.px,o.py=155.,130.,175.,130.
+        o.clamp = lambda *args: None
+        o.sound = lambda *args: None
+        o.hurt = lambda damage: True
+        o.new_boss_hit = lambda: False
+        for name in unique_methods:
+            setattr(o, name, MethodType(ns[name], o))
+        states, techniques, notices = set(), set(), set()
+        for frame in range(450):
+            o.frame = frame
+            getattr(o, method)()
+            states.add(o.state)
+            techniques.add(o.tech)
+            notices.add(o.notice)
+        assert "prep" in states and "attack" in states, (rank,seed,states)
+        assert o.new_attack_index >= 1, (rank,seed)
+        assert len(notices) >= (1 if rank == 3 else 2), (rank,seed)
+        if rank == 6:
+            assert "recover" in states and any("WALL BREAK" in n for n in notices), (rank,seed,notices)
+        if rank == 5:
+            assert "feint" in techniques and any("REAL OPEN" in n for n in notices)
+        if rank == 3:
+            assert "lane" in techniques
+        if rank == 2:
+            assert any("LOCK" in n for n in notices)
+        if rank == 1:
+            assert {"dash","lane","feint"}.issubset(techniques), techniques
+
+# Counterfactual, controlled combat situations.
+# A close-range approach suppresses rank 3's projectile.
+close = SimpleNamespace(rank=3, px=100.,py=110.,bx=96.,by=100.,
+    ba=0.,new_aim=0.,new_origin=(96.,100.),new_attack_index=0,
+    new_prep_stage=0,new_fake=False,new_stance="wall",
+    new_attack_total=.3,state="prep",timer=.5,phase=1,hit=False,
+    frame=0,tech="lane",prep_total=.95,notice="")
+close.clamp=lambda *args:None
+close.sound=lambda *args:None
+close.hurt=lambda *args:True
+close.new_boss_hit=lambda:False
+for name in unique_methods:
+    setattr(close,name,MethodType(ns[name],close))
+close.rank3_inner_range()
+assert close.state=="recover" and "INNER ZONE" in close.notice
+
+# Rank 2 tracks an early sidestep but not a late one.
+oracle = SimpleNamespace(rank=2, px=120.,py=135.,bx=96.,by=100.,
+    ba=0.,new_aim=0.,new_origin=(96.,100.),new_attack_index=1,
+    new_prep_stage=0,new_fake=False,new_stance="wall",
+    new_attack_total=.3,state="prep",timer=.50,phase=1,hit=False,
+    frame=0,tech="lane",prep_total=1.1,notice="")
+oracle.clamp=lambda *args:None
+oracle.sound=lambda *args:None
+oracle.hurt=lambda *args:True
+oracle.new_boss_hit=lambda:False
+for name in unique_methods:
+    setattr(oracle,name,MethodType(ns[name],oracle))
+oracle.rank2_oracle_lock()
+early=oracle.new_aim
+oracle.px,oracle.py=70.,130.
+oracle.timer=.15
+oracle.rank2_oracle_lock()
+locked=oracle.new_aim
+assert abs(early-locked)<1e-8 and oracle.new_prep_stage==1
+print("PASS: 30 independent rank 6-1 state-machine runs and counterfactual checks")
+# Rank 7 retains legacy fire-dance; ranks 6-1 use distinct dispatch.
 assert "if self.rank in RANK_NEW:" in source6
 assert "self.draw_new_boss()" in source7
 for rank in range(1, 11):
@@ -73,7 +166,7 @@ runtime_text = "\n".join((ROOT / part).read_text() for part in
 assert anchor in runtime_text, "Boot patch no longer matches runtime"
 assert "const selectWeaponAnchor=" in index
 assert "const oldSelectCommand=" not in index, "Obsolete rank9-specific boot patch"
-assert "5.3.2" in index
+assert "5.4.0" in index
 # All ten ranks must have both post-battle actions after a win or loss.
 # Verify that the result UI is not hidden and routes back through the same picker.
 source2 = (ROOT / "src/game02.txt").read_text()

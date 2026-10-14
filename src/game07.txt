@@ -778,6 +778,37 @@
         body=7 if self.flash else cfg['color']
         trim=cfg['trim']
         pyxel.elli(x-10,y+9,20,4,0)
+        # Boss-specific tells: a readable answer before the damage arrives.
+        if self.rank == 5 and self.state in ('prep','attack'):
+            # Two masked, dim silhouettes; only the center has a steady crest.
+            for shift in (-28,28):
+                gx,gy=int(round(self.bx+shift)),int(round(self.by+6))
+                pyxel.dither(.55)
+                pyxel.tri(gx-7,gy+5,gx+7,gy+5,gx,gy-12,3)
+                pyxel.rect(gx-4,gy-14,8,7,5)
+                pyxel.line(gx-11,gy-1,gx+11,gy-1,13)
+                pyxel.dither(1)
+            pyxel.circ(x,y-20,2,10)
+        if self.rank == 6 and self.state == 'recover' and self.timer>1:
+            # Wall impact is distinct from a regular sidestep opening.
+            for angle in range(0,360,60):
+                rad=angle*math.pi/180
+                pyxel.line(x+math.cos(rad)*13,y+math.sin(rad)*13,
+                           x+math.cos(rad)*20,y+math.sin(rad)*20,10)
+            pyxel.text(x-15,y-28,'CRASH',10)
+        if self.rank == 4 and self.state in ('idle','prep'):
+            pyxel.circb(x,y,15,10)
+            pyxel.text(x-11,y-27,'GUARD',10)
+        if self.rank == 4 and self.state == 'break':
+            pyxel.text(x-11,y-27,'OPEN',11)
+        if self.rank == 3 and self.state == 'recover' and self.timer>1:
+            pyxel.circb(x,y,28,11)
+            pyxel.text(x-15,y-27,'INNER',11)
+        if self.rank == 2 and self.state == 'prep':
+            pyxel.text(x-11,y-27,'LOCK' if self.new_prep_stage else 'TRACK',10)
+        if self.rank == 1 and self.state == 'prep':
+            pyxel.text(x-15,y-27,{'wall':'RUSH','guard':'GUARD',
+                                 'oracle':'TRACK'}.get(self.new_stance,'RUSH'),10)
         # Cape shape communicates archetype before attack begins.
         if self.rank in (7,3):
             pyxel.tri(x-5,y-2,x-12,y+12,x+1,y+6,8 if self.rank==7 else 12)
