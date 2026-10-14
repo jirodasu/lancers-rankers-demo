@@ -93,3 +93,6 @@ style.textContent += `
 #rank-select{margin:2px 0 7px}
 @media(max-width:370px){#rank-select .rank-options{gap:3px}#rank-select button{font-size:12px;min-height:42px}}
 `;
+
+/* Result screen: always offer two equal, reachable actions on every rank. */
+style.textContent += "#mode-choice #return-ranks{min-height:52px;border:1px solid #c9ad78;background:#182435;color:#f0d7a5;font-size:13px;font-weight:800;padding:6px 3px}#mode-choice.result{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#mode-choice.result #start{grid-column:2;font-size:13px;padding:6px 3px;white-space:normal}#mode-choice.result #return-ranks{grid-column:1}";

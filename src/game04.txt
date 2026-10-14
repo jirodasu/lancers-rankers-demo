@@ -280,8 +280,14 @@ class App:
         if window is not None and command:
             window.lancerInput.command = ''
         if command == 'select':
+            # Restore a fresh selection state without losing the selected rank/weapon.
             self.stop_bgm()
+            chosen_rank, chosen_weapon = self.rank, self.weapon_index
+            self.reset()
+            self.rank, self.weapon_index = chosen_rank, chosen_weapon
+            self.tutorial_done = chosen_rank != 10
             self.mode = 'select'
+            self.notice = '挑戦するランクを選べ'
         if command == 'rank10_select':
             self.rank = 10
             self.reset()

@@ -95,6 +95,7 @@ root.querySelectorAll('[data-select-rank]').forEach(el=>on(el,'click',()=>{
 root.querySelectorAll('[data-weapon]').forEach(el=>on(el,'click',()=>{input.weapon=Number(el.dataset.weapon);root.querySelectorAll('[data-weapon]').forEach(b=>b.classList.toggle('selected',b===el));}));
 on($('practice-start'),'click',()=>request('start'));
 on($('start'),'click',()=>request(mode==='select'?'battle':mode==='training_complete'?'battle':mode==='paused'?'resume':mode==='victory'&&current?.rank===10?'rank9_select':mode==='victory'&&current?.rank===9?'rank8_select':['victory','defeat'].includes(mode)&&current?.rank===8?'rank8_select':mode==='defeat'&&current?.rank===9?'rank9_select':'retry'));
+on($('return-ranks'),'click',()=>request('select'));
 on($('back'),'click',()=>request('select'));
 on($('pause'),'click',()=>request((mode==='paused'||mode==='training_paused')?'resume':'pause'));
 on($('mute'),'click',()=>{input.muted=!input.muted;$('mute').textContent=input.muted?'音 OFF':'音 ON';resumeAudio();});
@@ -132,7 +133,7 @@ window.receiveLancerState = raw => {
   if(mode===s.mode&&shownRank===s.rank)return;mode=s.mode;shownRank=s.rank;
   $('rank-select').hidden=s.mode!=='select';
   root.querySelectorAll('[data-select-rank]').forEach(el=>{const active=Number(el.dataset.selectRank)===s.rank;el.classList.toggle('selected',active);el.setAttribute('aria-pressed',String(active));});
-  $('overlay').hidden=s.mode==='battle'||s.mode==='training'||s.mode==='training_intro';$('weapons').hidden=s.mode!=='select';$('mode-choice').hidden=s.mode!=='select';$('mode-choice').classList.remove('rank9','single');$('practice-start').hidden=s.mode!=='select';$('back').hidden=s.mode==='select'||(s.rank!==10&&['victory','defeat'].includes(s.mode));$('pause').disabled=!['battle','training','paused','training_paused'].includes(s.mode);
+  $('overlay').hidden=s.mode==='battle'||s.mode==='training'||s.mode==='training_intro';$('weapons').hidden=s.mode!=='select';const onResult=s.mode==='victory'||s.mode==='defeat';$('mode-choice').hidden=s.mode!=='select'&&!onResult;$('mode-choice').classList.remove('rank9','single');$('mode-choice').classList.toggle('result',onResult);$('practice-start').hidden=s.mode!=='select';$('return-ranks').hidden=!onResult;$('back').hidden=s.mode==='select'||onResult;$('pause').disabled=!['battle','training','paused','training_paused'].includes(s.mode);
   $('pause').textContent=s.mode==='paused'?'再開':'一時停止';
   const rankLadder=$('clear-ranks');rankLadder.hidden=true;rankLadder.querySelectorAll('[data-clear-rank]').forEach(el=>el.classList.remove('earned'));
   if(s.mode==='select'){
@@ -162,6 +163,7 @@ window.receiveLancerState = raw => {
     else if(s.rank===9&&win){$('panel-kicker').textContent='RANK UP';$('panel-title').textContent='旋槍、撃破。';$('panel-tip').textContent='RANK 8「盾槍のアテリア」が解禁された。';$('start').textContent='武器を選んでRANK 8へ';}
     else if(s.rank===8){$('panel-kicker').textContent=win?'RANK 8 CLEAR':'TRY AGAIN · RANK 8';$('panel-title').textContent=win?'盾槍、撃破。':'盾を崩す隙を狙え。';$('panel-tip').textContent=win?'討伐 '+s.seconds+'秒':'盾構え中は攻撃を防がれる。攻撃後の隙を狙おう。';$('start').textContent='武器を選んでもう一度';}
     else if(s.rank===9){$('panel-kicker').textContent=win?'RANK 9 CLEAR':'TRY AGAIN · RANK 9';$('panel-title').textContent=win?'旋槍、撃破。':'連撃は、まだ見切れる。';$('panel-tip').textContent=win?`討伐 ${s.seconds}秒 / 残りHP ${s.hp} / 回復薬 ${s.potions}`:`リゼル 残りHP ${s.bossHp}。最初の一撃で欲張らず、連撃の最後を待とう。`;$('start').textContent='武器を選んでもう一度';}
+    else if(s.rank<=7){$('panel-kicker').textContent=win?`RANK ${s.rank} CLEAR`:`TRY AGAIN · RANK ${s.rank}`;$('panel-title').textContent=win?'勝利！ 槍を貫いた。':'まだ、槍は折れない。';$('panel-tip').textContent=win?`討伐 ${s.seconds}秒。次のランクも選べます。`:`${bossLabel[1]} 残りHP ${s.bossHp}。攻撃予告を見て、反撃の隙を狙おう。`;$('start').textContent='もう一度挑む';}
     else{$('panel-kicker').textContent='TRY AGAIN';$('panel-title').textContent='まだ、槍は折れない。';$('panel-tip').textContent=`ヘクトラン 残りHP ${s.bossHp}。赤い予告から横へ避け、攻撃後の隙を狙おう。`;$('start').textContent='もう一度挑む';}
   }
 };
