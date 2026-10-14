@@ -16,12 +16,13 @@ const snapshot=async(label)=>{
 };
 try{
   await page.goto(base,{waitUntil:'domcontentloaded',timeout:30000});
-  await page.waitForFunction(()=>document.getElementById('lancer-shell')||document.getElementById('reload')?.hidden===false,{timeout:90000}).catch(()=>{});
-  if(!await page.locator('#lancer-shell').count()){
-    await page.locator('#boot').waitFor({state:'visible',timeout:5000}).catch(()=>{});
-    if(await page.locator('#boot').isEnabled())await page.locator('#boot').click();
-    await page.waitForFunction(()=>!!document.getElementById('lancer-shell'),{timeout:45000}).catch(()=>{});
+  await page.waitForFunction(()=>document.getElementById('lancer-shell')||!document.getElementById('boot')?.disabled||document.getElementById('reload')?.hidden===false,null,{timeout:90000}).catch(()=>{});
+  if(!await page.locator('#lancer-shell').count() && await page.locator('#boot').isEnabled()){
+    await page.locator('#boot').click({timeout:2500}).catch(async e=>{
+      if(!await page.locator('#lancer-shell').count())errors.push('boot click: '+e.message.slice(0,160));
+    });
   }
+  await page.waitForFunction(()=>!!document.getElementById('lancer-shell')||document.getElementById('reload')?.hidden===false,null,{timeout:45000}).catch(()=>{});
   await snapshot('01-initial');
   const shell=page.locator('#lancer-shell');
   if(await shell.count()){
