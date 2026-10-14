@@ -85,3 +85,11 @@ style.textContent += `
 #mode-choice #start,#mode-choice.rank9 #start,#mode-choice.single #start{grid-column:2}
 @media(max-height:730px){#overlay .panel{padding-top:2px}#mode-choice,#mode-choice.rank9,#mode-choice.single{padding-top:7px}#mode-choice #practice-start,#mode-choice #start{min-height:46px}}
 `;
+
+/* Rank 10→1: compact five-column picker, two rows, mobile touch targets. */
+style.textContent += `
+#rank-select .rank-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+#rank-select button{min-height:43px;font-size:13px;padding:4px 0;white-space:nowrap}
+#rank-select{margin:2px 0 7px}
+@media(max-width:370px){#rank-select .rank-options{gap:3px}#rank-select button{font-size:12px;min-height:42px}}
+`;
