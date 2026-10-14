@@ -133,7 +133,7 @@ window.receiveLancerState = raw => {
   if(mode===s.mode&&shownRank===s.rank)return;mode=s.mode;shownRank=s.rank;
   $('rank-select').hidden=s.mode!=='select';
   root.querySelectorAll('[data-select-rank]').forEach(el=>{const active=Number(el.dataset.selectRank)===s.rank;el.classList.toggle('selected',active);el.setAttribute('aria-pressed',String(active));});
-  $('overlay').hidden=s.mode==='battle'||s.mode==='training'||s.mode==='training_intro';$('weapons').hidden=s.mode!=='select';const onResult=s.mode==='victory'||s.mode==='defeat';$('mode-choice').hidden=s.mode!=='select'&&!onResult;$('mode-choice').classList.remove('rank9','single');$('practice-start').hidden=s.mode!=='select';$('return-ranks').hidden=!onResult;$('back').hidden=s.mode==='select'||onResult;$('pause').disabled=!['battle','training','paused','training_paused'].includes(s.mode);
+  $('overlay').hidden=s.mode==='battle'||s.mode==='training'||s.mode==='training_intro';$('weapons').hidden=s.mode!=='select';const onResult=s.mode==='victory'||s.mode==='defeat';$('mode-choice').hidden=s.mode!=='select'&&!onResult;$('mode-choice').classList.remove('rank9','single');$('mode-choice').classList.toggle('result',onResult);$('practice-start').hidden=s.mode!=='select';$('return-ranks').hidden=!onResult;$('back').hidden=s.mode==='select'||onResult;$('pause').disabled=!['battle','training','paused','training_paused'].includes(s.mode);
   $('pause').textContent=s.mode==='paused'?'再開':'一時停止';
   const rankLadder=$('clear-ranks');rankLadder.hidden=true;rankLadder.querySelectorAll('[data-clear-rank]').forEach(el=>el.classList.remove('earned'));
   if(s.mode==='select'){
