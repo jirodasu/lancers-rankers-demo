@@ -16,8 +16,8 @@ ns = {"math": math, "DT": 1/60, "CX": 96, "CY": 130, "R": 85,
           (lambda t: math.hypot(px-(ax+(bx-ax)*t), py-(ay+(by-ay)*t)) <= radius)
           (max(0, min(1, ((px-ax)*(bx-ax)+(py-ay)*(by-ay)) /
           (((bx-ax)**2+(by-ay)**2) or 1))))}
-tree4 = ast.parse(source4)
-selected = [n for n in tree4.body if isinstance(n, ast.Assign) and
+runtime = ast.parse("\\n".join((ROOT / f"src/game0{i}.txt").read_text() for i in range(1, 8)))
+selected = [n for n in runtime.body if isinstance(n, ast.Assign) and
             any(isinstance(t, ast.Name) and t.id in ("RANK_NEW", "RANK_NEW_DAMAGE") for t in n.targets)]
 assert len(selected) == 2
 exec(compile(ast.Module(body=selected, type_ignores=[]), "<boss-data>", "exec"), ns)
