@@ -166,7 +166,7 @@ runtime_text = "\n".join((ROOT / part).read_text() for part in
 assert anchor in runtime_text, "Boot patch no longer matches runtime"
 assert "const selectWeaponAnchor=" in index
 assert "const oldSelectCommand=" not in index, "Obsolete rank9-specific boot patch"
-assert "5.3.2" in index
+assert "5.4.0" in index
 # All ten ranks must have both post-battle actions after a win or loss.
 # Verify that the result UI is not hidden and routes back through the same picker.
 source2 = (ROOT / "src/game02.txt").read_text()
