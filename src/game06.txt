@@ -111,7 +111,7 @@
         if self.tech == 'orbit':
             return 28 <= dist <= 55
         if self.tech == 'fan':
-            return dist <= 85 and (vx*dx+vy*dy) >= 0 and abs(math.atan2(vy,vx)-self.new_aim+math.pi)%(2*math.pi)-math.pi <= .48
+            return dist <= 85 and (vx*dx+vy*dy) >= 0 and abs((math.atan2(vy,vx)-self.new_aim+math.pi)%(2*math.pi)-math.pi) <= .48
         if self.tech in ('lane','feint'):
             return segment_hit(self.px,self.py,ox,oy,ox+dx*106,oy+dy*106,9 if self.rank in (4,2) else 13)
         if self.tech == 'dash':
