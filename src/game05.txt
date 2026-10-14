@@ -109,6 +109,17 @@
         self.attack_anim = w['duration']
         # Small prototype assist: thrust at the boss, movement still determines evade direction.
         self.aa = math.atan2(self.by-self.py, self.bx-self.px)
+        # Illusion boss: assist aims at the nearest visible silhouette,
+        # not omnisciently at the hidden true boss. Approach the bright real
+        # body to make it the nearest target and land a hit.
+        mirror_decoy = False
+        if self.rank == 5 and self.state in ('prep','attack'):
+            candidates = ((self.bx,self.by,False),
+                          (self.bx-28,self.by+6,True),
+                          (self.bx+28,self.by+6,True))
+            target = min(candidates, key=lambda q: math.hypot(q[0]-self.px,q[1]-self.py))
+            self.aa = math.atan2(target[1]-self.py,target[0]-self.px)
+            mirror_decoy = target[2]
         self.attack_full = full
         self.sound(0)
         ux, uy = math.cos(self.aa), math.sin(self.aa)
@@ -118,6 +129,10 @@
                 if math.hypot(x-self.bx, y-self.by)<15 or math.hypot(x-CX, y-CY)>R-5:
                     break
                 self.px, self.py = x, y
+        if mirror_decoy:
+            self.say('FAKE! 光る本体に近づいて狙え')
+            self.text(self.bx-13,self.by-22,'FAKE',8)
+            return
         if segment_hit(self.bx, self.by, self.px, self.py, self.px+ux*w['reach'], self.py+uy*w['reach'], 9+w['width']/2):
             # Rank 5: a player who strikes a decoy instead of the glowing
             # central body loses the attack and gets a clear feedback cue.
