@@ -867,7 +867,7 @@
         bosscol = 7 if self.flash else 10 if self.state=='break' else 9
         if self.rank in RANK_NEW:
             self.draw_new_boss()
-        el      if self.rank == 8:
+        elif self.rank == 8:
             self.draw_rank8_boss()
         elif self.rank == 9:
             self.draw_rank9_boss()
