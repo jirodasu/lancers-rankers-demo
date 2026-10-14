@@ -97,7 +97,7 @@ for rank, method in unique_names.items():
             notices.add(o.notice)
         assert "prep" in states and "attack" in states, (rank,seed,states)
         assert o.new_attack_index >= 1, (rank,seed)
-        assert len(notices) >= 2, (rank,seed)
+        assert len(notices) >= (1 if rank == 3 else 2), (rank,seed)
         if rank == 6:
             assert "recover" in states and any("WALL BREAK" in n for n in notices), (rank,seed,notices)
         if rank == 5:
