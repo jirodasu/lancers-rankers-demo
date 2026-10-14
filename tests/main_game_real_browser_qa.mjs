@@ -37,8 +37,9 @@ try{
     await page.waitForTimeout(1600);
     await snapshot('03-battle-start');
     await page.keyboard.down('ArrowRight');await page.waitForTimeout(900);await page.keyboard.up('ArrowRight');
-    await page.keyboard.down('KeyZ');await page.waitForTimeout(200);await page.keyboard.up('KeyZ');
-    await page.keyboard.down('KeyX');await page.waitForTimeout(120);await page.keyboard.up('KeyX');
+    await page.locator('#lancer-shell').locator('#attack').tap();
+    await page.waitForTimeout(220);
+    await page.locator('#lancer-shell').locator('#dodge').tap();
     await page.waitForTimeout(1600);
     await snapshot('04-after-input');
     await page.locator('#lancer-shell').locator('#pause').click({timeout:3000}).catch(()=>{});
