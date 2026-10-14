@@ -74,4 +74,25 @@ assert anchor in runtime_text, "Boot patch no longer matches runtime"
 assert "const selectWeaponAnchor=" in index
 assert "const oldSelectCommand=" not in index, "Obsolete rank9-specific boot patch"
 assert "5.3.1" in index
+# All ten ranks must have both post-battle actions after a win or loss.
+# Verify that the result UI is not hidden and routes back through the same picker.
+source2 = (ROOT / "src/game02.txt").read_text()
+assert 'id=\\\"return-ranks\\\"' in source1
+assert "on($('return-ranks'),'click',()=>request('select'))" in source3
+assert "const onResult=s.mode==='victory'||s.mode==='defeat'" in source3
+assert "$('mode-choice').hidden=s.mode!=='select'&&!onResult" in source3
+assert "$('return-ranks').hidden=!onResult" in source3
+assert "$('mode-choice').classList.toggle('result',onResult)" in source3
+assert "#mode-choice.result" in source2
+assert "else if(s.rank<=7)" in source3
+assert "bossLabel[1]} 残りHP" in source3
+assert "chosen_rank, chosen_weapon = self.rank, self.weapon_index" in source4
+assert "self.mode = 'select'" in source4
+# Ranks 10/9 still advance on victory; 8 and lower can retry.
+assert "mode==='victory'&&current?.rank===10?'rank9_select'" in source3
+assert "mode==='victory'&&current?.rank===9?'rank8_select'" in source3
+assert "['victory','defeat'].includes(mode))request('retry')" in source3
+for rank in range(1, 11):
+    assert f'{rank}位' in source1
+print("PASS: rank 10-1 victory/defeat navigation, picker return, and retry wiring")
 print("PASS: rank 7-1 boss state loops, motion methods, unique concepts, rank 10-1 picker")
