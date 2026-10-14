@@ -59,4 +59,19 @@ for rank in range(1, 11):
     assert f'data-select-rank=' in source1 and f'{rank}位' in source1, rank
 for rank in range(1, 8):
     assert f"{rank}:['RANK {rank} CHALLENGER'" in source3, rank
+# Boot-time source patch must match the actual concatenated Python runtime.
+# Previously the HTML loader hardcoded a rank9-only block and rejected
+# the newly added rank7-1 selection code before Pyxel could start.
+index = (ROOT / "index.html").read_text()
+anchor = """        if self.mode == 'select':
+            self.weapon_index = max(0, min(2, c.get('weapon', self.weapon_index)))"""
+runtime_text = "\n".join((ROOT / part).read_text() for part in
+    ["src/game01.txt", "src/game02.txt", "src/layout-fix.txt",
+     "src/practice-flow-fix.txt", "src/balance-ui-fix.txt",
+     "src/rank-timer-fix.txt", "src/game03.txt", "src/game04.txt",
+     "src/game05.txt", "src/game06.txt", "src/game07.txt"])
+assert anchor in runtime_text, "Boot patch no longer matches runtime"
+assert "const selectWeaponAnchor=" in index
+assert "const oldSelectCommand=" not in index, "Obsolete rank9-specific boot patch"
+assert "5.3.1" in index
 print("PASS: rank 7-1 boss state loops, motion methods, unique concepts, rank 10-1 picker")
