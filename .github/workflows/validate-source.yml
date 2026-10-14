@@ -51,3 +51,5 @@ jobs:
         run: python tests/ranker_factory_contract.py
       - name: Validate beginner UX and JavaScript syntax
         run: python tests/beginner_ux_contract.py
+      - name: Validate Rank 7-1 boss AI and animation contracts
+        run: python tests/ranks_7_to_1_regression.py
