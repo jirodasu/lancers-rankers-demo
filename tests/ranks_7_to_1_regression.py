@@ -27,10 +27,7 @@ assert len({roster[r]["name"] for r in roster}) == 7
 assert len({roster[r]["style"] for r in roster}) == 7
 assert all(roster[r]["hp"] > 0 for r in roster)
 
-tree6 = ast.parse(source6)
-boss_class = next(n for n in tree6.body if isinstance(n, ast.ClassDef) and n.name == "App") if any(isinstance(n, ast.ClassDef) and n.name == "App" for n in tree6.body) else None
-# Runtime fragments contain methods without a class header; indent-free extraction
-# is unnecessary because the full source is parsed by the CI syntax job.
+# Parse concatenated production Python (fragments are not standalone modules).
 runtime = ast.parse("\n".join((ROOT / f"src/game0{i}.txt").read_text() for i in range(1, 8)))
 app = next(n for n in runtime.body if isinstance(n, ast.ClassDef) and n.name == "App")
 method_names = ("new_boss_hit", "new_boss_update", "new_boss_telegraph", "draw_new_boss")
@@ -61,7 +58,7 @@ for rank in range(1, 8):
 assert "if self.rank in RANK_NEW:" in source6
 assert "self.draw_new_boss()" in source7
 for rank in range(1, 11):
-    assert f'data-select-rank=\\\"{rank}\\\"' in source1, rank
+    assert f'data-select-rank=' in source1 and f'{rank}位' in source1, rank
 for rank in range(1, 8):
     assert f"{rank}:['RANK {rank} CHALLENGER'" in source3, rank
 print("PASS: rank 7-1 boss state loops, motion methods, unique concepts, rank 10-1 picker")
