@@ -85,7 +85,7 @@ function resumeAudio(){
   }
 }
 on(window,'pointerdown',resumeAudio);
-function request(command){if(['start','battle','resume','retry','rank9_select','rank8_select','rank10_select'].includes(command)&&(landscape()||document.hidden))return;clearInput();input.command=command;resumeAudio();}
+function request(command){if((['start','battle','resume','retry'].includes(command)||/^rank(?:10|[1-9])_select$/.test(command))&&(landscape()||document.hidden))return;clearInput();input.command=command;resumeAudio();}
 root.querySelectorAll('[data-select-rank]').forEach(el=>on(el,'click',()=>{
   if(mode!=='select'||!ready)return;
   const selected=Number(el.dataset.selectRank);
@@ -105,7 +105,7 @@ const bar=(id,value)=>{const el=$(id),str=`${value}%`;if(el.style.width!==str)el
 window.receiveLancerState = raw => {
   const s=JSON.parse(raw);current=s;
   if(!ready){ready=true;$('loading').hidden=true;$('start').disabled=false;$('practice-start').disabled=false;}
-  const bossMax=Number(s.bossMax||600);text('boss-value',`${s.bossHp} / ${bossMax}`);bar('boss-bar',bossMax?100*s.bossHp/bossMax:0);text('phase',`PHASE ${s.phase}`);text('rank-number',s.rank||10);text('boss-title-prefix',s.rank===8?'盾槍の':s.rank===9?'旋槍の':'城門の守槍');text('boss-name',s.rank===8?'アテリア':s.rank===9?'リゼル':'ヘクトラン');
+  const bossMax=Number(s.bossMax||600);text('boss-value',`${s.bossHp} / ${bossMax}`);bar('boss-bar',bossMax?100*s.bossHp/bossMax:0);text('phase',`PHASE ${s.phase}`);text('rank-number',s.rank||10);const bossLabels={10:['城門の守槍','ヘクトラン'],9:['旋槍の','リゼル'],8:['盾槍の','アテリア'],7:['炎輪の','ナタリス'],6:['疾槍の','アキレオン'],5:['幻槍の','ジラン'],4:['聖槍の','ムルガル'],3:['光槍の','ルーグレイ'],2:['予見の','オルディン'],1:['魔槍の','クーフェリン']};const bossLabel=bossLabels[s.rank]||bossLabels[10];text('boss-title-prefix',bossLabel[0]);text('boss-name',bossLabel[1]);
   const poiseRow=root.querySelector('.poise-row'); if(poiseRow)poiseRow.hidden=!s.tutorialDone;
   bar('poise-bar',s.poise);text('hp-value',s.hp);bar('hp-bar',s.hp);text('st-value',s.stamina);bar('st-bar',s.stamina);text('potion-value',`回復薬 ${s.potions}`);
   const practiceCountdown=$('practice-countdown');
@@ -139,7 +139,14 @@ window.receiveLancerState = raw => {
     const rankCopy={
       10:['RANK 10 CHALLENGER','槍を選び、門を越えろ。','ヘクトラン：予告を避け、攻撃後の隙を突こう。','この槍でRANK 10へ'],
       9:['RANK 9 CHALLENGER','槍を選び、連撃を見切れ。','リゼル：連撃の最後を見切った後が攻め時。','この槍でRANK 9へ'],
-      8:['RANK 8 CHALLENGER','盾槍のアテリアに挑め。','アテリア：盾構え中は攻撃を防ぐ。攻撃後の隙を狙おう。','この槍でRANK 8へ']
+      8:['RANK 8 CHALLENGER','盾槍のアテリアに挑め。','アテリア：盾構え中は攻撃を防ぐ。攻撃後の隙を狙おう。','この槍でRANK 8へ'],
+      7:['RANK 7 CHALLENGER','炎輪のナタリスに挑め。','炎輪を避け、旋回後の隙を狙え。','この槍でRANK 7へ'],
+      6:['RANK 6 CHALLENGER','疾槍のアキレオンに挑め。','高速突進の直線を外し、着地を狙え。','この槍でRANK 6へ'],
+      5:['RANK 5 CHALLENGER','幻槍のジランに挑め。','偽の予告に惑わされず、本命を見切れ。','この槍でRANK 5へ'],
+      4:['RANK 4 CHALLENGER','聖槍のムルガルに挑め。','貫通槍を横に避け、硬直に反撃。','この槍でRANK 4へ'],
+      3:['RANK 3 CHALLENGER','光槍のルーグレイに挑め。','遠距離の扇攻撃をかわして接近。','この槍でRANK 3へ'],
+      2:['RANK 2 CHALLENGER','予見のオルディンに挑め。','偽予告の次に本当の槍が来る。','この槍でRANK 2へ'],
+      1:['RANK 1 CHALLENGER','魔槍のクーフェリンに挑め。','魔槍の連続軌道を読み切れ。','この槍でRANK 1へ']
     }[s.rank]||[];
     $('panel-kicker').textContent=rankCopy[0]||'CHALLENGER';
     $('panel-title').textContent=rankCopy[1]||'槍を選べ。';

@@ -110,6 +110,19 @@ def segment_hit(px, py, x1, y1, x2, y2, radius):
     t = max(0, min(1, ((px-x1)*dx+(py-y1)*dy)/(dx*dx+dy*dy or 1)))
     return math.hypot(px-x1-dx*t, py-y1-dy*t) <= radius
 
+
+# RANK 7-1 — data-driven prototype bosses. 10/9/8 tuning is unchanged.
+RANK_NEW = {
+  7: dict(name='炎輪のナタリス', hp=310, color=8, trim=10, style='fire-dance', attacks=('fan','orbit','lane'), hint='炎輪の外へ抜け、回り込んだ後を突け'),
+  6: dict(name='疾槍のアキレオン', hp=330, color=12, trim=7, style='speed-rush', attacks=('dash','dash','ring'), hint='突進の直線を外し、着地の隙を突け'),
+  5: dict(name='幻槍のジラン', hp=350, color=11, trim=10, style='feint', attacks=('feint','fan','lane'), hint='フェイント後の本当の予告を見切れ'),
+  4: dict(name='聖槍のムルガル', hp=370, color=10, trim=7, style='pierce', attacks=('lane','ring','fan'), hint='細い貫通槍を横に避け、槍を抜く隙を狙え'),
+  3: dict(name='光槍のルーグレイ', hp=390, color=9, trim=7, style='range-control', attacks=('fan','lane','ring'), hint='光の扇を見て、遠距離から間合いを詰めろ'),
+  2: dict(name='予見のオルディン', hp=420, color=13, trim=7, style='foresight', attacks=('feint','lane','fan'), hint='偽の予告を追わず、最後に固定された光を避けろ'),
+  1: dict(name='魔槍のクーフェリン', hp=480, color=8, trim=2, style='curse', attacks=('lane','fan','ring','dash'), hint='魔槍の軌道を見切り、長い硬直に反撃せよ'),
+}
+RANK_NEW_DAMAGE = {'fan':13,'orbit':13,'lane':17,'dash':18,'ring':15,'feint':16}
+
 class App:
     def __init__(self, auto_run=True, headless=False):
         self.canvas_fallback = window is not None and bool(window.lancerCanvasFallback)
@@ -177,7 +190,7 @@ class App:
     def reset(self):
         self.px, self.py = CX, CY+39
         self.bx, self.by = CX, CY-26
-        self.boss_max = 600 if self.rank == 10 else 520 if self.rank == 9 else 270
+        self.boss_max = RANK_NEW[self.rank]['hp'] if self.rank in RANK_NEW else 600 if self.rank == 10 else 520 if self.rank == 9 else 270
         self.hp, self.stamina, self.potions, self.bhp = 100, 100., 3, self.boss_max
         self.pa, self.ba = -math.pi/2, math.pi/2
         self.phase, self.poise, self.bleed = 1, 0., 0
@@ -209,6 +222,12 @@ class App:
         self.rank9_opening = False
         self.rank9_orbit = 1
         self.rank9_dash_origin = (self.bx, self.by)
+        self.new_attack_index = 0
+        self.new_aim = self.ba
+        self.new_origin = (self.bx, self.by)
+        self.new_fake = False
+        self.new_prep_stage = 0
+        self.new_attack_total = 0.3
         self.rank8_attack_index = 0
         self.rank8_counter = False
         self.rank8_aim = 0.
@@ -281,6 +300,15 @@ class App:
             self.tutorial_done = True
             self.mode = 'select'
             self.notice = 'RANK 9 — 武器を選べ'
+        if command.startswith('rank') and command.endswith('_select') and command[4:-7].isdigit():
+            selected_rank = int(command[4:-7])
+            if selected_rank in RANK_NEW:
+                # Do not interrupt the selection music when switching bosses.
+                self.rank = selected_rank
+                self.reset()
+                self.tutorial_done = True
+                self.mode = 'select'
+                self.notice = RANK_NEW[selected_rank]['name']
         if self.mode == 'select':
             self.weapon_index = max(0, min(2, c.get('weapon', self.weapon_index)))
         if command == 'start':
