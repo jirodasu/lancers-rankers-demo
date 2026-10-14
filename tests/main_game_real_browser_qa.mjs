@@ -1,0 +1,52 @@
+import { chromium } from 'playwright';
+import { mkdirSync, writeFileSync } from 'node:fs';
+const base='http://127.0.0.1:8765';
+mkdirSync('qa-artifacts',{recursive:true});
+const browser=await chromium.launch({headless:true});
+const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
+const errors=[],trace=[];
+page.on('pageerror',e=>errors.push('pageerror '+e.message));
+page.on('console',m=>{if(m.type()==='error')errors.push('console '+m.text())});
+page.on('requestfailed',r=>errors.push('request '+r.url()+' '+r.failure()?.errorText));
+const snapshot=async(label)=>{
+  const data=await page.evaluate(()=>{const root=document.getElementById('lancer-shell')?.shadowRoot;return {boot:document.getElementById('boot-status')?.textContent,error:document.getElementById('error')?.textContent,game:!!root,overlay:root?.getElementById('overlay')?.hidden,loading:root?.getElementById('load-label')?.textContent,rank:root?.getElementById('rank-number')?.textContent,mode:root?.getElementById('panel-title')?.textContent,notice:root?.getElementById('notice')?.textContent,hp:root?.getElementById('hp-value')?.textContent,bossHp:root?.getElementById('boss-value')?.textContent,buttons:root?.querySelectorAll('[data-select-rank]').length}});
+  trace.push({label,data});
+  await page.screenshot({path:'qa-artifacts/'+label+'.png'});
+  return data;
+};
+try{
+  await page.goto(base,{waitUntil:'domcontentloaded',timeout:30000});
+  await page.waitForFunction(()=>document.getElementById('lancer-shell')||document.getElementById('reload')?.hidden===false,{timeout:90000}).catch(()=>{});
+  if(!await page.locator('#lancer-shell').count()){
+    await page.locator('#boot').waitFor({state:'visible',timeout:5000}).catch(()=>{});
+    if(await page.locator('#boot').isEnabled())await page.locator('#boot').click();
+    await page.waitForFunction(()=>!!document.getElementById('lancer-shell'),{timeout:45000}).catch(()=>{});
+  }
+  await snapshot('01-initial');
+  const shell=page.locator('#lancer-shell');
+  if(await shell.count()){
+    const root=page.locator('#lancer-shell').locator('#overlay');
+    await page.waitForFunction(()=>document.getElementById('lancer-shell')?.shadowRoot?.getElementById('start')?.disabled===false,{timeout:30000}).catch(()=>{});
+    for(const rank of [6,5,4,3,2,1]){
+      await page.locator('#lancer-shell').locator('[data-select-rank="'+rank+'"]').click({timeout:3000}).catch(e=>errors.push('select '+rank+' '+e.message.slice(0,130)));
+      await page.waitForTimeout(300);
+      await snapshot('02-select-'+rank);
+    }
+    await page.locator('#lancer-shell').locator('#start').click({timeout:3000}).catch(e=>errors.push('start '+e.message.slice(0,130)));
+    await page.waitForTimeout(1600);
+    await snapshot('03-battle-start');
+    await page.keyboard.down('ArrowRight');await page.waitForTimeout(900);await page.keyboard.up('ArrowRight');
+    await page.keyboard.down('KeyZ');await page.waitForTimeout(200);await page.keyboard.up('KeyZ');
+    await page.keyboard.down('KeyX');await page.waitForTimeout(120);await page.keyboard.up('KeyX');
+    await page.waitForTimeout(1600);
+    await snapshot('04-after-input');
+    await page.locator('#lancer-shell').locator('#pause').click({timeout:3000}).catch(()=>{});
+    await page.waitForTimeout(350);
+    await snapshot('05-pause');
+  }
+}finally{
+  writeFileSync('qa-artifacts/trace.json',JSON.stringify({trace,errors},null,2));
+  console.log('MAIN GAME QA TRACE',JSON.stringify({trace,errors}));
+  await browser.close();
+}
+if(!trace.some(t=>t.data.game))process.exitCode=1;
