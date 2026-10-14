@@ -222,6 +222,7 @@ class App:
         self.rank9_opening = False
         self.rank9_orbit = 1
         self.rank9_dash_origin = (self.bx, self.by)
+        self.new_stance = 'wall'
         self.new_attack_index = 0
         self.new_aim = self.ba
         self.new_origin = (self.bx, self.by)
