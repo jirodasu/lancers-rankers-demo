@@ -16,7 +16,7 @@ ns = {"math": math, "DT": 1/60, "CX": 96, "CY": 130, "R": 85,
           (lambda t: math.hypot(px-(ax+(bx-ax)*t), py-(ay+(by-ay)*t)) <= radius)
           (max(0, min(1, ((px-ax)*(bx-ax)+(py-ay)*(by-ay)) /
           (((bx-ax)**2+(by-ay)**2) or 1))))}
-runtime = ast.parse("\\n".join((ROOT / f"src/game0{i}.txt").read_text() for i in range(1, 8)))
+runtime = ast.parse("\n".join((ROOT / f"src/game0{i}.txt").read_text() for i in range(1, 8)))
 selected = [n for n in runtime.body if isinstance(n, ast.Assign) and
             any(isinstance(t, ast.Name) and t.id in ("RANK_NEW", "RANK_NEW_DAMAGE") for t in n.targets)]
 assert len(selected) == 2
@@ -27,8 +27,6 @@ assert len({roster[r]["name"] for r in roster}) == 7
 assert len({roster[r]["style"] for r in roster}) == 7
 assert all(roster[r]["hp"] > 0 for r in roster)
 
-# Parse concatenated production Python (fragments are not standalone modules).
-runtime = ast.parse("\n".join((ROOT / f"src/game0{i}.txt").read_text() for i in range(1, 8)))
 app = next(n for n in runtime.body if isinstance(n, ast.ClassDef) and n.name == "App")
 method_names = ("new_boss_hit", "new_boss_update", "new_boss_telegraph", "draw_new_boss")
 methods = {n.name: n for n in app.body if isinstance(n, ast.FunctionDef) and n.name in method_names}
