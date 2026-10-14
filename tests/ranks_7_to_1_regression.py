@@ -79,6 +79,9 @@ for rank, method in unique_names.items():
             new_attack_total=.3, state="idle", timer=.01,
             phase=1, hit=False, frame=0, tech="lane", prep_total=.8,
             notice="", flash=0)
+        if rank == 6:
+            # Put the charger near the rim and the bait just beyond it.
+            o.bx,o.by,o.px,o.py=155.,130.,175.,130.
         o.clamp = lambda *args: None
         o.sound = lambda *args: None
         o.hurt = lambda damage: True
