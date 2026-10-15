@@ -7,6 +7,8 @@ on:
       - 'config/**'
       - 'index.html'
       - 'tests/factory_browser_smoke.mjs'
+      - 'tests/main_game_real_browser_qa.mjs'
+      - 'src/**'
       - '.github/workflows/factory-browser-smoke.yml'
   push:
     branches: [main]
@@ -15,6 +17,8 @@ on:
       - 'config/**'
       - 'index.html'
       - 'tests/factory_browser_smoke.mjs'
+      - 'tests/main_game_real_browser_qa.mjs'
+      - 'src/**'
       - '.github/workflows/factory-browser-smoke.yml'
   workflow_dispatch:
 jobs:
@@ -34,3 +38,13 @@ jobs:
         run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/factory-http.log 2>&1 &
       - name: Exercise real-browser authoring flow
         run: node tests/factory_browser_smoke.mjs
+      - name: QA main game (real Chromium + screenshots)
+        if: always()
+        run: node tests/main_game_real_browser_qa.mjs
+      - name: Save QA screenshots and input traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: main-game-qa
+          path: qa-artifacts/
+          if-no-files-found: ignore
