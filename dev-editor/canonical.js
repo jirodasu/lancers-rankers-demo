@@ -33,7 +33,7 @@ function renderSync(){
    meta.textContent="正規設定 "+(canonical.updatedAt||"")+" を基準に編集中";
  }else if(active&&same(cur,active.canonical)){
    badge.textContent="採用済み・GitHub反映待ち";badge.className="canonical-sync pending";
-   meta.textContent="この値が次の正規設定です。更新データをChatGPTへ渡すと以後の作業基準になります。";
+   meta.textContent="この値が次の正規設定です。更新データをClaude Codeへ渡すと以後の作業基準になります。";
  }else{
    badge.textContent="未確定の調整あり";badge.className="canonical-sync dirty";
    meta.textContent="現在の調整はまだ正規設定ではありません。「この状態を採用確定」で固定できます。";
@@ -85,12 +85,12 @@ async function adopt(){
  setPending({canonical:adopted,payload:p,createdAt:adopted.updatedAt});
  renderSync();
  const ok=await copyText(payloadText(p));
- api().setStatus(ok?"採用確定。ChatGPT用の正規更新データをコピーしました":"採用確定。DATAから更新データを保存してください",ok);
+ api().setStatus(ok?"採用確定。正規更新データをコピーしました":"採用確定。DATAから更新データを保存してください",ok);
 }
 async function copyPayload(){
  const p=pending();if(!p)return;
  const ok=await copyText(payloadText(p.payload));
- api().setStatus(ok?"ChatGPT用の正規更新データをコピーしました":"コピーできませんでした",ok)
+ api().setStatus(ok?"正規更新データをコピーしました":"コピーできませんでした",ok)
 }
 function downloadPayload(){
  const p=pending();if(!p)return;
