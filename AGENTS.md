@@ -20,6 +20,6 @@ Rules:
 
 ## DEV EDITOR
 
-The editor lives at `dev-editor/`. Its "採用確定" action creates a handoff payload for ChatGPT/Codex. GitHub Pages cannot commit repository content without authenticated write access, so an editor state is not repository-canonical until `config/lancers-tuning.json` is committed.
+The editor lives at `dev-editor/`. Its "採用確定" action creates a handoff payload for Claude Code (the sole development agent since 2026-10-16). GitHub Pages cannot commit repository content without authenticated write access, so an editor state is not repository-canonical until `config/lancers-tuning.json` is committed.
 
 When doing any future Lancers task, inspect the canonical tuning file before editing relevant source files.
